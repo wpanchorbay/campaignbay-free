@@ -39,7 +39,7 @@ const UserRoleRule: FC<UserRoleRuleProps> = ({
           }
           options={userRoles}
         />
-        {renderErrorMessage(errors?.option?.message)}
+        {renderErrorMessage(errors?.option?.message || "")}
       </div>
       <Label className="campaignbay-text-[12px] campaignbay-leading-[16px] campaignbay-font-[400] campaignbay-text-[#757575]">
         {__("role.", "campaignbay")}

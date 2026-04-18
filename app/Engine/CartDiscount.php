@@ -111,6 +111,7 @@ class CartDiscount
 
 		if (isset($cart->cart_contents) && !empty($cart->cart_contents)) {
 			foreach ($cart->cart_contents as $key => $cart_item) {
+				wpab_campaignbay_log('Processing cart item: ' . $cart_item['data']->get_name() . ' (Key: ' . $key . ')', 'DEBUG');
 				// skip it if it is a free product with bogo or any other type of discount
 				if (isset($cart_item['is_campaignbay_free_product']) && $cart_item['is_campaignbay_free_product'] == true) {
 					continue;
@@ -371,7 +372,8 @@ class CartDiscount
 		do_action('campaignbay_before_cart_discount_data', $cart_item);
 		$product = $cart_item['data'];
 		$tiers = Helper::get_quantity_tiers_with_campaign($product);
-		$meta = Woocommerce::get_product($product->get_id())->get_meta('campaignbay');
+		// $meta = Woocommerce::get_product($product->get_id())->get_meta('campaignbay');
+		$meta = Woocommerce::get_product_from_data($product)->get_meta('campaignbay');
 		$meta['is_quantity'] = false;
 		$base_price = $meta['base_price'];
 		$quantity = $cart_item['quantity'];
@@ -575,6 +577,8 @@ class CartDiscount
 			);
 		$discount_breakdown[$campaign_id]['old_price'] = $discount_breakdown[$campaign_id]['old_price'] + ($quantity * $base_price);
 		$discount_breakdown[$campaign_id]['discount'] = $discount_breakdown[$campaign_id]['discount'] + ($quantity * ($base_price - $new_price));
+
+		wpab_campaignbay_log(sprintf('Added BOGO free product %s (ID: %d) to cart for campaign %d.', $product_data->get_name(), $free_product_id, $campaign_id), 'INFO');
 
 		return $cart_item_key;
 	}

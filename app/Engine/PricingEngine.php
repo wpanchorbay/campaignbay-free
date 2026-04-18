@@ -70,6 +70,28 @@ class PricingEngine extends Base
 	 */
 	private $calculated_totals = false;
 
+
+	/**
+	 * The cart level condition campaigns array.
+	 *
+	 * Stores the campaigns that have cart level conditions. we will apply discount on 
+	 * these campaigns after cart total calculation.
+	 *
+	 * @since 1.1.17
+	 * @var array
+	 */
+	private $cart_level_condition_campaigns = [];
+
+	/**
+	 * Whether we are calculating cart total for cart level conditions.
+	 *
+	 * @since 1.1.17
+	 * @var bool
+	 */
+	protected $calculating_cart_total_for_cart_level_conditions = false;
+
+	private $calculated_cart = null;
+
 	/**
 	 * Constructor to define and build the hooks array.
 	 *
@@ -122,6 +144,7 @@ class PricingEngine extends Base
 		];
 
 		add_action('woocommerce_before_calculate_totals', [$this, 'before_calculate_totals'], 20, 1);
+		add_action('woocommerce_after_calculate_totals', [$this, 'after_calculate_totals'], 20, 1);
 
 		foreach ($hooks as $hook) {
 			$this->add_hook(...$hook);
@@ -592,6 +615,7 @@ class PricingEngine extends Base
 	public function before_calculate_totals($cart)
 	{
 		remove_action('woocommerce_before_calculate_totals', [$this, 'before_calculate_totals'], 20, 1);
+		wpab_campaignbay_log('Before calculate totals: ', 'DEBUG');
 		$this->coupons = CartDiscount::calculate_cart_discount($cart);
 		$this->calculated_totals = true;
 		$discount_breakdown = $cart->campaignbay_discount_breakdown ?? array();
@@ -599,6 +623,33 @@ class PricingEngine extends Base
 			$this->discount_applied = true;
 
 		add_action('woocommerce_before_calculate_totals', [$this, 'before_calculate_totals'], 20, 1);
+	}
+
+	/**
+	 * After calculate totals.
+	 *
+	 * @since 1.1.17
+	 * @param WC_Cart $cart The cart object.
+	 * @return void
+	 */
+	public function after_calculate_totals($cart)
+	{
+		$cart_level_condition_campaigns = $this->get_cart_level_condition_campaigns();
+		if (empty($cart_level_condition_campaigns)) {
+			wpab_campaignbay_log('No cart level condition campaigns found', 'info');
+			return;
+		}
+		remove_action('woocommerce_after_calculate_totals', [$this, 'after_calculate_totals'], 20, 1);
+		$this->calculated_cart = array(
+			"subtotal" => $cart->get_subtotal(),
+			"total" => $cart->get_total('edit'),
+		);
+		wpab_campaignbay_log('Cart level condition campaigns found for evaluation: ' . print_r($this->cart_level_condition_campaigns, true), 'DEBUG');
+		wpab_campaignbay_log('Calculating cart total for cart level conditions');
+
+		$this->calculating_cart_total_for_cart_level_conditions = true;
+		$cart->calculate_totals();
+		add_action('woocommerce_after_calculate_totals', [$this, 'after_calculate_totals'], 20, 1);
 	}
 
 
@@ -722,6 +773,51 @@ class PricingEngine extends Base
 				}
 			}
 		}
+	}
+
+	/**
+	 * Add cart level condition campaigns.
+	 *
+	 * @since 1.1.17
+	 * @param \WpabCampaignBay\Model\Campaign $campaign The campaign object.
+	 * @return void
+	 */
+	public function add_cart_level_condition_campaigns($campaign)
+	{
+		$this->cart_level_condition_campaigns[] = $campaign;
+	}
+
+	/**
+	 * Get cart level condition campaigns.
+	 *
+	 * @since 1.1.17
+	 * @return array The cart level condition campaigns.
+	 */
+	public function get_cart_level_condition_campaigns()
+	{
+		return $this->cart_level_condition_campaigns;
+	}
+
+	/**
+	 * Check if calculating cart total for cart level conditions.
+	 *
+	 * @since 1.1.17
+	 * @return bool True if calculating cart total for cart level conditions, false otherwise.
+	 */
+	public function is_calculating_cart_total_for_cart_level_conditions()
+	{
+		return $this->calculating_cart_total_for_cart_level_conditions;
+	}
+
+	/**
+	 * Get calculated cart.
+	 *
+	 * @since 1.1.17
+	 * @return \WC_Cart The cart object.
+	 */
+	public function get_calculated_cart()
+	{
+		return $this->calculated_cart;
 	}
 
 }

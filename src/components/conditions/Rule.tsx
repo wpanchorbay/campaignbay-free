@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { ConditionInterface, RuleErrors } from "./type";
+import { CartTotalRuleCondition, ConditionInterface, RuleErrors } from "./type";
 import UsersRule from "./UsersRule";
 import { Trash2 } from "lucide-react";
 import { UserRuleCondition, UserRolesCondition, UsersCondition } from "./type";
@@ -7,6 +7,7 @@ import UserRoleRule from "./UserRoleRule";
 import UserRolesRule from "./UserRolesRule";
 import { closeSmall, Icon } from "@wordpress/icons";
 import Button from "../common/Button";
+import CartTotalRule from "./CartTotalRule";
 
 interface RuleProps {
   rule: ConditionInterface;
@@ -27,6 +28,14 @@ const Rule: FC<RuleProps> = ({ rule, onChange, onDelete, errors }) => {
               <UserRoleRule
                 errors={errors}
                 condition={rule.condition as UserRuleCondition}
+                onChange={(condition) => onChange({ ...rule, condition })}
+              />
+            );
+          case "cart_total":
+            return (
+              <CartTotalRule
+                errors={errors}
+                condition={rule.condition as CartTotalRuleCondition}
                 onChange={(condition) => onChange({ ...rule, condition })}
               />
             );

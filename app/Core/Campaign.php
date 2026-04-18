@@ -622,6 +622,10 @@ class Campaign
 				'options' => 'required|array',
 				'is_included' => 'required|boolean',
 			],
+			'cart_total' => [
+				'value' => 'required|numeric|min:0',
+				'operator' => 'required|string|in:>=,<=,==,>,<',
+			],
 		];
 		/**
 		 * Filters the default conditions validation rules.
@@ -639,9 +643,9 @@ class Campaign
 			$condition_validator = new Validator($rule['condition']);
 			$validation_rules = $default_rules[$rule['type']];
 			if (!$condition_validator->validate($validation_rules)) {
-				// error_log('condition_validator->get_first_error()');
-				// error_log(print_r($condition_validator->get_errors(), true));
-				// error_log('condition: ' . print_r($rule['condition'], true));
+				wpab_campaignbay_log('Condition validation failed: ' . $condition_validator->get_first_error(), 'DEBUG');
+				wpab_campaignbay_log($condition_validator->get_errors(), 'DEBUG');
+				wpab_campaignbay_log($rule['condition'], 'DEBUG');
 				return new WP_Error(
 					'rest_validation_error',
 					$condition_validator->get_first_error(),

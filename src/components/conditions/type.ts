@@ -1,10 +1,14 @@
-import { Dispatch, SetStateAction } from "react";
-import { CampaignErrorsType, CampaignType, ValidationError } from "../../types";
+import { ValidationError } from "../../utils/types";
 
-export type ConditionRuleType = "user_role" | "user_roles" | "users";
+export type ConditionRuleType = "user_role" | "user_roles" | "users" | "cart_total";
 export type UserRuleCondition = {
   option: string;
   is_included: boolean;
+};
+export type CartTotalRuleConditionOperator = "<=" | ">=" | "<" | ">" | "==";
+export type CartTotalRuleCondition = {
+  operator: CartTotalRuleConditionOperator;
+  value: number;
 };
 export type UserRolesCondition = {
   options: string[];
@@ -18,7 +22,8 @@ export type UsersCondition = {
 export type AllConditionsType =
   | UserRuleCondition
   | UserRolesCondition
-  | UsersCondition;
+  | UsersCondition
+  | CartTotalRuleCondition;
 
 export type ConditionInterface = {
   type: ConditionRuleType;

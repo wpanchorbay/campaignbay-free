@@ -400,6 +400,40 @@ class Woocommerce
         return false;
     }
 
+    /**
+     * Get the product from product data
+     * 
+     * This method retrieves the product object from a given product data.
+     * 
+     * @since 1.1.17
+     * 
+     * @param $product The product data.
+     * @return bool|false|WC_Product|null The product object.
+     */
+    static function get_product_from_data($product)
+    {
+
+        /**
+         * Filters the WooCommerce product object retrieved by the plugin.
+         *
+         * This hook is applied after the plugin fetches a product object using `wc_get_product()`.
+         * It allows developers to intercept and modify the product object before it is used
+         * in any of the plugin's internal calculations or caching mechanisms. This can be used
+         * for advanced scenarios, such as substituting a different product object for testing
+         * or complex bundling logic.
+         *
+         * @since 1.0.0
+         * @hook  campaignbay_get_product
+         *
+         * @param WC_Product|false $product_object The retrieved product object, or false if not found.
+         * @param int              $product_id     The ID of the product that was requested.
+         *
+         * @return WC_Product|false The filtered product object.
+         */
+        return apply_filters('campaignbay_get_product', $product, $product->get_id());
+
+    }
+
 
     /**
      * Get the sale price of the product
@@ -481,12 +515,12 @@ class Woocommerce
      */
     static function get_product_base_price($product)
     {
-        
-        
+
+
         $price = null;
         if (empty($product))
             return $price;
-        if(self::product_type_is($product, 'variable')){
+        if (self::product_type_is($product, 'variable')) {
             $children = self::get_product_children($product);
             foreach ($children as $child) {
                 $child_product = wc_get_product($child);
@@ -521,7 +555,8 @@ class Woocommerce
      * @param $product_data The product data.
      * @return string The hash of the cart item data.
      */
-    static function generate_cart_item_data_hash($product_data){
+    static function generate_cart_item_data_hash($product_data)
+    {
         if (function_exists('wc_get_cart_item_data_hash')) {
             return wc_get_cart_item_data_hash($product_data);
         }
@@ -539,7 +574,7 @@ class Woocommerce
     static function get_product_categories($product)
     {
         $categories = $variant = array();
-        if(!empty($product))
+        if (!empty($product))
             if (is_object($product) && method_exists($product, 'get_category_ids')) {
                 if (self::product_type_is($product, 'variation')) {
                     $variant = $product;
@@ -548,7 +583,7 @@ class Woocommerce
                 }
                 $categories = $product->get_category_ids();
             }
-        return  $categories;
+        return $categories;
     }
 
     /**
@@ -579,15 +614,16 @@ class Woocommerce
      * @param mixed $cart_item
      * @return int|null the product id
      */
-    public static function get_product_id_from_cart_item($cart_item){
+    public static function get_product_id_from_cart_item($cart_item)
+    {
         $product_id = null;
-        
-        if(isset($cart_item['product_id'])){
+
+        if (isset($cart_item['product_id'])) {
             $product_id = $cart_item['product_id'];
-            if(isset($cart_item['variation_id']) && !empty($cart_item['variation_id'])){
+            if (isset($cart_item['variation_id']) && !empty($cart_item['variation_id'])) {
                 $product_id = $cart_item['variation_id'];
             }
-        } else if(isset($cart_item['data'])){
+        } else if (isset($cart_item['data'])) {
             $product_id = self::get_product_id($cart_item['data']);
         }
 
