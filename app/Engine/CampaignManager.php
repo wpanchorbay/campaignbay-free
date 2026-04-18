@@ -91,12 +91,12 @@ class CampaignManager extends Base
 
 		$cached_campaigns = get_transient('campaignbay_active_campaigns');
 		if (false !== $cached_campaigns) {
-			wpab_campaignbay_log('cached_campaigns found', 'DEBUG');
+			wpab_campaignbay_log('cached_campaigns found', 'INFO');
 			$this->active_campaigns = $cached_campaigns;
 			return $this->active_campaigns;
 		}
 
-		wpab_campaignbay_log('no cached campaigns found, fetching from database', 'DEBUG');
+		wpab_campaignbay_log('No cached campaigns found, fetching from database', 'WARNING');
 
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'campaignbay_campaigns';
@@ -112,7 +112,7 @@ class CampaignManager extends Base
 		);
 
 		if (is_wp_error($results)) {
-			wpab_campaignbay_log('Error in fetching campaigns', 'error');
+			wpab_campaignbay_log('Error in fetching campaigns', 'ERROR');
 			return array();
 		}
 
@@ -130,7 +130,7 @@ class CampaignManager extends Base
 				}
 			}
 		} else {
-			wpab_campaignbay_log('query has no campaigns', 'DEBUG');
+			wpab_campaignbay_log('query has no campaigns', 'INFO');
 		}
 
 		set_transient('campaignbay_active_campaigns', $campaign_objects, 60 * MINUTE_IN_SECONDS);
@@ -151,7 +151,7 @@ class CampaignManager extends Base
 
 		$cached_campaigns = get_transient('campaignbay_scheduled_campaigns');
 		if (false !== $cached_campaigns) {
-			wpab_campaignbay_log('cached scheduled campaigns found', 'DEBUG');
+			wpab_campaignbay_log('cached scheduled campaigns found', 'INFO');
 			$this->scheduled_campaigns = $cached_campaigns;
 			return $this->scheduled_campaigns;
 		}
@@ -173,7 +173,7 @@ class CampaignManager extends Base
 		);
 
 		if (is_wp_error($results)) {
-			wpab_campaignbay_log('Error in fetching scheduled campaigns', 'error');
+			wpab_campaignbay_log('Error in fetching scheduled campaigns', 'ERROR');
 			return array();
 		}
 
@@ -187,7 +187,7 @@ class CampaignManager extends Base
 				}
 			}
 		} else {
-			wpab_campaignbay_log('no scheduled or active campaigns found for failsafe check.', 'DEBUG');
+			wpab_campaignbay_log('no scheduled or active campaigns found for failsafe check.', 'INFO');
 			$campaign_objects = array();
 		}
 
@@ -205,7 +205,7 @@ class CampaignManager extends Base
 	 */
 	public function clear_cache($source = 'unknown')
 	{
-		wpab_campaignbay_log('clearing cache from ' . $source, 'DEBUG');
+		wpab_campaignbay_log('clearing cache from ' . $source, 'INFO');
 		delete_transient('campaignbay_active_campaigns');
 		delete_transient('campaignbay_scheduled_campaigns');
 		$this->active_campaigns = null;

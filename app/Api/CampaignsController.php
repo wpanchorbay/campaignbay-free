@@ -542,7 +542,7 @@ class CampaignsController extends ApiController
 				$result = $campaign->set_status($status);
 
 				if ($result === true && !is_wp_error($result)) {
-					wpab_campaignbay_log('title : ' . $campaign->get_title() . ' ' . $status, 'error');
+					wpab_campaignbay_log('title : ' . $campaign->get_title() . ' ' . $status, 'ERROR');
 					$updated_count++;
 					// Log the activity.
 					Logger::get_instance()->log(
@@ -558,7 +558,7 @@ class CampaignsController extends ApiController
 				}
 				if (is_wp_error($result)) {
 					//phpcs:ignore
-					wpab_campaignbay_log(print_r($result, true), 'error');
+					wpab_campaignbay_log(print_r($result, true), 'ERROR');
 				}
 			}
 		}

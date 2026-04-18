@@ -90,21 +90,7 @@ class Campaign
 
 
 
-	/**
-	 * Throws a validation error with a specific field message.
-	 *
-	 * @since 1.0.0
-	 * @param string $field The field name that failed validation.
-	 * @throws Exception Always throws an exception.
-	 */
-	public static function throw_validation_error($field = '')
-	{
-		$message = 'Campaign validation failed.';
-		if (!empty($field)) {
-			$message .= " Field: {$field}";
-		}
-		throw new Exception(esc_html($message));
-	}
+
 
 
 	/**
@@ -122,6 +108,7 @@ class Campaign
 		$rules = self::get_validation_rules($args);
 		// checking validation
 		if (!$validator->validate($rules)) {
+			wpab_campaignbay_log('Validation failed for campaign: ' . $validator->get_first_error(), 'ERROR');
 			return new WP_Error('rest_validation_error', $validator->get_first_error(), array('status' => 400, 'details' => $validator->get_errors(), 'data' => $args));
 		}
 		// retriving validated data
@@ -134,6 +121,7 @@ class Campaign
 				$tier_validator = new Validator($tier);
 				$tier_rules = self::get_tiers_validation_rules($data['type']);
 				if (!$tier_validator->validate($tier_rules)) {
+					wpab_campaignbay_log('Validation failed for tier: ' . $tier_validator->get_first_error(), 'WARNING');
 					return new WP_Error(
 						'rest_validation_error',
 						$tier_validator->get_first_error(),
@@ -259,6 +247,7 @@ class Campaign
 		$rules = self::get_validation_rules($args);
 
 		if (!$validator->validate($rules)) {
+			wpab_campaignbay_log('Validation failed for campaign: ' . $validator->get_first_error(), 'WARNING');
 			//phpcs:ignore
 			return new WP_Error('rest_validation_error', $validator->get_first_error(), array('status' => 400, 'details' => $validator->get_errors(), 'data' => $args));
 		}
@@ -270,6 +259,7 @@ class Campaign
 				$tier_validator = new Validator($tier);
 				$tier_rules = self::get_tiers_validation_rules($data['type']);
 				if (!$tier_validator->validate($tier_rules)) {
+					wpab_campaignbay_log('Validation failed for tier: ' . $tier_validator->get_first_error(), 'WARNING');
 					return new WP_Error(
 						'rest_validation_error',
 						$tier_validator->get_first_error(),
@@ -574,6 +564,7 @@ class Campaign
 		$validator = new Validator(array_merge($default, $settings));
 
 		if (!$validator->validate($rules)) {
+			wpab_campaignbay_log('Validation failed for settings: ' . $validator->get_first_error(), 'WARNING');
 			return new WP_Error(
 				'rest_validation_error',
 				$validator->get_first_error(),
@@ -598,6 +589,7 @@ class Campaign
 			'rules' => 'nullable|array',
 		];
 		if (!$validator->validate($rules)) {
+			wpab_campaignbay_log('Validation failed for conditions: ' . $validator->get_first_error(), 'WARNING');
 			return new WP_Error(
 				'rest_validation_error',
 				$validator->get_first_error(),
@@ -643,9 +635,9 @@ class Campaign
 			$condition_validator = new Validator($rule['condition']);
 			$validation_rules = $default_rules[$rule['type']];
 			if (!$condition_validator->validate($validation_rules)) {
-				wpab_campaignbay_log('Condition validation failed: ' . $condition_validator->get_first_error(), 'DEBUG');
-				wpab_campaignbay_log($condition_validator->get_errors(), 'DEBUG');
-				wpab_campaignbay_log($rule['condition'], 'DEBUG');
+				wpab_campaignbay_log('Condition validation failed: ' . $condition_validator->get_first_error(), 'ERROR');
+				wpab_campaignbay_log($condition_validator->get_errors(), 'WARNING');
+				wpab_campaignbay_log($rule['condition'], 'WARNING');
 				return new WP_Error(
 					'rest_validation_error',
 					$condition_validator->get_first_error(),
@@ -787,7 +779,8 @@ class Campaign
 		if (!in_array($status, $allowed_statuses, true)) {
 			wpab_campaignbay_log(
 				// Translators: %s is the invalid status provided.
-				sprintf(__('Invalid status "%s" provided. Status must be one of: active, inactive, scheduled, expired.', 'campaignbay'), $status)
+				sprintf(__('Invalid status "%s" provided. Status must be one of: active, inactive, scheduled, expired.', 'campaignbay'), $status),
+				'ERROR'
 			);
 			return false;
 		}
@@ -798,9 +791,9 @@ class Campaign
 			$table_name = $wpdb->prefix . 'campaignbay_campaigns';
 
 			$new_schedule_enabled = $this->data->status === 'expired' ? 0 : $this->data->schedule_enabled;
-			wpab_campaignbay_log('________ name: ' . $this->data->name);
-			wpab_campaignbay_log('________ status: ' . $this->data->status);
-			wpab_campaignbay_log('New schedule enabled: ' . $new_schedule_enabled);
+			wpab_campaignbay_log('________ name: ' . $this->data->name, 'INFO');
+			wpab_campaignbay_log('________ status: ' . $this->data->status, 'INFO');
+			wpab_campaignbay_log('New schedule enabled: ' . $new_schedule_enabled, 'INFO');
 
 			//phpcs:ignore
 			$result = $wpdb->update(
@@ -1216,7 +1209,7 @@ class Campaign
 			$this->data->status = 'expired';
 		}
 
-		wpab_campaignbay_log('Usage count incremented for campaign: #' . $this->get_id() . ' ' . $this->get_title() . ' - New count: ' . $this->data->usage_count, 'DEBUG');
+		wpab_campaignbay_log('Usage count incremented for campaign: #' . $this->get_id() . ' ' . $this->get_title() . ' - New count: ' . $this->data->usage_count, 'INFO');
 
 		/**
 		 * Fires after a campaign's usage count is updated.
@@ -1277,7 +1270,7 @@ class Campaign
 			$this->data->status = 'expired';
 		}
 
-		wpab_campaignbay_log('Usage count decremented for campaign: #' . $this->get_id() . ' ' . $this->get_title() . ' - New count: ' . $this->data->usage_count, 'DEBUG');
+		wpab_campaignbay_log('Usage count decremented for campaign: #' . $this->get_id() . ' ' . $this->get_title() . ' - New count: ' . $this->data->usage_count, 'INFO');
 
 		/**
 		 * Fires after a campaign's usage count is updated.

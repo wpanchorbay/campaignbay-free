@@ -73,7 +73,7 @@ class OrderManager extends Base
 		}
 
 		foreach ($discount_breakdown as $campaign_id => $data) {
-			wpab_campaignbay_log('campaign_id: ' . $campaign_id, 'DEBUG');
+			wpab_campaignbay_log('campaign_id: ' . $campaign_id, 'INFO');
 			$campaign = new Campaign($campaign_id);
 			$campaign->increment_usage_count();
 			wpab_campaignbay_log('incrementing usage count' . $campaign_id);
@@ -111,7 +111,7 @@ class OrderManager extends Base
 			array('%d')
 		);
 		foreach ($campaign_ids ?? [] as $key => $campaign) {
-			wpab_campaignbay_log('decrementing usage count' . $campaign->campaign_id);
+			wpab_campaignbay_log('decrementing usage count' . $campaign->campaign_id, 'INFO');
 			$campaign = new Campaign($campaign->campaign_id);
 			$campaign->decrement_usage_count();
 		}
@@ -185,8 +185,6 @@ class OrderManager extends Base
 
 			// Increment the usage count for the campaign
 			$campaign = new Campaign($campaign_id);
-			// $campaign->increment_usage_count();
-			// wpab_campaignbay_log('usage_count: ' . $campaign->get_usage_count(), 'DEBUG');
 			CampaignManager::get_instance()->clear_cache('order_manager');
 		}
 

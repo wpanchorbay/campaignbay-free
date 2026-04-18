@@ -81,7 +81,7 @@ class CalenderManager extends Base
 			return $this->campaigns;
 		}
 
-		wpab_campaignbay_log('no cached campaigns found, fetching from database', 'DEBUG');
+		wpab_campaignbay_log('No cached campaigns found, fetching from database', 'WARNING');
 
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'campaignbay_campaigns';
@@ -96,7 +96,7 @@ class CalenderManager extends Base
 		);
 
 		if (is_wp_error($results)) {
-			wpab_campaignbay_log('Error in fetching campaigns in calendar manager', 'error');
+			wpab_campaignbay_log('Error in fetching campaigns in calendar manager', 'ERROR');
 			return array();
 		}
 
@@ -121,7 +121,7 @@ class CalenderManager extends Base
 				$campaign_objects[$row->id] = $data;
 			}
 		} else {
-			wpab_campaignbay_log('query has no campaigns', 'DEBUG');
+			wpab_campaignbay_log('Query has no campaigns', 'WARNING');
 		}
 
 		set_transient('campaignbay_calender_campaigns', $campaign_objects, 60 * 24 * 30 * MINUTE_IN_SECONDS);
@@ -139,7 +139,7 @@ class CalenderManager extends Base
 	 */
 	public function clear_cache($source = 'unknown')
 	{
-		wpab_campaignbay_log('clearing calendar cache', 'DEBUG');
+		wpab_campaignbay_log('clearing calendar cache', 'INFO');
 		delete_transient('campaignbay_calender_campaigns');
 		$this->campaigns = null;
 	}

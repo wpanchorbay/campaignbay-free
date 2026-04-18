@@ -493,7 +493,7 @@ class PricingEngine extends Base
 			// if the simple campaign is set to display as regular price, return
 			if (wpab_campaignbay_get_value($meta['simple'], 'display_as_regular_price', false) === true)
 				return;
-			wpab_campaignbay_log('________ simple: ' . print_r($meta['simple'], true));
+			wpab_campaignbay_log('________ simple: ' . print_r($meta['simple'], true), 'INFO');
 			if (wpab_campaignbay_get_value($meta['simple'], 'show_product_message', true) === false)
 				return;
 			$format = wpab_campaignbay_get_value($meta['simple'], 'message_format');
@@ -615,7 +615,7 @@ class PricingEngine extends Base
 	public function before_calculate_totals($cart)
 	{
 		remove_action('woocommerce_before_calculate_totals', [$this, 'before_calculate_totals'], 20, 1);
-		wpab_campaignbay_log('Before calculate totals: ', 'DEBUG');
+		wpab_campaignbay_log('Before calculate totals: ', 'INFO');
 		$this->coupons = CartDiscount::calculate_cart_discount($cart);
 		$this->calculated_totals = true;
 		$discount_breakdown = $cart->campaignbay_discount_breakdown ?? array();
@@ -644,8 +644,8 @@ class PricingEngine extends Base
 			"subtotal" => $cart->get_subtotal(),
 			"total" => $cart->get_total('edit'),
 		);
-		wpab_campaignbay_log('Cart level condition campaigns found for evaluation: ' . print_r($this->cart_level_condition_campaigns, true), 'DEBUG');
-		wpab_campaignbay_log('Calculating cart total for cart level conditions');
+		wpab_campaignbay_log('Cart level condition campaigns found for evaluation: ' . print_r($this->cart_level_condition_campaigns, true), 'INFO');
+		wpab_campaignbay_log('Calculating cart total for cart level conditions', 'INFO');
 
 		$this->calculating_cart_total_for_cart_level_conditions = true;
 		$cart->calculate_totals();

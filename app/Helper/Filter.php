@@ -108,7 +108,7 @@ class Filter
             return false;
         }
 
-        wpab_campaignbay_log('Product level conditions matched: ' . $campaign->get_title() . ' -- -- -- ' . $product->get_name(), 'DEBUG');
+        wpab_campaignbay_log('Product level conditions matched: ' . $campaign->get_title() . ' -- -- -- ' . $product->get_name(), 'INFO');
 
         /**
          * Fires before evaluating product against campaign targeting rules.

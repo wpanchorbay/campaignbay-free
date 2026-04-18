@@ -104,9 +104,13 @@ if (!function_exists('wpab_campaignbay_log')) {
 	 */
 	function wpab_campaignbay_log($message, $level = 'INFO', $dev_mode = true)
 	{
-		$enable_logging =WpabCampaignBay\Core\Common::get_instance()->get_settings('debug_enableMode');
+		$enable_logging = WpabCampaignBay\Core\Common::get_instance()->get_settings('debug_enableMode');
 		// if (!$enable_logging && !defined('WP_DEBUG') && !WP_DEBUG && $level !== 'error') {
-		if (!$enable_logging && ($level !== 'ERROR' || $level !== 'error')) {
+		if (!$enable_logging && ($level !== 'ERROR' && $level !== 'error' && $level !== 'DEBUG' && $level !== 'debug')) {
+			// error_log(print_r(array(
+			// 	'Message' => $message,
+			// 	'Level' => $level
+			// ), true));
 			return;
 		}
 		$upload_dir = wp_upload_dir();
@@ -139,7 +143,7 @@ if (!function_exists('wpab_campaignbay_log')) {
 
 
 
-if ( ! function_exists( 'wpab_campaignbay_get_value' ) ) {
+if (!function_exists('wpab_campaignbay_get_value')) {
 	/**
 	 * Safely retrieve a value from a nested array or object using dot notation.
 	 * Returns default if key is missing OR if value is an empty string.
@@ -150,17 +154,18 @@ if ( ! function_exists( 'wpab_campaignbay_get_value' ) ) {
 	 * @param mixed        $default The default value if key is not found or is empty string.
 	 * @return mixed
 	 */
-	function wpab_campaignbay_get_value( $target, $key, $default = null ) {
-		if ( is_null( $key ) || trim( $key ) == '' ) {
+	function wpab_campaignbay_get_value($target, $key, $default = null)
+	{
+		if (is_null($key) || trim($key) == '') {
 			return $target;
 		}
 
-		$keys = is_array( $key ) ? $key : explode( '.', $key );
+		$keys = is_array($key) ? $key : explode('.', $key);
 
-		foreach ( $keys as $segment ) {
-			if ( is_array( $target ) && isset( $target[ $segment ] ) ) {
-				$target = $target[ $segment ];
-			} elseif ( is_object( $target ) && isset( $target->{$segment} ) ) {
+		foreach ($keys as $segment) {
+			if (is_array($target) && isset($target[$segment])) {
+				$target = $target[$segment];
+			} elseif (is_object($target) && isset($target->{$segment})) {
 				$target = $target->{$segment};
 			} else {
 				// Key not found, return default
@@ -169,7 +174,7 @@ if ( ! function_exists( 'wpab_campaignbay_get_value' ) ) {
 		}
 
 		// If the found value is exactly an empty string, return default.
-		if ( $target === '' ) {
+		if ($target === '') {
 			return $default;
 		}
 

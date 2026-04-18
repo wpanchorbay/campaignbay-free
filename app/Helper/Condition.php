@@ -57,14 +57,14 @@ class Condition
         $match_type = $conditions['match_type'] ?? 'any';
         $is_cart_level_condition = false;
         $checking_cart_level_conditions = PricingEngine::get_instance()->is_calculating_cart_total_for_cart_level_conditions();
-        wpab_campaignbay_log('Evaluating conditions for campaign: ' . $campaign->get_id() . ' - ' . $campaign->get_title(), 'DEBUG');
+        wpab_campaignbay_log('Evaluating conditions for campaign: ' . $campaign->get_id() . ' - ' . $campaign->get_title(), 'INFO');
         if ($product) {
-            wpab_campaignbay_log('Target product: ' . $product->get_id() . ' - ' . $product->get_name(), 'DEBUG');
+            wpab_campaignbay_log('Target product: ' . $product->get_id() . ' - ' . $product->get_name(), 'INFO');
         }
         if ($checking_cart_level_conditions) {
-            wpab_campaignbay_log('Evaluating cart level conditions.', 'DEBUG');
+            wpab_campaignbay_log('Evaluating cart level conditions.', 'INFO');
         } else {
-            wpab_campaignbay_log('Not evaluating cart level conditions yet (pre-calculation).', 'DEBUG');
+            wpab_campaignbay_log('Not evaluating cart level conditions yet (pre-calculation).', 'INFO');
         }
         if ($match_type === 'any' && !$checking_cart_level_conditions) {
             foreach ($rules as $rule) {
@@ -154,7 +154,7 @@ class Condition
                 $result = self::check_user_role($condition);
                 break;
             case 'cart_total':
-                wpab_campaignbay_log('Cart total condition deferred for post-calculation check.', 'DEBUG');
+                wpab_campaignbay_log('Cart total condition deferred for post-calculation check.', 'INFO');
                 $result = true; // cannot run it now now just pass it , check it after cart total calculation
                 break;
             default:
@@ -248,7 +248,7 @@ class Condition
      */
     public static function pass_cart_level_rule($condition, $product = null)
     {
-        wpab_campaignbay_log('Evaluating cart level rule.', 'DEBUG');
+        wpab_campaignbay_log('Evaluating cart level rule.', 'INFO');
         $result = true;
         $type = $condition['type'];
         $condition = $condition['condition'];
@@ -261,9 +261,9 @@ class Condition
                 break;
         }
         if ($result) {
-            wpab_campaignbay_log('Cart level rule passed.', 'DEBUG');
+            wpab_campaignbay_log('Cart level rule passed.', 'INFO');
         } else {
-            wpab_campaignbay_log('Cart level rule failed.', 'DEBUG');
+            wpab_campaignbay_log('Cart level rule failed.', 'INFO');
         }
         return $result;
     }
@@ -287,7 +287,7 @@ class Condition
         $value = $condition['value'];
         $cart = PricingEngine::get_instance()->get_calculated_cart();
         $cart_total = $cart['total'];
-        wpab_campaignbay_log(sprintf('Checking cart total condition: Cart Total (%s) %s Target Value (%s)', $cart_total, $operator, $value), 'DEBUG');
+        wpab_campaignbay_log(sprintf('Checking cart total condition: Cart Total (%s) %s Target Value (%s)', $cart_total, $operator, $value), 'INFO');
         switch ($operator) {
             case '>=':
                 $result = $cart_total >= $value;

@@ -9,7 +9,6 @@ import React, {
 import { Modal, Spinner } from "@wordpress/components";
 import apiFetch from "@wordpress/api-fetch";
 
-
 // Define the shape of the component's props
 interface LogViewerModalProps {
   isLogModalOpen: boolean;
@@ -55,7 +54,7 @@ const LogViewerModal: FC<LogViewerModalProps> = ({
     try {
       const response = await apiFetch<LogContentResponse>({ path });
       setLogContent(
-        response.log_content || `No logs found for ${selectedDate}.`
+        response.log_content || `No logs found for ${selectedDate}.`,
       );
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -172,10 +171,50 @@ const LogViewerModal: FC<LogViewerModalProps> = ({
         </div>
       </div>
       <pre className="campaignbay-p-[4px] campaignbay-bg-gray-50 campaignbay-border campaignbay-border-gray-200 campaignbay-overflow-auto campaignbay-text-xs campaignbay-h-[50vh] campaignbay-scrollbar">
-        {isLoading ? <Spinner /> : logContent}
+        {isLoading ? <Spinner /> : <LogContent logContent={logContent} />}
       </pre>
     </Modal>
   );
 };
 
 export default LogViewerModal;
+
+const LogContent = ({ logContent }: { logContent: string }) => {
+  const logLines = logContent.split("\n");
+  let lastLevel = "INFO";
+
+  return (
+    <>
+      {logLines.map((line, index) => {
+        // Detect level in current line
+        if (line.includes("[INFO]")) {
+          lastLevel = "INFO";
+        } else if (line.includes("[ERROR]") || line.toLowerCase().includes("error")) {
+          lastLevel = "ERROR";
+        } else if (line.includes("[DEBUG]") || line.toLowerCase().includes("debug")) {
+          lastLevel = "DEBUG";
+        } else if (line.includes("[WARNING]")) {
+          lastLevel = "WARNING";
+        }
+
+        // Determine color class
+        let colorClass = "campaignbay-text-gray-600";
+        if (lastLevel === "INFO") {
+          colorClass = "campaignbay-text-blue-500";
+        } else if (lastLevel === "ERROR") {
+          colorClass = "campaignbay-text-red-500";
+        } else if (lastLevel === "DEBUG") {
+          colorClass = "campaignbay-text-orange-500";
+        } else if (lastLevel === "WARNING") {
+          colorClass = "campaignbay-text-orange-500";
+        }
+
+        return (
+          <div className={`campaignbay-block ${colorClass}`} key={index}>
+            {line}
+          </div>
+        );
+      })}
+    </>
+  );
+};

@@ -109,7 +109,7 @@ class Scheduler extends Base
 
 		if ($campaign->get_status() === 'scheduled' && $campaign->get_schedule_enabled()) {
 			if (!$start_timestamp) {
-				wpab_campaignbay_log(sprintf('Campaign #%d is missing start timestamps. Cannot schedule. %d', $campaign_id, $start_timestamp), 'WARNING');
+				wpab_campaignbay_log(sprintf('Campaign #%d is missing start timestamps. Cannot schedule. %d', $campaign_id, $start_timestamp), 'ERROR');
 			} else {
 				wp_schedule_single_event(
 					$start_timestamp,
@@ -127,7 +127,7 @@ class Scheduler extends Base
 			}
 
 			if (!$end_timestamp) {
-				wpab_campaignbay_log(sprintf('Campaign #%d is missing end timestamps. Cannot schedule deactivation.', $campaign_id), 'WARNING');
+				wpab_campaignbay_log(sprintf('Campaign #%d is missing end timestamps. Cannot schedule deactivation.', $campaign_id), 'ERROR');
 				return;
 			} else {
 				// Schedule the deactivation event.
@@ -167,7 +167,7 @@ class Scheduler extends Base
 		$campaigns = CampaignManager::get_instance()->get_scheduled_campaigns();
 
 		if (empty($campaigns)) {
-			wpab_campaignbay_log('no scheduled or active campaigns found for failsafe check.', 'DEBUG');
+			wpab_campaignbay_log('no scheduled or active campaigns found for failsafe check.', 'WARNING');
 			return;
 		}
 

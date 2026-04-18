@@ -111,7 +111,7 @@ class CartDiscount
 
 		if (isset($cart->cart_contents) && !empty($cart->cart_contents)) {
 			foreach ($cart->cart_contents as $key => $cart_item) {
-				wpab_campaignbay_log('Processing cart item: ' . $cart_item['data']->get_name() . ' (Key: ' . $key . ')', 'DEBUG');
+				wpab_campaignbay_log('Processing cart item: ' . $cart_item['data']->get_name() . ' (Key: ' . $key . ')', 'INFO');
 				// skip it if it is a free product with bogo or any other type of discount
 				if (isset($cart_item['is_campaignbay_free_product']) && $cart_item['is_campaignbay_free_product'] == true) {
 					continue;
