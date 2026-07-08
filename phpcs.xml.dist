@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<ruleset name="CampaignBay Ruleset">
+    <description>Standard ruleset for CampaignBay plugin</description>
+
+    <!-- Pass some flags to PHPCS:
+         p flag: Show progress of the run.
+         s flag: Show sniff codes in all reports.
+    -->
+    <arg value="ps"/>
+
+    <!-- Strip the filepaths down to the relevant bit. -->
+    <arg name="basepath" value="./"/>
+
+    <!-- Check up to 8 files simultaneously. -->
+    <arg name="parallel" value="8"/>
+
+    <!-- Only check the PHP extensions. -->
+    <arg name="extensions" value="php"/>
+
+    <!-- Check all files in this directory and the directories below it. -->
+    <file>.</file>
+
+    <!-- Exclude stuff we don't own -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/dist/*</exclude-pattern>
+    <exclude-pattern>*/build/*</exclude-pattern>
+    <exclude-pattern>*/assets/*</exclude-pattern>
+    <exclude-pattern>Woocommerce.php</exclude-pattern>
+
+    <!-- Include the WordPress-Extra and WordPress-Docs standards. -->
+    <rule ref="WordPress-Extra">
+        <!-- PSR-4 compatible file names are acceptable -->
+        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase" />
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName" />
+    </rule>
+    <rule ref="WordPress-Docs">
+        <exclude name="Squiz.Commenting.InlineComment.InvalidEndChar" />
+    </rule>
+
+    <!-- Minimum supported WP version -->
+    <config name="minimum_supported_wp_version" value="5.6"/>
+
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="campaignbay"/>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="WordPress.WP.Capabilities">
+        <properties>
+            <property name="custom_capabilities" type="array">
+                <element value="manage_campaignbay"/>
+                <element value="manage_woocommerce"/>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <property name="prefixes" type="array">
+                <element value="campaignbay"/>
+                <element value="CampaignBay"/>
+                <element value="CAMPAIGNBAY"/>
+                <element value="wpab"/>
+                <element value="Wpab"/>
+                <element value="WPAB"/>
+            </property>
+        </properties>
+    </rule>
+
+</ruleset>

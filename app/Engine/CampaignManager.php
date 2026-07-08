@@ -18,7 +18,7 @@ use WpabCampaignBay\Core\Campaign;
  */
 
 // Exit if accessed directly.
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -32,8 +32,8 @@ if (!defined('ABSPATH')) {
  * @package    WPAB_CampaignBay
  * @author     WP Anchor Bay <wpanchorbay@gmail.com>
  */
-class CampaignManager extends Base
-{
+class CampaignManager extends Base {
+
 
 
 	/**
@@ -47,7 +47,7 @@ class CampaignManager extends Base
 
 	/**
 	 * Summary of scheduled_campaigns
-	 * 
+	 *
 	 * @since 1.0.0
 	 * @access private
 	 * @var array|null
@@ -63,16 +63,15 @@ class CampaignManager extends Base
 	 * @since 1.0.0
 	 * @access private
 	 */
-	protected function __construct()
-	{
+	protected function __construct() {
 		parent::__construct();
 
 		// Use the inherited add_action method to register hooks.
 		// These hooks will clear the campaign cache whenever a campaign is saved or deleted.
-		$this->add_action('campaignbay_campaign_save', 'clear_cache', 10, 2);
-		$this->add_action('campaignbay_campaign_usage_incremented', 'clear_cache', 10, 2);
-		$this->add_action('campaignbay_campaign_usage_decremented', 'clear_cache', 10, 2);
-		$this->add_action('campaignbay_campaign_delete', 'clear_cache', 10, 1);
+		$this->add_action( 'campaignbay_campaign_save', 'clear_cache', 10, 2 );
+		$this->add_action( 'campaignbay_campaign_usage_incremented', 'clear_cache', 10, 2 );
+		$this->add_action( 'campaignbay_campaign_usage_decremented', 'clear_cache', 10, 2 );
+		$this->add_action( 'campaignbay_campaign_delete', 'clear_cache', 10, 1 );
 	}
 
 
@@ -83,25 +82,24 @@ class CampaignManager extends Base
 	 * @since 1.0.0
 	 * @return Campaign[] An array of active campaign objects.
 	 */
-	public function get_active_campaigns()
-	{
-		if (null !== $this->active_campaigns) {
+	public function get_active_campaigns() {
+		if ( null !== $this->active_campaigns ) {
 			return $this->active_campaigns;
 		}
 
-		$cached_campaigns = get_transient('campaignbay_active_campaigns');
-		if (false !== $cached_campaigns) {
-			wpab_campaignbay_log('cached_campaigns found', 'INFO');
+		$cached_campaigns = get_transient( 'campaignbay_active_campaigns' );
+		if ( false !== $cached_campaigns ) {
+			wpab_campaignbay_log( 'cached_campaigns found', 'INFO' );
 			$this->active_campaigns = $cached_campaigns;
 			return $this->active_campaigns;
 		}
 
-		wpab_campaignbay_log('No cached campaigns found, fetching from database', 'WARNING');
+		wpab_campaignbay_log( 'No cached campaigns found, fetching from database', 'WARNING' );
 
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'campaignbay_campaigns';
 
-		// we have our personal caching 
+		// we have our personal caching
 		//phpcs:ignore
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
@@ -111,29 +109,29 @@ class CampaignManager extends Base
 			)
 		);
 
-		if (is_wp_error($results)) {
-			wpab_campaignbay_log('Error in fetching campaigns', 'ERROR');
+		if ( is_wp_error( $results ) ) {
+			wpab_campaignbay_log( 'Error in fetching campaigns', 'ERROR' );
 			return array();
 		}
 
 		$campaign_objects = array();
-		if ($results) {
-			foreach ($results as $row) {
+		if ( $results ) {
+			foreach ( $results as $row ) {
 				// Decode JSON fields
-				$row->target_ids = !empty($row->target_ids) ? json_decode($row->target_ids, true) : array();
-				$row->tiers = !empty($row->tiers) ? json_decode($row->tiers, true) : array();
+				$row->target_ids = ! empty( $row->target_ids ) ? json_decode( $row->target_ids, true ) : array();
+				$row->tiers      = ! empty( $row->tiers ) ? json_decode( $row->tiers, true ) : array();
 
-				$campaign = new Campaign($row);
-				if ($campaign) {
+				$campaign = new Campaign( $row );
+				if ( $campaign ) {
 					// Usage count is now stored directly in the table, no need to load separately
-					$campaign_objects[$campaign->get_id()] = $campaign;
+					$campaign_objects[ $campaign->get_id() ] = $campaign;
 				}
 			}
 		} else {
-			wpab_campaignbay_log('query has no campaigns', 'INFO');
+			wpab_campaignbay_log( 'query has no campaigns', 'INFO' );
 		}
 
-		set_transient('campaignbay_active_campaigns', $campaign_objects, 60 * MINUTE_IN_SECONDS);
+		set_transient( 'campaignbay_active_campaigns', $campaign_objects, 60 * MINUTE_IN_SECONDS );
 		$this->active_campaigns = $campaign_objects;
 		return $this->active_campaigns;
 	}
@@ -143,19 +141,17 @@ class CampaignManager extends Base
 	 * @since 1.0.0
 	 * @return Campaign[] An array of active campaign objects.
 	 */
-	public function get_scheduled_campaigns()
-	{
-		if (null !== $this->scheduled_campaigns) {
+	public function get_scheduled_campaigns() {
+		if ( null !== $this->scheduled_campaigns ) {
 			return $this->scheduled_campaigns;
 		}
 
-		$cached_campaigns = get_transient('campaignbay_scheduled_campaigns');
-		if (false !== $cached_campaigns) {
-			wpab_campaignbay_log('cached scheduled campaigns found', 'INFO');
+		$cached_campaigns = get_transient( 'campaignbay_scheduled_campaigns' );
+		if ( false !== $cached_campaigns ) {
+			wpab_campaignbay_log( 'cached scheduled campaigns found', 'INFO' );
 			$this->scheduled_campaigns = $cached_campaigns;
 			return $this->scheduled_campaigns;
 		}
-
 
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'campaignbay_campaigns';
@@ -172,26 +168,26 @@ class CampaignManager extends Base
 			)
 		);
 
-		if (is_wp_error($results)) {
-			wpab_campaignbay_log('Error in fetching scheduled campaigns', 'ERROR');
+		if ( is_wp_error( $results ) ) {
+			wpab_campaignbay_log( 'Error in fetching scheduled campaigns', 'ERROR' );
 			return array();
 		}
 
 		$campaign_objects = array();
-		if ($results) {
-			foreach ($results as $row) {
+		if ( $results ) {
+			foreach ( $results as $row ) {
 
-				$campaign = new Campaign($row);
-				if ($campaign) {
-					$campaign_objects[$campaign->get_id()] = $campaign;
+				$campaign = new Campaign( $row );
+				if ( $campaign ) {
+					$campaign_objects[ $campaign->get_id() ] = $campaign;
 				}
 			}
 		} else {
-			wpab_campaignbay_log('no scheduled or active campaigns found for failsafe check.', 'INFO');
+			wpab_campaignbay_log( 'no scheduled or active campaigns found for failsafe check.', 'INFO' );
 			$campaign_objects = array();
 		}
 
-		set_transient('campaignbay_scheduled_campaigns', $campaign_objects, 60 * MINUTE_IN_SECONDS);
+		set_transient( 'campaignbay_scheduled_campaigns', $campaign_objects, 60 * MINUTE_IN_SECONDS );
 		$this->scheduled_campaigns = $campaign_objects;
 		return $this->scheduled_campaigns;
 	}
@@ -203,12 +199,11 @@ class CampaignManager extends Base
 	 *
 	 * @param string $source The source of the cache clear.
 	 */
-	public function clear_cache($source = 'unknown')
-	{
-		wpab_campaignbay_log('clearing cache from ' . $source, 'INFO');
-		delete_transient('campaignbay_active_campaigns');
-		delete_transient('campaignbay_scheduled_campaigns');
-		$this->active_campaigns = null;
+	public function clear_cache( $source = 'unknown' ) {
+		wpab_campaignbay_log( 'clearing cache from ' . $source, 'INFO' );
+		delete_transient( 'campaignbay_active_campaigns' );
+		delete_transient( 'campaignbay_scheduled_campaigns' );
+		$this->active_campaigns    = null;
 		$this->scheduled_campaigns = null;
 	}
 }

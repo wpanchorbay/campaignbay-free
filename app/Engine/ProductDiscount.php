@@ -22,7 +22,7 @@ use WpabCampaignBay\Helper\Woocommerce;
  */
 
 // Exit if accessed directly.
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -36,12 +36,12 @@ if (!defined('ABSPATH')) {
  * @package    WPAB_CampaignBay
  * @author     WP Anchor Bay <wpanchorbay@gmail.com>
  */
-class ProductDiscount
-{
+class ProductDiscount {
+
 
 	/**
 	 * Summary of settings
-	 * 
+	 *
 	 * @since 1.0.0
 	 * @var array
 	 */
@@ -49,7 +49,7 @@ class ProductDiscount
 
 	/**
 	 * Summary of product
-	 * 
+	 *
 	 * @since 1.0.0
 	 * @var WC_Product
 	 */
@@ -57,7 +57,7 @@ class ProductDiscount
 
 	/**
 	 * Summary of campaigns
-	 * 
+	 *
 	 * @since 1.0.0
 	 * @var array
 	 */
@@ -65,7 +65,7 @@ class ProductDiscount
 
 	/**
 	 * Summary of data
-	 * 
+	 *
 	 * @since 1.0.0
 	 * @var array
 	 */
@@ -78,10 +78,9 @@ class ProductDiscount
 	 * @since 1.0.0
 	 * @param WC_Product $product The product object to be processed.
 	 */
-	private function __construct(WC_Product $product)
-	{
-		$this->product = $product;
-		$this->settings = Common::get_instance()->get_settings();
+	private function __construct( WC_Product $product ) {
+		$this->product   = $product;
+		$this->settings  = Common::get_instance()->get_settings();
 		$this->campaigns = CampaignManager::get_instance()->get_active_campaigns();
 	}
 
@@ -94,18 +93,17 @@ class ProductDiscount
 	 * @param WC_Product|int $product The product object or product ID.
 	 * @return self|null Returns a new instance for chaining, or null if the product is invalid.
 	 */
-	public static function create($product)
-	{
-		if (is_numeric($product)) {
-			$product = wc_get_product($product);
+	public static function create( $product ) {
+		if ( is_numeric( $product ) ) {
+			$product = wc_get_product( $product );
 		}
 
-		if (!$product instanceof WC_Product) {
+		if ( ! $product instanceof WC_Product ) {
 			// Return null or a dummy object if the product is invalid to prevent fatal errors.
 			return null;
 		}
 
-		return new self($product);
+		return new self( $product );
 	}
 
 
@@ -119,27 +117,26 @@ class ProductDiscount
 	 * @since 1.0.0
 	 * @return self Returns the instance to allow for further chaining.
 	 */
-	public function apply_discounts()
-	{
+	public function apply_discounts() {
 
 		// if variable product just apply on variations
-		if (Woocommerce::product_type_is($this->product, 'variable')) {
+		if ( Woocommerce::product_type_is( $this->product, 'variable' ) ) {
 			return $this->apply_discounts_on_variations();
 		}
-		$original_price = (float) Woocommerce::get_product_regular_price($this->product);
-		$base_price = (float) Woocommerce::get_product_base_price($this->product);
-		$best_price = null;
+		$original_price   = (float) Woocommerce::get_product_regular_price( $this->product );
+		$base_price       = (float) Woocommerce::get_product_base_price( $this->product );
+		$best_price       = null;
 		$applied_campaign = null;
-		$applied_tier = null;
-		$this->data = array(
+		$applied_tier     = null;
+		$this->data       = array(
 			'original_price' => $original_price,
-			'base_price' => $base_price,
-			'on_discount' => false,
-			'is_on_sale' => false,
+			'base_price'     => $base_price,
+			'on_discount'    => false,
+			'is_on_sale'     => false,
 		);
 
-		foreach ($this->campaigns as $campaign) {
-			if ($campaign->get_type() !== 'scheduled' && $campaign->get_type() !== 'earlybird') {
+		foreach ( $this->campaigns as $campaign ) {
+			if ( $campaign->get_type() !== 'scheduled' && $campaign->get_type() !== 'earlybird' ) {
 				/**
 				 * Fires when a product-level campaign type not native to the free version is being processed.
 				 *
@@ -160,26 +157,27 @@ class ProductDiscount
 				 * @param object|null $applied_campaign The campaign object corresponding to the current best price.
 				 * @param array|null $applied_tier The tier data (if any) corresponding to the current best price.
 				 */
-				do_action('campaignbay_product_campaign_discount_calculation', $this->product, $this, $campaign, $original_price, $base_price, $best_price, $applied_campaign, $applied_tier);
+				do_action( 'campaignbay_product_campaign_discount_calculation', $this->product, $this, $campaign, $original_price, $base_price, $best_price, $applied_campaign, $applied_tier );
 
 				continue;
 			}
-			if (!$campaign->is_applicable_to_product($this->product)) {
+			if ( ! $campaign->is_applicable_to_product( $this->product ) ) {
 				continue;
 			}
-			if ($campaign->get_type() === 'earlybird') {
-				$tier = Helper::earlybird_current_tier($campaign);
-				$new_price = $this->calculate_earlybird_price($tier, $base_price);
-			} elseif ($campaign->get_type() === 'scheduled')
-				$new_price = $this->calculate_scheduled_price($campaign, $base_price);
+			if ( $campaign->get_type() === 'earlybird' ) {
+				$tier      = Helper::earlybird_current_tier( $campaign );
+				$new_price = $this->calculate_earlybird_price( $tier, $base_price );
+			} elseif ( $campaign->get_type() === 'scheduled' ) {
+				$new_price = $this->calculate_scheduled_price( $campaign, $base_price );
+			}
 
-			if ($this->is_better_price($new_price, $best_price)) {
-				$best_price = $new_price;
+			if ( $this->is_better_price( $new_price, $best_price ) ) {
+				$best_price       = $new_price;
 				$applied_campaign = $campaign;
-				$applied_tier = $tier ?? null;
+				$applied_tier     = $tier ?? null;
 			}
 		}
-		if ($applied_campaign !== null) {
+		if ( $applied_campaign !== null ) {
 
 			/**
 			 * Fires within the campaign loop, just before the current campaign's price is compared to the best price.
@@ -201,38 +199,38 @@ class ProductDiscount
 			 * @param object|null $applied_campaign The campaign object that corresponds to the current best price.
 			 * @param object|null $applied_tier     The specific tier (if any) of the applied campaign.
 			 */
-			do_action('campaignbay_product_discount_before_appling', $this->product, $this, $campaign, $original_price, $base_price, $best_price, $applied_campaign, $applied_tier);
+			do_action( 'campaignbay_product_discount_before_appling', $this->product, $this, $campaign, $original_price, $base_price, $best_price, $applied_campaign, $applied_tier );
 
 			$this->data['on_discount'] = true;
-			$this->data['is_simple'] = true;
-			$data = array(
-				'campaign' => $applied_campaign->get_id(),
-				'campaign_title' => $applied_campaign->get_title(),
-				'price' => $best_price,
-				'discount' => $base_price - $best_price,
-				'message_format' => $applied_campaign->get_settings()['message_format'] ?? '',
-				'show_product_message' => $applied_campaign->get_settings()['show_product_message'] ?? true,
-				'display_as_regular_price' => $applied_campaign->get_settings()['display_as_regular_price'] ?? false
+			$this->data['is_simple']   = true;
+			$data                      = array(
+				'campaign'                 => $applied_campaign->get_id(),
+				'campaign_title'           => $applied_campaign->get_title(),
+				'price'                    => $best_price,
+				'discount'                 => $base_price - $best_price,
+				'message_format'           => $applied_campaign->get_settings()['message_format'] ?? '',
+				'show_product_message'     => $applied_campaign->get_settings()['show_product_message'] ?? true,
+				'display_as_regular_price' => $applied_campaign->get_settings()['display_as_regular_price'] ?? false,
 			);
-			if ($applied_campaign->get_type() === 'scheduled') {
+			if ( $applied_campaign->get_type() === 'scheduled' ) {
 				$data['value'] = $applied_campaign->get_discount_value() ?? null;
-				$data['type'] = $applied_campaign->get_discount_type() ?? null;
+				$data['type']  = $applied_campaign->get_discount_type() ?? null;
 			}
-			if ($applied_campaign->get_type() === 'earlybird') {
+			if ( $applied_campaign->get_type() === 'earlybird' ) {
 				$data['value'] = $applied_tier['value'];
-				$data['type'] = $applied_tier['type'];
+				$data['type']  = $applied_tier['type'];
 			}
 			$this->data['simple'] = $data;
 
-			$this->product->set_price($this->data['simple']['price']);
+			$this->product->set_price( $this->data['simple']['price'] );
 
-			$this->product->set_regular_price($this->data['base_price']);
+			$this->product->set_regular_price( $this->data['base_price'] );
 			// add on sale badge
-			if (!$this->data['simple']['display_as_regular_price']) {
+			if ( ! $this->data['simple']['display_as_regular_price'] ) {
 				$this->data['is_on_sale'] = true;
 			} else {
 				$this->data['is_on_sale'] = false;
-				$this->product->set_regular_price($this->data['simple']['price']);
+				$this->product->set_regular_price( $this->data['simple']['price'] );
 			}
 
 			/**
@@ -255,7 +253,7 @@ class ProductDiscount
 			 * @param object|null $applied_campaign The campaign object that corresponds to the current best price.
 			 * @param object|null $applied_tier     The specific tier (if any) of the applied campaign.
 			 */
-			do_action('campaignbay_product_discount_after_appling', $this->product, $this, $campaign, $original_price, $base_price, $best_price, $applied_campaign, $applied_tier);
+			do_action( 'campaignbay_product_discount_after_appling', $this->product, $this, $campaign, $original_price, $base_price, $best_price, $applied_campaign, $applied_tier );
 
 		}
 
@@ -274,49 +272,51 @@ class ProductDiscount
 		 *
 		 * @return array The modified data array.
 		 */
-		$this->product->add_meta_data('campaignbay', apply_filters('campaignbay_product_discount_meta', $this->data, $this->product), true);
+		$this->product->add_meta_data( 'campaignbay', apply_filters( 'campaignbay_product_discount_meta', $this->data, $this->product ), true );
 		return $this;
 	}
 
 	/**
 	 * Summary of apply_discounts_on_variations
-	 * 
+	 *
 	 * @since 1.0.0
 	 * @return self Returns the instance to allow for further chaining.
 	 */
-	public function apply_discounts_on_variations()
-	{
-		$prices = Woocommerce::get_variation_prices($this->product);
+	public function apply_discounts_on_variations() {
+		$prices     = Woocommerce::get_variation_prices( $this->product );
 		$this->data = array(
 			'on_discount' => false,
 		);
 
-		if (empty($prices['price'])) {
+		if ( empty( $prices['price'] ) ) {
 			return $this;
 		}
-		$base_price = array();
+		$base_price     = array();
 		$original_price = array();
-		foreach ($prices['price'] as $key => $value) {
-			$meta = Woocommerce::get_product($key)->get_meta('campaignbay');
-			if ($meta['on_discount'])
+		foreach ( $prices['price'] as $key => $value ) {
+			$meta = Woocommerce::get_product( $key )->get_meta( 'campaignbay' );
+			if ( $meta['on_discount'] ) {
 				$this->data['on_discount'] = true;
-
-			if ($meta['is_on_sale'])
-				$this->data['is_on_sale'] = true;
-
-			if (isset($meta['is_simple']) && $meta['is_simple']) {
-				$this->data['is_simple'] = $meta['is_simple'];
-				if (!isset($meta['simple']))
-					$this->data['simple'] = array();
-				$this->data['simple'][$key] = $meta['simple'];
 			}
-			$base_price[$key] = $meta['base_price'];
-			$original_price[$key] = $meta['original_price'];
+
+			if ( $meta['is_on_sale'] ) {
+				$this->data['is_on_sale'] = true;
+			}
+
+			if ( isset( $meta['is_simple'] ) && $meta['is_simple'] ) {
+				$this->data['is_simple'] = $meta['is_simple'];
+				if ( ! isset( $meta['simple'] ) ) {
+					$this->data['simple'] = array();
+				}
+				$this->data['simple'][ $key ] = $meta['simple'];
+			}
+			$base_price[ $key ]     = $meta['base_price'];
+			$original_price[ $key ] = $meta['original_price'];
 		}
 
-		$this->data['base_price'] = $base_price;
+		$this->data['base_price']     = $base_price;
 		$this->data['original_price'] = $original_price;
-		$this->product->add_meta_data('campaignbay', $this->data, true);
+		$this->product->add_meta_data( 'campaignbay', $this->data, true );
 		return $this;
 	}
 
@@ -326,8 +326,7 @@ class ProductDiscount
 	 * @since 1.0.0
 	 * @return WC_Product The processed product object.
 	 */
-	public function get_product()
-	{
+	public function get_product() {
 		return $this->product;
 	}
 
@@ -341,16 +340,15 @@ class ProductDiscount
 	 * @param float  $base_price The price before discount.
 	 * @return float The calculated price.
 	 */
-	public function calculate_scheduled_price($campaign, $base_price)
-	{
-		$discount_type = $campaign->get_discount_type();
-		$discount_value = $campaign->get_discount_value();
+	public function calculate_scheduled_price( $campaign, $base_price ) {
+		$discount_type    = $campaign->get_discount_type();
+		$discount_value   = $campaign->get_discount_value();
 		$calculated_price = $base_price;
 
-		if ($discount_type === 'percentage') {
-			$calculated_price = $this->calculate_percentage_price($base_price, $discount_value);
-		} elseif ($discount_type === 'fixed') {
-			$calculated_price = $this->calculate_fixed_price($base_price, $discount_value);
+		if ( $discount_type === 'percentage' ) {
+			$calculated_price = $this->calculate_percentage_price( $base_price, $discount_value );
+		} elseif ( $discount_type === 'fixed' ) {
+			$calculated_price = $this->calculate_fixed_price( $base_price, $discount_value );
 		}
 
 		return $calculated_price;
@@ -365,15 +363,14 @@ class ProductDiscount
 	 * @param float $base_price The price before discount.
 	 * @return float The calculated price.
 	 */
-	public function calculate_earlybird_price($tier, $base_price)
-	{
-		$discount_type = $tier['type'];
-		$discount_value = $tier['value'];
+	public function calculate_earlybird_price( $tier, $base_price ) {
+		$discount_type    = $tier['type'];
+		$discount_value   = $tier['value'];
 		$calculated_price = $base_price;
-		if ($discount_type === 'percentage') {
-			$calculated_price = $this->calculate_percentage_price($base_price, $discount_value);
-		} elseif ($discount_type === 'fixed' || $discount_type === 'currency') {
-			$calculated_price = $this->calculate_fixed_price($base_price, $discount_value);
+		if ( $discount_type === 'percentage' ) {
+			$calculated_price = $this->calculate_percentage_price( $base_price, $discount_value );
+		} elseif ( $discount_type === 'fixed' || $discount_type === 'currency' ) {
+			$calculated_price = $this->calculate_fixed_price( $base_price, $discount_value );
 		}
 		return $calculated_price;
 	}
@@ -386,9 +383,8 @@ class ProductDiscount
 	 * @param float $discount_value The fixed amount to subtract.
 	 * @return float The final price, ensuring it's not below zero.
 	 */
-	public function calculate_fixed_price($base_price, $discount_value)
-	{
-		return max(0, $base_price - $discount_value);
+	public function calculate_fixed_price( $base_price, $discount_value ) {
+		return max( 0, $base_price - $discount_value );
 	}
 
 	/**
@@ -399,10 +395,9 @@ class ProductDiscount
 	 * @param float $discount_value The percentage to subtract (e.g., 10 for 10%).
 	 * @return float The final price, ensuring it's not below zero.
 	 */
-	public function calculate_percentage_price($base_price, $discount_value)
-	{
-		$discount_amount = ($discount_value / 100) * $base_price;
-		return max(0, $base_price - $discount_amount);
+	public function calculate_percentage_price( $base_price, $discount_value ) {
+		$discount_amount = ( $discount_value / 100 ) * $base_price;
+		return max( 0, $base_price - $discount_amount );
 	}
 
 	/**
@@ -413,23 +408,22 @@ class ProductDiscount
 	 * @param float $current_best_price The current best price.
 	 * @return bool True if the new price is better, false otherwise.
 	 */
-	public function is_better_price($new_price, $current_best_price)
-	{
-		if ($new_price === null)
+	public function is_better_price( $new_price, $current_best_price ) {
+		if ( $new_price === null ) {
 			return false;
-		if ($current_best_price === null)
+		}
+		if ( $current_best_price === null ) {
 			return true;
-		$setting = Common::get_instance()->get_settings('product_priorityMethod');
+		}
+		$setting = Common::get_instance()->get_settings( 'product_priorityMethod' );
 
-		if ($setting === 'apply_highest') {
+		if ( $setting === 'apply_highest' ) {
 			return $new_price < $current_best_price;
-		} elseif ($setting === 'apply_lowest') {
+		} elseif ( $setting === 'apply_lowest' ) {
 			return $new_price > $current_best_price;
-		} elseif ($setting === 'apply_first') {
+		} elseif ( $setting === 'apply_first' ) {
 			return $current_best_price === null;
 		}
 		return false;
 	}
-
-
 }

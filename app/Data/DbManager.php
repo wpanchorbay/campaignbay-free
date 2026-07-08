@@ -15,8 +15,8 @@
 namespace WpabCampaignBay\Data;
 
 // Exit if accessed directly.
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 /**
@@ -34,79 +34,75 @@ if (!defined('ABSPATH')) {
  * @subpackage WPAB_CampaignBay/Data
  * @author     WP Anchor Bay <wpanchorbay@gmail.com>
  */
-class DbManager
-{
-    /**
-     * The single instance of the class.
-     *
-     * @since 1.0.0
-     * @var   DbManager
-     * @access private
-     */
-    private static $instance = null;
-    /**
-     * Gets an instance of this object.
-     * Prevents duplicate instances which avoids artefacts and improves performance.
-     *
-     * @static
-     * @access public
-     * @since 1.0.0
-     * @return object
-     */
-    public static function get_instance()
-    {
-        // Store the instance locally to avoid private static replication.
-        static $instance = null;
-        if (null === self::$instance) {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
+class DbManager {
 
-    /**
-     * A dummy constructor to prevent the class from being loaded more than once.
-     *
-     * @see DbManager::get_instance()
-     *
-     * @since 1.0.0
-     * @access private
-     */
-    private function __construct()
-    {
-        // Prevent direct instantiation.
-    }
+	/**
+	 * The single instance of the class.
+	 *
+	 * @since 1.0.0
+	 * @var   DbManager
+	 * @access private
+	 */
+	private static $instance = null;
+	/**
+	 * Gets an instance of this object.
+	 * Prevents duplicate instances which avoids artefacts and improves performance.
+	 *
+	 * @static
+	 * @access public
+	 * @since 1.0.0
+	 * @return object
+	 */
+	public static function get_instance() {
+		// Store the instance locally to avoid private static replication.
+		static $instance = null;
+		if ( null === self::$instance ) {
+			self::$instance = new self();
+		}
+		return self::$instance;
+	}
 
-    /**
-     * Run the database manager.
-     *
-     * This method is called to initialize the database manager and create necessary tables.
-     *
-     * @since 1.0.0
-     */
-    public function create_tables()
-    {
-        $this->create_campaigns_table();
-        $this->create_logs_table();
-    }
+	/**
+	 * A dummy constructor to prevent the class from being loaded more than once.
+	 *
+	 * @see DbManager::get_instance()
+	 *
+	 * @since 1.0.0
+	 * @access private
+	 */
+	private function __construct() {
+		// Prevent direct instantiation.
+	}
 
-    /**
-     * Create the campaigns table.
-     *
-     * This table stores campaign data.
-     *
-     * @since 1.0.0
-     * @access private
-     */
-    private function create_campaigns_table()
-    {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'campaignbay_campaigns';
-        $charset_collate = $wpdb->get_charset_collate();
+	/**
+	 * Run the database manager.
+	 *
+	 * This method is called to initialize the database manager and create necessary tables.
+	 *
+	 * @since 1.0.0
+	 */
+	public function create_tables() {
+		$this->create_campaigns_table();
+		$this->create_logs_table();
+	}
 
-        // - Two spaces after PRIMARY KEY.
-        // - One space between KEY and its name.
-        // - Each field on its own line.
-        $sql = "CREATE TABLE {$table_name} (
+	/**
+	 * Create the campaigns table.
+	 *
+	 * This table stores campaign data.
+	 *
+	 * @since 1.0.0
+	 * @access private
+	 */
+	private function create_campaigns_table() {
+		global $wpdb;
+		$table_name      = $wpdb->prefix . 'campaignbay_campaigns';
+		$charset_collate = $wpdb->get_charset_collate();
+
+		// - Two spaces after PRIMARY KEY.
+		// - One space between KEY and its name.
+		// - Each field on its own line.
+		$sql = "CREATE TABLE {$table_name} (
             id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             title varchar(255) NOT NULL,
             status varchar(20) NOT NULL DEFAULT 'inactive',
@@ -135,24 +131,23 @@ class DbManager
             KEY date_range (start_datetime, end_datetime)
         ) $charset_collate;";
 
-        dbDelta($sql);
-    }
+		dbDelta( $sql );
+	}
 
-    /**
-     * Create the logs table.
-     *
-     * This table stores analytics and activity data.
-     *
-     * @since 1.0.0
-     * @access private
-     */
-    private function create_logs_table()
-    {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'campaignbay_logs';
-        $charset_collate = $wpdb->get_charset_collate();
+	/**
+	 * Create the logs table.
+	 *
+	 * This table stores analytics and activity data.
+	 *
+	 * @since 1.0.0
+	 * @access private
+	 */
+	private function create_logs_table() {
+		global $wpdb;
+		$table_name      = $wpdb->prefix . 'campaignbay_logs';
+		$charset_collate = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE $table_name (
+		$sql = "CREATE TABLE $table_name (
 			log_id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			campaign_id bigint(20) UNSIGNED NOT NULL,
 			order_id bigint(20) UNSIGNED DEFAULT 0 NOT NULL,
@@ -170,28 +165,23 @@ class DbManager
 			KEY timestamp (timestamp)
 		) $charset_collate;";
 
-        dbDelta($sql);
-    }
+		dbDelta( $sql );
+	}
 
-    /**
-     * Create the indexes for the campaigns table.
-     *
-     * @since 1.0.0
-     * @access private
-     */
-    private function create_campaigns_table_indexes()
-    {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'campaignbay_campaigns';
+	/**
+	 * Create the indexes for the campaigns table.
+	 *
+	 * @since 1.0.0
+	 * @access private
+	 */
+	private function create_campaigns_table_indexes() {
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'campaignbay_campaigns';
         //phpcs:ignore
         $wpdb->query("CREATE INDEX `status` ON {$table_name} (`status`)");
         //phpcs:ignore
         $wpdb->query("CREATE INDEX `type` ON {$table_name} (`type`)");
         //phpcs:ignore
         $wpdb->query("CREATE INDEX `date_range` ON {$table_name} (`start_datetime`, `end_datetime`)");
-    }
-
+	}
 }
-
-
-

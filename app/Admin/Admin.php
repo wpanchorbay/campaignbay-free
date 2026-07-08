@@ -6,7 +6,7 @@ use WpabCampaignBay\Core\Common;
 use WpabCampaignBay\Helper\Woocommerce;
 
 // Exit if accessed directly.
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -20,8 +20,8 @@ if (!defined('ABSPATH')) {
  * @subpackage WPAB_CampaignBayadmin
  * @author     dipta-sdd <sankarsandipta@gmail.com>
  */
-class Admin
-{
+class Admin {
+
 
 	/**
 	 * The single instance of the class.
@@ -53,11 +53,10 @@ class Admin
 	 * @return Admin
 	 * @since 1.0.0
 	 */
-	public static function get_instance()
-	{
+	public static function get_instance() {
 		// Store the instance locally to avoid private static replication.
 		static $instance = null;
-		if (null === self::$instance) {
+		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
 		return self::$instance;
@@ -68,18 +67,17 @@ class Admin
 	 *
 	 * @since 1.0.0
 	 * @access public
-	 * @return void	
+	 * @return void
 	 */
-	public function add_admin_menu()
-	{
-		$white_label = Common::get_instance()->get_white_label();
+	public function add_admin_menu() {
+		$white_label     = Common::get_instance()->get_white_label();
 		$this->menu_info = array(
 			'page_title' => $white_label['plugin_name'],
 			'menu_title' => $white_label['menu_label'],
-			'menu_slug' => CAMPAIGNBAY_PLUGIN_NAME,
-			'icon_url' => $white_label['menu_icon'],
-			'position' => $white_label['position'],
-			'docs_uri' => $white_label['docs_uri'],
+			'menu_slug'  => CAMPAIGNBAY_PLUGIN_NAME,
+			'icon_url'   => $white_label['menu_icon'],
+			'position'   => $white_label['position'],
+			'docs_uri'   => $white_label['docs_uri'],
 		);
 
 		add_menu_page(
@@ -87,44 +85,44 @@ class Admin
 			$this->menu_info['menu_title'],
 			'manage_campaignbay',
 			$this->menu_info['menu_slug'],
-			array($this, 'add_setting_root_div'),
+			array( $this, 'add_setting_root_div' ),
 			$this->menu_info['icon_url'],
 			$this->menu_info['position'],
 		);
 		add_submenu_page(
 			$this->menu_info['menu_slug'],
 			$this->menu_info['page_title'],
-			esc_html__('Dashboard', 'campaignbay'),
+			esc_html__( 'Dashboard', 'campaignbay' ),
 			'manage_campaignbay',
 			CAMPAIGNBAY_TEXT_DOMAIN,
-			array($this, 'add_setting_root_div')
+			array( $this, 'add_setting_root_div' )
 		);
 		$submenu_pages = array();
 
 		$submenu_pages[] = array(
 			'menu_title' => 'All Campaigns',
-			'menu_slug' => '#/campaigns',
+			'menu_slug'  => '#/campaigns',
 		);
 		$submenu_pages[] = array(
 			'menu_title' => 'Add Campaign',
-			'menu_slug' => '#/campaigns/add',
+			'menu_slug'  => '#/campaigns/add',
 		);
 		$submenu_pages[] = array(
 			'menu_title' => 'Calendar',
-			'menu_slug' => '#/calendar',
+			'menu_slug'  => '#/calendar',
 		);
 		$submenu_pages[] = array(
 			'menu_title' => 'Settings',
-			'menu_slug' => '#/settings',
+			'menu_slug'  => '#/settings',
 		);
-		foreach ($submenu_pages as $submenu_page) {
+		foreach ( $submenu_pages as $submenu_page ) {
 			add_submenu_page(
 				$this->menu_info['menu_slug'],
-				esc_html($submenu_page['menu_title'] . '-' . $this->menu_info['page_title']),
+				esc_html( $submenu_page['menu_title'] . '-' . $this->menu_info['page_title'] ),
 				$submenu_page['menu_title'],
 				'manage_campaignbay',
 				CAMPAIGNBAY_TEXT_DOMAIN . $submenu_page['menu_slug'],
-				array($this, 'add_setting_root_div')
+				array( $this, 'add_setting_root_div' )
 			);
 		}
 	}
@@ -135,70 +133,80 @@ class Admin
 	 * @since 1.0.7
 	 * @param WP_Admin_Bar $wp_admin_bar The admin bar object.
 	 */
-	public function add_admin_bar_new_item($admin_bar)
-	{
-		if (!current_user_can('manage_options')) {
+	public function add_admin_bar_new_item( $admin_bar ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
-		$href = admin_url('admin.php?page=' . CAMPAIGNBAY_PLUGIN_NAME . '#/campaigns/add');
+		$href = admin_url( 'admin.php?page=' . CAMPAIGNBAY_PLUGIN_NAME . '#/campaigns/add' );
 
 		// 3. Add the Node
 		$args = array(
-			'id' => 'wpab_cb_new_campaign',   
-			'title' => __('Campaign', CAMPAIGNBAY_TEXT_DOMAIN),
-			'href' => $href,
-			'parent' => 'new-content',             
+			'id'     => 'wpab_cb_new_campaign',
+			'title'  => __( 'Campaign', CAMPAIGNBAY_TEXT_DOMAIN ),
+			'href'   => $href,
+			'parent' => 'new-content',
 		);
 
-		$admin_bar->add_node($args);
-
+		$admin_bar->add_node( $args );
 
 		// 1. Add the Main Parent Item
-		$admin_bar->add_node(array(
-			'id'    => 'campaignbay-admin-bar',
-			'title' => 'CampaignBay',
-			'href'  => admin_url('admin.php?page=campaignbay#/campaigns'),
-			'meta'  => array(
-				'title' => __('Dashboard', 'campaignbay'),
-			),
-		));
+		$admin_bar->add_node(
+			array(
+				'id'    => 'campaignbay-admin-bar',
+				'title' => 'CampaignBay',
+				'href'  => admin_url( 'admin.php?page=campaignbay#/campaigns' ),
+				'meta'  => array(
+					'title' => __( 'Dashboard', 'campaignbay' ),
+				),
+			)
+		);
 
 		// 2. Add Submenu: Dashboard (Same as parent link)
-		$admin_bar->add_node(array(
-			'id'     => 'campaignbay-dashboard',
-			'parent' => 'campaignbay-admin-bar',
-			'title'  => __('Dashboard', 'campaignbay'),
-			'href'   => admin_url('admin.php?page=campaignbay'),
-		));
+		$admin_bar->add_node(
+			array(
+				'id'     => 'campaignbay-dashboard',
+				'parent' => 'campaignbay-admin-bar',
+				'title'  => __( 'Dashboard', 'campaignbay' ),
+				'href'   => admin_url( 'admin.php?page=campaignbay' ),
+			)
+		);
 
-		$admin_bar->add_node(array(
-			'id'     => 'campaignbay-campaigns-add',
-			'parent' => 'campaignbay-admin-bar',
-			'title'  => __('Add Campaign', 'campaignbay'),
-			'href'   => admin_url('admin.php?page=campaignbay#/campaigns/add'),
-		));
-		$admin_bar->add_node(array(
-			'id'     => 'campaignbay-campaigns',
-			'parent' => 'campaignbay-admin-bar',
-			'title'  => __('Campaigns', 'campaignbay'),
-			'href'   => admin_url('admin.php?page=campaignbay#/campaigns'),	
-		));
+		$admin_bar->add_node(
+			array(
+				'id'     => 'campaignbay-campaigns-add',
+				'parent' => 'campaignbay-admin-bar',
+				'title'  => __( 'Add Campaign', 'campaignbay' ),
+				'href'   => admin_url( 'admin.php?page=campaignbay#/campaigns/add' ),
+			)
+		);
+		$admin_bar->add_node(
+			array(
+				'id'     => 'campaignbay-campaigns',
+				'parent' => 'campaignbay-admin-bar',
+				'title'  => __( 'Campaigns', 'campaignbay' ),
+				'href'   => admin_url( 'admin.php?page=campaignbay#/campaigns' ),
+			)
+		);
 
-		// 3. Add Submenu: Calendar 
-		$admin_bar->add_node(array(
-			'id'     => 'campaignbay-calendar',
-			'parent' => 'campaignbay-admin-bar',
-			'title'  => __('Calendar', 'campaignbay'),
-			'href'   => admin_url('admin.php?page=campaignbay#/calendar'),
-		));
-		// 3. Add Submenu: Settings 
-		$admin_bar->add_node(array(
-			'id'     => 'campaignbay-settings',
-			'parent' => 'campaignbay-admin-bar',
-			'title'  => __('Settings', 'campaignbay'),
-			'href'   => admin_url('admin.php?page=campaignbay#/settings'),
-		));
+		// 3. Add Submenu: Calendar
+		$admin_bar->add_node(
+			array(
+				'id'     => 'campaignbay-calendar',
+				'parent' => 'campaignbay-admin-bar',
+				'title'  => __( 'Calendar', 'campaignbay' ),
+				'href'   => admin_url( 'admin.php?page=campaignbay#/calendar' ),
+			)
+		);
+		// 3. Add Submenu: Settings
+		$admin_bar->add_node(
+			array(
+				'id'     => 'campaignbay-settings',
+				'parent' => 'campaignbay-admin-bar',
+				'title'  => __( 'Settings', 'campaignbay' ),
+				'href'   => admin_url( 'admin.php?page=campaignbay#/settings' ),
+			)
+		);
 	}
 
 
@@ -209,11 +217,10 @@ class Admin
 	 * @since 1.0.0
 	 * @return bool
 	 */
-	public function is_menu_page()
-	{
-		$screen = get_current_screen();
-		$admin_scripts_bases = array('toplevel_page_' . CAMPAIGNBAY_PLUGIN_NAME);
-		if (!(isset($screen->base) && in_array($screen->base, $admin_scripts_bases, true))) {
+	public function is_menu_page() {
+		$screen              = get_current_screen();
+		$admin_scripts_bases = array( 'toplevel_page_' . CAMPAIGNBAY_PLUGIN_NAME );
+		if ( ! ( isset( $screen->base ) && in_array( $screen->base, $admin_scripts_bases, true ) ) ) {
 			return false;
 		}
 		return true;
@@ -228,9 +235,8 @@ class Admin
 	 * @param string $classes The classes.
 	 * @return string
 	 */
-	public function add_has_sticky_header($classes)
-	{
-		if ($this->is_menu_page()) {
+	public function add_has_sticky_header( $classes ) {
+		if ( $this->is_menu_page() ) {
 			$classes .= ' at-has-hdr-stky ';
 		}
 		return $classes;
@@ -243,9 +249,8 @@ class Admin
 	 * @access public
 	 * @return void
 	 */
-	public function add_setting_root_div()
-	{
-		echo '<div id="' . esc_attr(CAMPAIGNBAY_PLUGIN_NAME) . '">
+	public function add_setting_root_div() {
+		echo '<div id="' . esc_attr( CAMPAIGNBAY_PLUGIN_NAME ) . '">
 			<div class="campaignbay-loader-container">
 				<div class="campaignbay-newtons-cradle">
 					<div class="campaignbay-newtons-cradle__dot"></div>
@@ -264,25 +269,24 @@ class Admin
 	 * @access public
 	 * @return void
 	 */
-	public function enqueue_resources()
-	{
+	public function enqueue_resources() {
 		$this->enqueue_global_admin_styles();
-		if (!$this->is_menu_page()) {
+		if ( ! $this->is_menu_page() ) {
 			return;
 		}
 
-		$deps_file = CAMPAIGNBAY_PATH . 'build/admin.asset.php';
-		$dependency = array('wp-i18n');
-		$version = CAMPAIGNBAY_VERSION;
-		if (file_exists($deps_file)) {
-			$deps_file = require $deps_file;
+		$deps_file  = CAMPAIGNBAY_PATH . 'build/admin.asset.php';
+		$dependency = array( 'wp-i18n' );
+		$version    = CAMPAIGNBAY_VERSION;
+		if ( file_exists( $deps_file ) ) {
+			$deps_file  = require $deps_file;
 			$dependency = $deps_file['dependencies'];
-			$version = $deps_file['version'];
+			$version    = $deps_file['version'];
 		}
 
-		$wordpress_version = get_bloginfo('version');
+		$wordpress_version = get_bloginfo( 'version' );
 
-		if (version_compare($wordpress_version, '6.8.0', '>=')) {
+		if ( version_compare( $wordpress_version, '6.8.0', '>=' ) ) {
 			/**
 			 * Filters the URL of the main admin JavaScript file.
 			 *
@@ -294,8 +298,8 @@ class Admin
 			 *
 			 * @param {string} $script_url The URL to the admin.js file.
 			 */
-			$admin_script = apply_filters('campaignbay_admin_script', CAMPAIGNBAY_URL . 'build/admin.js');
-			wp_enqueue_script(CAMPAIGNBAY_PLUGIN_NAME, $admin_script, $dependency, $version, true);
+			$admin_script = apply_filters( 'campaignbay_admin_script', CAMPAIGNBAY_URL . 'build/admin.js' );
+			wp_enqueue_script( CAMPAIGNBAY_PLUGIN_NAME, $admin_script, $dependency, $version, true );
 		} else {
 			$version = CAMPAIGNBAY_VERSION;
 
@@ -310,9 +314,9 @@ class Admin
 			 *
 			 * @param {string} $script_url The URL to the admin-legacy.js file.
 			 */
-			$admin_legacy_script = apply_filters('campaignbay_admin_legacy_script', CAMPAIGNBAY_URL . 'build/admin-legacy.js');
+			$admin_legacy_script = apply_filters( 'campaignbay_admin_legacy_script', CAMPAIGNBAY_URL . 'build/admin-legacy.js' );
 
-			wp_enqueue_script(CAMPAIGNBAY_PLUGIN_NAME, CAMPAIGNBAY_URL . 'build/admin-legacy.js', array(), $version, true);
+			wp_enqueue_script( CAMPAIGNBAY_PLUGIN_NAME, CAMPAIGNBAY_URL . 'build/admin-legacy.js', array(), $version, true );
 		}
 
 		/**
@@ -326,25 +330,28 @@ class Admin
 		 *
 		 * @param {string} $style_url The URL to the admin.css file.
 		 */
-		$admin_css = apply_filters('campaignbay_admin_css', CAMPAIGNBAY_URL . 'build/admin.css');
+		$admin_css = apply_filters( 'campaignbay_admin_css', CAMPAIGNBAY_URL . 'build/admin.css' );
 
-		wp_enqueue_style(CAMPAIGNBAY_PLUGIN_NAME, $admin_css, array(), $version);
+		wp_enqueue_style( CAMPAIGNBAY_PLUGIN_NAME, $admin_css, array(), $version );
 
-		wp_style_add_data(CAMPAIGNBAY_PLUGIN_NAME, 'rtl', 'replace');
+		wp_style_add_data( CAMPAIGNBAY_PLUGIN_NAME, 'rtl', 'replace' );
 
 		$woocommerce_currency_symbol = Woocommerce::get_currency_symbol();
 
-		$user_id = get_current_user_id();
-		$onboarding_first_campaign = get_user_meta($user_id, '_campaignbay_onboarding_first_campaign', true);
-
+		$user_id                   = get_current_user_id();
+		$onboarding_first_campaign = get_user_meta( $user_id, '_campaignbay_onboarding_first_campaign', true );
 
 		$user_roles = get_editable_roles();
-		$user_roles = array_map(function ($key, $role) {
-			return [
-				'value' => $key,
-				'name'  => $role['name'],
-			];
-		}, array_keys($user_roles), $user_roles);
+		$user_roles = array_map(
+			function ( $key, $role ) {
+				return array(
+					'value' => $key,
+					'name'  => $role['name'],
+				);
+			},
+			array_keys( $user_roles ),
+			$user_roles
+		);
 
 		/**
 		 * Filters the data passed from PHP to the main admin JavaScript application.
@@ -375,29 +382,29 @@ class Admin
 		$localize = apply_filters(
 			'campaignbay_admin_localize',
 			array(
-				'version' => $version,
-				'root_id' => CAMPAIGNBAY_PLUGIN_NAME,
-				'nonce' => wp_create_nonce('wp_rest'),
-				'store' => CAMPAIGNBAY_PLUGIN_NAME,
-				'rest_url' => get_rest_url(),
-				'white_label' => Common::get_instance()->get_white_label(),
+				'version'                     => $version,
+				'root_id'                     => CAMPAIGNBAY_PLUGIN_NAME,
+				'nonce'                       => wp_create_nonce( 'wp_rest' ),
+				'store'                       => CAMPAIGNBAY_PLUGIN_NAME,
+				'rest_url'                    => get_rest_url(),
+				'white_label'                 => Common::get_instance()->get_white_label(),
 				'woocommerce_currency_symbol' => $woocommerce_currency_symbol,
-				'onboarding' => array(
+				'onboarding'                  => array(
 					'first_campaign' => $onboarding_first_campaign || false,
 				),
-				'wpSettings' => array(
-					'dateFormat' => get_option('date_format'),
-					'timeFormat' => get_option('time_format'),
+				'wpSettings'                  => array(
+					'dateFormat' => get_option( 'date_format' ),
+					'timeFormat' => get_option( 'time_format' ),
 					'user_roles' => $user_roles,
 				),
-				'campaignbay_settings' => Common::get_instance()->get_settings()
+				'campaignbay_settings'        => Common::get_instance()->get_settings(),
 			)
 		);
 
-		wp_localize_script(CAMPAIGNBAY_PLUGIN_NAME, 'campaignbay_Localize', $localize);
+		wp_localize_script( CAMPAIGNBAY_PLUGIN_NAME, 'campaignbay_Localize', $localize );
 
 		$path_to_check = CAMPAIGNBAY_PATH . 'languages';
-		$result = wp_set_script_translations(
+		$result        = wp_set_script_translations(
 			CAMPAIGNBAY_PLUGIN_NAME,
 			'campaignbay',
 			$path_to_check
@@ -412,8 +419,7 @@ class Admin
 	 * @since 1.0.0
 	 * @access private
 	 */
-	private function enqueue_global_admin_styles()
-	{
+	private function enqueue_global_admin_styles() {
 		wp_enqueue_style(
 			'campaignbay-admin-menu',
 			CAMPAIGNBAY_URL . 'assets/css/admin-menu.css',
@@ -425,13 +431,12 @@ class Admin
 
 	/**
 	 * Get settings schema.
-	 * 	
+	 *
 	 * @since 1.0.0
 	 * @access public
 	 * @return array settings schema for this plugin.
 	 */
-	public function get_settings_schema()
-	{
+	public function get_settings_schema() {
 		/**
 		 * Filters the entire settings schema for the plugin.
 		 *
@@ -463,169 +468,174 @@ class Admin
 		$setting_properties = apply_filters(
 			'campaignbay_options_properties',
 			array(
-				/*==================================================
+				/*
+				==================================================
 				* Global Settings Tab
 				==================================================*/
-				'global_enableAddon' => array(
-					'type' => 'boolean',
+				'global_enableAddon'                      => array(
+					'type'    => 'boolean',
 					'default' => true,
 				),
-				'global_calculate_discount_from' => array(
-					'type' => 'string',
+				'global_calculate_discount_from'          => array(
+					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_key',
-					'default' => 'regular_price',
+					'default'           => 'regular_price',
 				),
-				'position_to_show_bulk_table' => array(
-					'type' => 'string',
+				'position_to_show_bulk_table'             => array(
+					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_key',
-					'default' => 'woocommerce_after_add_to_cart_form',
+					'default'           => 'woocommerce_after_add_to_cart_form',
 				),
-				'position_to_show_discount_bar' => array(
-					'type' => 'string',
+				'position_to_show_discount_bar'           => array(
+					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_key',
-					'default' => 'woocommerce_before_add_to_cart_form',
+					'default'           => 'woocommerce_before_add_to_cart_form',
 				),
 
-				/*==================================================
+				/*
+				==================================================
 				* Performance & Caching (from Global Tab)
 				==================================================*/
-				'perf_enableCaching' => array(
-					'type' => 'boolean',
+				'perf_enableCaching'                      => array(
+					'type'    => 'boolean',
 					'default' => true,
 				),
 
-				/*==================================================
+				/*
+				==================================================
 				* Debugging & Logging (from Global Tab)
 				==================================================*/
-				'debug_enableMode' => array(
-					'type' => 'boolean',
+				'debug_enableMode'                        => array(
+					'type'    => 'boolean',
 					'default' => false,
 				),
 
-				/*==================================================
+				/*
+				==================================================
 				* Product Settings Tab
 				==================================================*/
-				'product_message_format_percentage' => array(
-					'type' => 'string',
+				'product_message_format_percentage'       => array(
+					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
-					'default' => 'You save {percentage_off}!',
+					'default'           => 'You save {percentage_off}!',
 				),
-				'product_message_format_fixed' => array(
-					'type' => 'string',
+				'product_message_format_fixed'            => array(
+					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
-					'default' => 'You save {amount_off} per item',
+					'default'           => 'You save {amount_off} per item',
 				),
-				'bogo_banner_message_format' => array(
-					'type' => 'string',
+				'bogo_banner_message_format'              => array(
+					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
-					'default' => 'Buy {buy_quantity} and {get_quantity} free!!!!!!',
+					'default'           => 'Buy {buy_quantity} and {get_quantity} free!!!!!!',
 				),
-				'product_priorityMethod' => array(
-					'type' => 'string',
+				'product_priorityMethod'                  => array(
+					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_key',
-					'default' => 'apply_highest',
+					'default'           => 'apply_highest',
 				),
-				'show_discount_table' => array(
-					'type' => 'boolean',
+				'show_discount_table'                     => array(
+					'type'    => 'boolean',
 					'default' => true,
 				),
-				'discount_table_options' => array(
-					'type' => 'object',
+				'discount_table_options'                  => array(
+					'type'       => 'object',
 					'properties' => array(
 						'show_header' => array(
-							'type' => 'boolean',
+							'type'    => 'boolean',
 							'default' => true,
 						),
-						'title' => array(
-							'type' => 'object',
+						'title'       => array(
+							'type'       => 'object',
 							'properties' => array(
-								'show' => array(
-									'type' => 'boolean',
+								'show'  => array(
+									'type'    => 'boolean',
 									'default' => true,
 								),
 								'label' => array(
-									'type' => 'string',
+									'type'              => 'string',
 									'sanitize_callback' => 'sanitize_text_field',
-									'default' => 'Title',
+									'default'           => 'Title',
 								),
 							),
 						),
-						'range' => array(
-							'type' => 'object',
+						'range'       => array(
+							'type'       => 'object',
 							'properties' => array(
-								'show' => array(
-									'type' => 'boolean',
+								'show'  => array(
+									'type'    => 'boolean',
 									'default' => true,
 								),
 								'label' => array(
-									'type' => 'string',
+									'type'              => 'string',
 									'sanitize_callback' => 'sanitize_text_field',
-									'default' => 'Range',
+									'default'           => 'Range',
 								),
 							),
 						),
-						'discount' => array(
-							'type' => 'object',
+						'discount'    => array(
+							'type'       => 'object',
 							'properties' => array(
-								'show' => array(
-									'type' => 'boolean',
+								'show'    => array(
+									'type'    => 'boolean',
 									'default' => true,
 								),
-								'label' => array(
-									'type' => 'string',
+								'label'   => array(
+									'type'              => 'string',
 									'sanitize_callback' => 'sanitize_text_field',
-									'default' => 'Discount',
+									'default'           => 'Discount',
 								),
 								'content' => array(
-									'type' => 'string',
+									'type'              => 'string',
 									'sanitize_callback' => 'sanitize_key',
-									'default' => 'price',
+									'default'           => 'price',
 								),
 							),
 						),
 					),
 				),
 
-				/*==================================================
+				/*
+				==================================================
 				* Cart Settings Tab
 				==================================================*/
-				'cart_allowWcCouponStacking' => array(
-					'type' => 'boolean',
+				'cart_allowWcCouponStacking'              => array(
+					'type'    => 'boolean',
 					'default' => false,
 				),
-				'cart_allowCampaignStacking' => array(
-					'type' => 'boolean',
+				'cart_allowCampaignStacking'              => array(
+					'type'    => 'boolean',
 					'default' => false,
 				),
 				'cart_quantity_message_format_percentage' => array(
-					'type' => 'string',
+					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
-					'default' => 'Add {remainging_quantity_for_next_offer} more and get {discount_value}% off',
+					'default'           => 'Add {remainging_quantity_for_next_offer} more and get {discount_value}% off',
 				),
-				'cart_quantity_message_format_fixed' => array(
-					'type' => 'string',
+				'cart_quantity_message_format_fixed'      => array(
+					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
-					'default' => 'Add {remainging_quantity_for_next_offer} more and get {discount_value} off per item!!',
+					'default'           => 'Add {remainging_quantity_for_next_offer} more and get {discount_value} off per item!!',
 				),
-				'cart_bogo_message_format' => array(
-					'type' => 'string',
+				'cart_bogo_message_format'                => array(
+					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
-					'default' => '{title} discount applied.',
+					'default'           => '{title} discount applied.',
 				),
 
-
-				/*==================================================
+				/*
+				==================================================
 				* Advance Settings Tab
 				==================================================*/
-				'advanced_deleteAllOnUninstall' => array(
-					'type' => 'boolean',
+				'advanced_deleteAllOnUninstall'           => array(
+					'type'    => 'boolean',
 					'default' => false,
 				),
 			),
 		);
 
 		return array(
-			'type' => 'object',
+			'type'       => 'object',
 			'properties' => $setting_properties,
 		);
 	}
@@ -639,20 +649,19 @@ class Admin
 	 * @access public
 	 * @return void
 	 */
-	public function register_settings()
-	{
+	public function register_settings() {
 		$defaults = Common::get_instance()->get_default_settings();
 
 		register_setting(
 			'campaignbay_settings_group',
 			CAMPAIGNBAY_OPTION_NAME,
 			array(
-				'type' => 'object',
-				'default' => $defaults,
-				'show_in_rest' => array(
+				'type'              => 'object',
+				'default'           => $defaults,
+				'show_in_rest'      => array(
 					'schema' => $this->get_settings_schema(),
 				),
-				'sanitize_callback' => array($this, 'sanitize_settings_object'),
+				'sanitize_callback' => array( $this, 'sanitize_settings_object' ),
 			)
 		);
 	}
@@ -668,53 +677,51 @@ class Admin
 	 * @param array $input The raw array of settings data submitted for saving.
 	 * @return array The sanitized array of settings data.
 	 */
-	public function sanitize_settings_object($input)
-	{
-		$schema = $this->get_settings_schema();
-		$properties = $schema['properties'] ?? array();
+	public function sanitize_settings_object( $input ) {
+		$schema          = $this->get_settings_schema();
+		$properties      = $schema['properties'] ?? array();
 		$default_options = Common::get_instance()->get_default_settings();
 
-
-		$sanitized_output = get_option(CAMPAIGNBAY_OPTION_NAME, $default_options);
+		$sanitized_output = get_option( CAMPAIGNBAY_OPTION_NAME, $default_options );
 
 		// Loop through every property defined in our schema.
-		foreach ($properties as $key => $details) {
-			if (!isset($input[$key])) {
+		foreach ( $properties as $key => $details ) {
+			if ( ! isset( $input[ $key ] ) ) {
 				continue;
 			}
 
-			$value = $input[$key];
-			$type = $details['type'] ?? 'string';
+			$value = $input[ $key ];
+			$type  = $details['type'] ?? 'string';
 
-			switch ($type) {
+			switch ( $type ) {
 				case 'boolean':
-					$sanitized_output[$key] = (bool) $value;
+					$sanitized_output[ $key ] = (bool) $value;
 					break;
 
 				case 'integer':
-					$sanitized_output[$key] = absint($value);
+					$sanitized_output[ $key ] = absint( $value );
 					break;
 
 				case 'string':
-					$sanitized_output[$key] = sanitize_text_field($value);
+					$sanitized_output[ $key ] = sanitize_text_field( $value );
 					break;
 
 				case 'object':
-					if (is_array($value)) {
-						$sanitized_output[$key] = $this->sanitize_nested_object($value, $details['properties']);
+					if ( is_array( $value ) ) {
+						$sanitized_output[ $key ] = $this->sanitize_nested_object( $value, $details['properties'] );
 					}
 					break;
 
 				case 'array':
-					if (is_array($value)) {
-						$sanitized_output[$key] = array_map('sanitize_text_field', $value);
+					if ( is_array( $value ) ) {
+						$sanitized_output[ $key ] = array_map( 'sanitize_text_field', $value );
 					} else {
-						$sanitized_output[$key] = array();
+						$sanitized_output[ $key ] = array();
 					}
 					break;
 
 				default:
-					$sanitized_output[$key] = sanitize_text_field($value);
+					$sanitized_output[ $key ] = sanitize_text_field( $value );
 					break;
 			}
 		}
@@ -739,9 +746,8 @@ class Admin
 	 *                              'mustuse', 'dropins', and 'search'.
 	 * @return array settings schema for this plugin.
 	 */
-	public function add_plugin_action_links($actions, $plugin_file, $plugin_data, $context)
-	{
-		$actions[] = '<a href="' . esc_url(menu_page_url($this->menu_info['menu_slug'], false)) . '">' . esc_html__('Settings', 'campaignbay') . '</a>';
+	public function add_plugin_action_links( $actions, $plugin_file, $plugin_data, $context ) {
+		$actions[] = '<a href="' . esc_url( menu_page_url( $this->menu_info['menu_slug'], false ) ) . '">' . esc_html__( 'Settings', 'campaignbay' ) . '</a>';
 		return $actions;
 	}
 
@@ -756,44 +762,43 @@ class Admin
 	 * @param array $properties The schema properties for this object.
 	 * @return array The sanitized object.
 	 */
-	private function sanitize_nested_object($input, $properties)
-	{
+	private function sanitize_nested_object( $input, $properties ) {
 		$output = array();
 
 		// Loop through the schema's properties to ensure we only process expected keys.
-		foreach ($properties as $key => $details) {
+		foreach ( $properties as $key => $details ) {
 			// Only process if the key exists in the submitted input.
-			if (!isset($input[$key])) {
+			if ( ! isset( $input[ $key ] ) ) {
 				continue;
 			}
 
-			$value = $input[$key];
-			$type = $details['type'] ?? 'string';
+			$value = $input[ $key ];
+			$type  = $details['type'] ?? 'string';
 
-			switch ($type) {
+			switch ( $type ) {
 				case 'boolean':
-					$output[$key] = (bool) $value;
+					$output[ $key ] = (bool) $value;
 					break;
 
 				case 'string':
 					// Also respect the specific sanitize_callback here.
 					$callback = $details['sanitize_callback'] ?? 'sanitize_text_field';
-					if (function_exists($callback)) {
-						$output[$key] = call_user_func($callback, $value);
+					if ( function_exists( $callback ) ) {
+						$output[ $key ] = call_user_func( $callback, $value );
 					} else {
-						$output[$key] = sanitize_text_field($value);
+						$output[ $key ] = sanitize_text_field( $value );
 					}
 					break;
 
 				case 'object':
-					if (is_array($value)) {
-						$output[$key] = $this->sanitize_nested_object($value, $details['properties']);
+					if ( is_array( $value ) ) {
+						$output[ $key ] = $this->sanitize_nested_object( $value, $details['properties'] );
 					}
 					break;
 
 				// Add other types as needed (integer, array, etc.)
 				default:
-					$output[$key] = sanitize_text_field($value);
+					$output[ $key ] = sanitize_text_field( $value );
 					break;
 			}
 		}
@@ -814,23 +819,22 @@ class Admin
 	 * @param string $file  The plugin file name.
 	 * @return array The modified array of meta links.
 	 */
-	public function add_plugin_row_meta($links, $file)
-	{
-		if (CAMPAIGNBAY_PLUGIN_BASENAME !== $file) {
+	public function add_plugin_row_meta( $links, $file ) {
+		if ( CAMPAIGNBAY_PLUGIN_BASENAME !== $file ) {
 			return $links;
 		}
 
 		// Get the URLs from your white label settings.
 		$white_label = Common::get_instance()->get_white_label();
-		$docs_url = $white_label['docs_uri'] ?? '#';
+		$docs_url    = $white_label['docs_uri'] ?? '#';
 		$support_url = $white_label['support_uri'] ?? '#';
 
 		// Add the new links.
 		$row_meta = array(
-			'docs' => '<a href="' . esc_url($docs_url) . '" target="_blank">' . esc_html__('Docs', 'campaignbay') . '</a>',
-			'support' => '<a href="' . esc_url($support_url) . '" target="_blank">' . esc_html__('Support', 'campaignbay') . '</a>',
+			'docs'    => '<a href="' . esc_url( $docs_url ) . '" target="_blank">' . esc_html__( 'Docs', 'campaignbay' ) . '</a>',
+			'support' => '<a href="' . esc_url( $support_url ) . '" target="_blank">' . esc_html__( 'Support', 'campaignbay' ) . '</a>',
 		);
 
-		return array_merge($links, $row_meta);
+		return array_merge( $links, $row_meta );
 	}
 }

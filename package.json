@@ -9,7 +9,10 @@
     "build:legacy": "cross-env BUILD_TARGET=legacy wp-scripts build",
     "start:legacy": "cross-env BUILD_TARGET=legacy wp-scripts start",
     "makepot": "wp i18n make-pot . languages/campaignbay.pot --domain=campaignbay --slug=campaignbay --exclude='node_modules,vendor,src'",
-    "make-json": "wp i18n make-json languages --no-purge && node helper/rename-translations.js"
+    "make-json": "wp i18n make-json languages --no-purge && node helper/rename-translations.js",
+    "lint": "phpcs --standard=phpcs.xml.dist",
+    "lint-stat": "phpcs --standard=phpcs.xml.dist --report=summary",
+    "lint-fix": "phpcbf --standard=phpcs.xml.dist"
   },
   "author": "sankarsan das",
   "license": "GPLv2 or later",

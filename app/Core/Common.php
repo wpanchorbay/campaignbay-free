@@ -3,7 +3,7 @@
 namespace WpabCampaignBay\Core;
 
 // Exit if accessed directly.
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -30,8 +30,8 @@ if (!defined('ABSPATH')) {
  * @subpackage WPAB_CampaignBayincludes
  * @author     dipta-sdd <sankarsandipta@gmail.com>
  */
-class Common
-{
+class Common {
+
 	/**
 	 * The single instance of the class.
 	 *
@@ -49,64 +49,70 @@ class Common
 	 * @var   array
 	 */
 	private $default_settings = array(
-			/*==================================================
-			* Global Settings Tab
-			==================================================*/
-			'global_enableAddon' => true,
-			'global_calculate_discount_from' => 'regular_price',
-			'position_to_show_bulk_table' => 'woocommerce_after_add_to_cart_form',
-			'position_to_show_discount_bar' => 'woocommerce_before_add_to_cart_form',
+		/*
+			==================================================
+		* Global Settings Tab
+		==================================================*/
+		'global_enableAddon'                      => true,
+		'global_calculate_discount_from'          => 'regular_price',
+		'position_to_show_bulk_table'             => 'woocommerce_after_add_to_cart_form',
+		'position_to_show_discount_bar'           => 'woocommerce_before_add_to_cart_form',
 
-			/*==================================================
-			* Performance & Caching (from Global Tab)
-			==================================================*/
-			'perf_enableCaching' => true,
+		/*
+			==================================================
+		* Performance & Caching (from Global Tab)
+		==================================================*/
+		'perf_enableCaching'                      => true,
 
-			/*==================================================
-			* Debugging & Logging (from Global Tab)
-			==================================================*/
-			'debug_enableMode' => true,
+		/*
+			==================================================
+		* Debugging & Logging (from Global Tab)
+		==================================================*/
+		'debug_enableMode'                        => true,
 
-			/*==================================================
-			* Product Settings Tab
-			==================================================*/
-			'product_message_format_percentage' => 'You save {percentage_off}%',
-			'product_message_format_fixed' => 'You save {amount_off} per item',
-			'bogo_banner_message_format' => 'Buy {buy_quantity} and {get_quantity} free!!!!!!',
-			'product_priorityMethod' => 'apply_highest',
-			'show_discount_table' => 'true',
-			'discount_table_options' => array(
-				'show_header' => true,
-				'title' => array(
-					'show' => true,
-					'label' => 'Title',
-				),
-				'range' => array(
-					'show' => true,
-					'label' => 'Range',
-				),
-				'discount' => array(
-					'show' => true,
-					'label' => 'Discount',
-					'content' => 'price'
-				)
+		/*
+			==================================================
+		* Product Settings Tab
+		==================================================*/
+		'product_message_format_percentage'       => 'You save {percentage_off}%',
+		'product_message_format_fixed'            => 'You save {amount_off} per item',
+		'bogo_banner_message_format'              => 'Buy {buy_quantity} and {get_quantity} free!!!!!!',
+		'product_priorityMethod'                  => 'apply_highest',
+		'show_discount_table'                     => 'true',
+		'discount_table_options'                  => array(
+			'show_header' => true,
+			'title'       => array(
+				'show'  => true,
+				'label' => 'Title',
 			),
+			'range'       => array(
+				'show'  => true,
+				'label' => 'Range',
+			),
+			'discount'    => array(
+				'show'    => true,
+				'label'   => 'Discount',
+				'content' => 'price',
+			),
+		),
 
 
-			/*==================================================
-			* Cart Settings Tab
-			==================================================*/
-			'cart_allowWcCouponStacking' => false,
-			'cart_allowCampaignStacking' => false,
-			'cart_quantity_message_format_percentage' => 'Add {remainging_quantity_for_next_offer} more and get {percentage_off}% off',
-			'cart_quantity_message_format_fixed' => 'Add {remainging_quantity_for_next_offer} more and get {amount_off} off per item!!',
-			'cart_bogo_message_format' => '{title} discount applied.',
+		/*
+			==================================================
+		* Cart Settings Tab
+		==================================================*/
+		'cart_allowWcCouponStacking'              => false,
+		'cart_allowCampaignStacking'              => false,
+		'cart_quantity_message_format_percentage' => 'Add {remainging_quantity_for_next_offer} more and get {percentage_off}% off',
+		'cart_quantity_message_format_fixed'      => 'Add {remainging_quantity_for_next_offer} more and get {amount_off} off per item!!',
+		'cart_bogo_message_format'                => '{title} discount applied.',
 
-			/*==================================================
-			* Advance Settings Tab
-			==================================================*/
-			'advanced_deleteAllOnUninstall' => false,
-		);
+		/*
+			==================================================
+		* Advance Settings Tab
+		==================================================*/
+		'advanced_deleteAllOnUninstall'           => false,
+	);
 
 	/**
 	 * The settings of the plugin.
@@ -125,11 +131,10 @@ class Common
 	 * @return Common
 	 * @since 1.0.0
 	 */
-	public static function get_instance()
-	{
+	public static function get_instance() {
 		// Store the instance locally to avoid private static replication.
 		static $instance = null;
-		if (null === self::$instance) {
+		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
 		return self::$instance;
@@ -142,13 +147,12 @@ class Common
 	 * @param string $key optional meta key.
 	 * @return array|null
 	 */
-	public function get_settings($key = '')
-	{
-		if (!$this->settings) {
+	public function get_settings( $key = '' ) {
+		if ( ! $this->settings ) {
 			$this->load_settings();
 		}
-		if (!empty($key)) {
-			return isset($this->settings[$key]) ? $this->settings[$key] : false;
+		if ( ! empty( $key ) ) {
+			return isset( $this->settings[ $key ] ) ? $this->settings[ $key ] : false;
 		}
 		return $this->settings;
 	}
@@ -160,8 +164,7 @@ class Common
 	 * @access public
 	 * @return array
 	 */
-	public function get_default_settings()
-	{
+	public function get_default_settings() {
 		return $this->default_settings;
 	}
 
@@ -172,16 +175,14 @@ class Common
 	 * @access public
 	 * @return void
 	 */
-	public function load_settings()
-	{
-		$options = get_option(CAMPAIGNBAY_OPTION_NAME);
-		if (!is_array($options)) {
+	public function load_settings() {
+		$options = get_option( CAMPAIGNBAY_OPTION_NAME );
+		if ( ! is_array( $options ) ) {
 			$options = array();
 		}
 		$default_settings = $this->get_default_settings();
-		$settings = array_merge($default_settings, $options);
-		$this->settings = $settings;
-
+		$settings         = array_merge( $default_settings, $options );
+		$this->settings   = $settings;
 	}
 
 	/**
@@ -193,15 +194,14 @@ class Common
 	 * @param string $val The value to update.
 	 * @return void
 	 */
-	public function update_settings($key_or_data, $val = '')
-	{
-		if (is_string($key_or_data)) {
-			$options = $this->get_settings();
-			$options[$key_or_data] = $val;
+	public function update_settings( $key_or_data, $val = '' ) {
+		if ( is_string( $key_or_data ) ) {
+			$options                 = $this->get_settings();
+			$options[ $key_or_data ] = $val;
 		} else {
 			$options = $key_or_data;
 		}
-		update_option(CAMPAIGNBAY_OPTION_NAME, $options);
+		update_option( CAMPAIGNBAY_OPTION_NAME, $options );
 		$this->load_settings();
 	}
 	/**
@@ -211,10 +211,9 @@ class Common
 	 * @access public
 	 * @return array|null
 	 */
-	public function get_white_label()
-	{
+	public function get_white_label() {
 		static $cache = null;
-		if (!$cache) {
+		if ( ! $cache ) {
 			$cache = wpab_campaignbay_get_white_label();
 		}
 
@@ -228,8 +227,6 @@ class Common
 	 * @access   public
 	 * @return void
 	 */
-	public function register_scripts_and_styles()
-	{
-
+	public function register_scripts_and_styles() {
 	}
 }

@@ -15,7 +15,7 @@ namespace WpabCampaignBay\Core;
  */
 
 // Exit if accessed directly.
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -37,8 +37,8 @@ use WpabCampaignBay\Helper\Logger;
  * @package    WPAB_CampaignBay
  * @author     WP Anchor Bay <wpanchorbay@gmail.com>
  */
-class Campaign
-{
+class Campaign {
+
 
 	/**
 	 * The campaign ID.
@@ -73,18 +73,17 @@ class Campaign
 	 * @since 1.0.0
 	 * @param int|object $campaign The campaign ID or campaign data object.
 	 */
-	public function __construct($campaign)
-	{
-		if (is_object($campaign)) {
-			$this->id = $campaign->id;
+	public function __construct( $campaign ) {
+		if ( is_object( $campaign ) ) {
+			$this->id   = $campaign->id;
 			$this->data = $campaign;
-		} elseif (is_numeric($campaign)) {
-			$this->id = absint($campaign);
+		} elseif ( is_numeric( $campaign ) ) {
+			$this->id = absint( $campaign );
 			$this->load_data();
 		}
 
-		if (!$this->data) {
-			throw new Exception('Invalid campaign provided.');
+		if ( ! $this->data ) {
+			throw new Exception( 'Invalid campaign provided.' );
 		}
 	}
 
@@ -101,34 +100,41 @@ class Campaign
 	 * @return Campaign The created campaign object.
 	 * @throws Exception If validation fails.
 	 */
-	public static function create($args)
-	{
+	public static function create( $args ) {
 		// validating main data
-		$validator = new Validator($args);
-		$rules = self::get_validation_rules($args);
+		$validator = new Validator( $args );
+		$rules     = self::get_validation_rules( $args );
 		// checking validation
-		if (!$validator->validate($rules)) {
-			wpab_campaignbay_log('Validation failed for campaign: ' . $validator->get_first_error(), 'ERROR');
-			return new WP_Error('rest_validation_error', $validator->get_first_error(), array('status' => 400, 'details' => $validator->get_errors(), 'data' => $args));
+		if ( ! $validator->validate( $rules ) ) {
+			wpab_campaignbay_log( 'Validation failed for campaign: ' . $validator->get_first_error(), 'ERROR' );
+			return new WP_Error(
+				'rest_validation_error',
+				$validator->get_first_error(),
+				array(
+					'status'  => 400,
+					'details' => $validator->get_errors(),
+					'data'    => $args,
+				)
+			);
 		}
 		// retriving validated data
 		$data = $validator->get_validated_data();
 
-		// validating tiers 
+		// validating tiers
 		$tmp_tiers = array();
-		if (self::need_tier_validation($data['type'])) {
-			foreach ($data['tiers'] as $tier) {
-				$tier_validator = new Validator($tier);
-				$tier_rules = self::get_tiers_validation_rules($data['type']);
-				if (!$tier_validator->validate($tier_rules)) {
-					wpab_campaignbay_log('Validation failed for tier: ' . $tier_validator->get_first_error(), 'WARNING');
+		if ( self::need_tier_validation( $data['type'] ) ) {
+			foreach ( $data['tiers'] as $tier ) {
+				$tier_validator = new Validator( $tier );
+				$tier_rules     = self::get_tiers_validation_rules( $data['type'] );
+				if ( ! $tier_validator->validate( $tier_rules ) ) {
+					wpab_campaignbay_log( 'Validation failed for tier: ' . $tier_validator->get_first_error(), 'WARNING' );
 					return new WP_Error(
 						'rest_validation_error',
 						$tier_validator->get_first_error(),
 						array(
-							'status' => 400,
-							'details' => array('tiers' => array($tier['id'] => $tier_validator->get_errors())),
-							'data' => $tier
+							'status'  => 400,
+							'details' => array( 'tiers' => array( $tier['id'] => $tier_validator->get_errors() ) ),
+							'data'    => $tier,
 						)
 					);
 				}
@@ -137,35 +143,34 @@ class Campaign
 			}
 		}
 
-
 		// validating settings
-		$validated_settings = self::get_validated_settings($data['settings'] ?? array(), $data['type']);
-		if (is_wp_error($validated_settings)) {
+		$validated_settings = self::get_validated_settings( $data['settings'] ?? array(), $data['type'] );
+		if ( is_wp_error( $validated_settings ) ) {
 			return $validated_settings;
 		}
 		// validating conditions
-		$validated_conditions = self::get_validated_conditions($data['conditions'] ?? array(), $data['type']);
-		if (is_wp_error($validated_conditions)) {
+		$validated_conditions = self::get_validated_conditions( $data['conditions'] ?? array(), $data['type'] );
+		if ( is_wp_error( $validated_conditions ) ) {
 			return $validated_conditions;
 		}
 
 		// json encoding json fields
 
-		$data['tiers'] = wp_json_encode($tmp_tiers ? $tmp_tiers : []);
-		$data['target_ids'] = wp_json_encode(isset($data['target_ids']) ? $data['target_ids'] : '[]');
-		$data['settings'] = wp_json_encode($validated_settings ? $validated_settings : '[]');
-		$data['conditions'] = wp_json_encode($validated_conditions ? $validated_conditions : '[]');
+		$data['tiers']      = wp_json_encode( $tmp_tiers ? $tmp_tiers : array() );
+		$data['target_ids'] = wp_json_encode( isset( $data['target_ids'] ) ? $data['target_ids'] : '[]' );
+		$data['settings']   = wp_json_encode( $validated_settings ? $validated_settings : '[]' );
+		$data['conditions'] = wp_json_encode( $validated_conditions ? $validated_conditions : '[]' );
 
 		// adding other default data
-		$data['usage_count'] = 0;
-		$data['date_created'] = current_time('mysql');
-		$data['date_modified'] = current_time('mysql');
-		$data['created_by'] = get_current_user_id();
-		$data['updated_by'] = get_current_user_id();
+		$data['usage_count']   = 0;
+		$data['date_created']  = current_time( 'mysql' );
+		$data['date_modified'] = current_time( 'mysql' );
+		$data['created_by']    = get_current_user_id();
+		$data['updated_by']    = get_current_user_id();
 		try {
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'campaignbay_campaigns';
-			$formats = array(
+			$formats    = array(
 				'%s', // title
 				'%s', // type
 				'%s', // target_ids
@@ -186,29 +191,29 @@ class Campaign
 				'%s',
 				'%s',
 				'%d',
-				'%d'
+				'%d',
 			);
 
 			//phpcs:ignore
 			$result = $wpdb->insert($table_name, $data, $formats);
 
-			if (false === $result) {
-				throw new Exception('Failed to create campaign.');
+			if ( false === $result ) {
+				throw new Exception( 'Failed to create campaign.' );
 			}
 
 			$campaign_id = $wpdb->insert_id;
-			$campaign = new self($campaign_id);
+			$campaign    = new self( $campaign_id );
 
 			/**
 			 * Fires after a new campaign is created and all its data is saved.
 			 *
 			 * @since 1.0.0
 			 * @hook campaignbay_campaign_save
-			 * 
+			 *
 			 * @param int      $campaign_id The ID of the new campaign.
 			 * @param Campaign $campaign    The campaign object.
 			 */
-			do_action('campaignbay_campaign_save', $campaign_id, $campaign);
+			do_action( 'campaignbay_campaign_save', $campaign_id, $campaign );
 
 			// Log the activity.
 			Logger::get_instance()->log(
@@ -216,16 +221,23 @@ class Campaign
 				'created',
 				array(
 					'campaign_id' => $campaign->get_id(),
-					'extra_data' => array(
+					'extra_data'  => array(
 						'title' => $campaign->get_title(),
-					)
+					),
 				)
 			);
 
 			return $campaign;
-		} catch (Exception $e) {
-			wpab_campaignbay_log('Error creating campaign: ' . $e->getMessage(), 'ERROR');
-			return new WP_Error('rest_cannot_create', __('Cannot create campaign.', 'campaignbay'), array('status' => 500, 'error' => $e->getMessage()));
+		} catch ( Exception $e ) {
+			wpab_campaignbay_log( 'Error creating campaign: ' . $e->getMessage(), 'ERROR' );
+			return new WP_Error(
+				'rest_cannot_create',
+				__( 'Cannot create campaign.', 'campaignbay' ),
+				array(
+					'status' => 500,
+					'error'  => $e->getMessage(),
+				)
+			);
 		}
 	}
 
@@ -238,35 +250,34 @@ class Campaign
 	 * @param array $args The campaign arguments to update.
 	 * @return bool|WP_Error True on success, false on failure.
 	 */
-	public function update($args, $partial = false)
-	{
-		if ($partial) {
-			$args = array_merge((array) $this->data, $args);
+	public function update( $args, $partial = false ) {
+		if ( $partial ) {
+			$args = array_merge( (array) $this->data, $args );
 		}
-		$validator = new Validator($args);
-		$rules = self::get_validation_rules($args);
+		$validator = new Validator( $args );
+		$rules     = self::get_validation_rules( $args );
 
-		if (!$validator->validate($rules)) {
-			wpab_campaignbay_log('Validation failed for campaign: ' . $validator->get_first_error(), 'WARNING');
+		if ( ! $validator->validate( $rules ) ) {
+			wpab_campaignbay_log( 'Validation failed for campaign: ' . $validator->get_first_error(), 'WARNING' );
 			//phpcs:ignore
 			return new WP_Error('rest_validation_error', $validator->get_first_error(), array('status' => 400, 'details' => $validator->get_errors(), 'data' => $args));
 		}
 		$data = $validator->get_validated_data();
 		// validating tiers
 		$tmp_tiers = array();
-		if (self::need_tier_validation($data['type'])) {
-			foreach ($data['tiers'] as $tier) {
-				$tier_validator = new Validator($tier);
-				$tier_rules = self::get_tiers_validation_rules($data['type']);
-				if (!$tier_validator->validate($tier_rules)) {
-					wpab_campaignbay_log('Validation failed for tier: ' . $tier_validator->get_first_error(), 'WARNING');
+		if ( self::need_tier_validation( $data['type'] ) ) {
+			foreach ( $data['tiers'] as $tier ) {
+				$tier_validator = new Validator( $tier );
+				$tier_rules     = self::get_tiers_validation_rules( $data['type'] );
+				if ( ! $tier_validator->validate( $tier_rules ) ) {
+					wpab_campaignbay_log( 'Validation failed for tier: ' . $tier_validator->get_first_error(), 'WARNING' );
 					return new WP_Error(
 						'rest_validation_error',
 						$tier_validator->get_first_error(),
 						array(
-							'status' => 400,
-							'details' => array('tiers' => array($tier['id'] => $tier_validator->get_errors())),
-							'data' => $tier
+							'status'  => 400,
+							'details' => array( 'tiers' => array( $tier['id'] => $tier_validator->get_errors() ) ),
+							'data'    => $tier,
 						)
 					);
 				}
@@ -274,30 +285,30 @@ class Campaign
 			}
 		}
 		// validating settings
-		$validated_settings = $this->get_validated_settings($data['settings'] ?? array(), $data['type']);
-		if (is_wp_error($validated_settings)) {
+		$validated_settings = $this->get_validated_settings( $data['settings'] ?? array(), $data['type'] );
+		if ( is_wp_error( $validated_settings ) ) {
 			return $validated_settings;
 		}
 		// validating conditions
-		$validated_conditions = $this->get_validated_conditions($data['conditions'] ?? array(), $data['type']);
-		if (is_wp_error($validated_conditions)) {
+		$validated_conditions = $this->get_validated_conditions( $data['conditions'] ?? array(), $data['type'] );
+		if ( is_wp_error( $validated_conditions ) ) {
 			return $validated_conditions;
 		}
 		// json encoding json fields
-		$data['target_ids'] = isset($data['target_ids']) ? wp_json_encode($data['target_ids']) : wp_json_encode($this->data->target_ids ?? '[]');
-		$data['settings'] = $validated_settings ? wp_json_encode($validated_settings) : wp_json_encode($this->data->settings ?? '[]');
-		$data['conditions'] = $validated_conditions ? wp_json_encode($validated_conditions) : wp_json_encode($this->data->conditions ?? '[]');
-		$data['tiers'] = wp_json_encode(isset($tmp_tiers) ? $tmp_tiers : $this->data->tiers ?? '[]');
+		$data['target_ids'] = isset( $data['target_ids'] ) ? wp_json_encode( $data['target_ids'] ) : wp_json_encode( $this->data->target_ids ?? '[]' );
+		$data['settings']   = $validated_settings ? wp_json_encode( $validated_settings ) : wp_json_encode( $this->data->settings ?? '[]' );
+		$data['conditions'] = $validated_conditions ? wp_json_encode( $validated_conditions ) : wp_json_encode( $this->data->conditions ?? '[]' );
+		$data['tiers']      = wp_json_encode( isset( $tmp_tiers ) ? $tmp_tiers : $this->data->tiers ?? '[]' );
 		// adding other default data
-		$data['date_modified'] = current_time('mysql');
-		$data['updated_by'] = get_current_user_id();
+		$data['date_modified'] = current_time( 'mysql' );
+		$data['updated_by']    = get_current_user_id();
 
 		try {
 
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'campaignbay_campaigns';
-			$formats = array();
-			$formats = array(
+			$formats    = array();
+			$formats    = array(
 				'%s',
 				'%s',
 				'%s',
@@ -315,9 +326,9 @@ class Campaign
 				'%s',
 				'%s',
 				'%s',
-				'%d'
+				'%d',
 			);
-			if (empty($data)) {
+			if ( empty( $data ) ) {
 				return true;
 			}
 
@@ -325,11 +336,11 @@ class Campaign
 			$result = $wpdb->update(
 				$table_name,
 				$data,
-				array('id' => $this->id),
+				array( 'id' => $this->id ),
 				$formats,
-				array('%d')
+				array( '%d' )
 			);
-			if (is_wp_error($result) || false === $result) {
+			if ( is_wp_error( $result ) || false === $result ) {
 				return false;
 			}
 
@@ -341,11 +352,11 @@ class Campaign
 			 *
 			 * @since 1.0.0
 			 * @hook campaignbay_campaign_save
-			 * 
+			 *
 			 * @param int      $campaign_id The ID of the updated campaign.
 			 * @param Campaign $campaign    The campaign object.
 			 */
-			do_action('campaignbay_campaign_save', $this->id, $this);
+			do_action( 'campaignbay_campaign_save', $this->id, $this );
 
 			// Log the activity.
 			Logger::get_instance()->log(
@@ -353,16 +364,23 @@ class Campaign
 				'updated',
 				array(
 					'campaign_id' => $this->get_id(),
-					'extra_data' => array(
+					'extra_data'  => array(
 						'title' => $this->get_title(),
-					)
+					),
 				)
 			);
 
 			return true;
-		} catch (Exception $e) {
-			wpab_campaignbay_log('Error updating campaign: ' . $e->getMessage(), 'ERROR');
-			return new WP_Error('rest_cannot_update', __('Cannot update campaign.', 'campaignbay'), array('status' => 500, 'error' => $e->getMessage()));
+		} catch ( Exception $e ) {
+			wpab_campaignbay_log( 'Error updating campaign: ' . $e->getMessage(), 'ERROR' );
+			return new WP_Error(
+				'rest_cannot_update',
+				__( 'Cannot update campaign.', 'campaignbay' ),
+				array(
+					'status' => 500,
+					'error'  => $e->getMessage(),
+				)
+			);
 		}
 	}
 
@@ -378,32 +396,31 @@ class Campaign
 	 * @access private
 	 * @return array The array of validation rules for a campaign.
 	 */
-	private static function get_validation_rules($args = null)
-	{
-		$rules = [
-			'title' => 'required|max:255',
-			'type' => 'required|in:earlybird,scheduled,quantity,bogo',
-			'status' => 'required|in:active,inactive,scheduled,expired',
+	private static function get_validation_rules( $args = null ) {
+		$rules = array(
+			'title'              => 'required|max:255',
+			'type'               => 'required|in:earlybird,scheduled,quantity,bogo',
+			'status'             => 'required|in:active,inactive,scheduled,expired',
 
-			'discount_type' => 'nullable|in:percentage,fixed',
-			'discount_value' => 'required_if:type,scheduled|numeric',
-			'tiers' => 'nullable|array',
+			'discount_type'      => 'nullable|in:percentage,fixed',
+			'discount_value'     => 'required_if:type,scheduled|numeric',
+			'tiers'              => 'nullable|array',
 
-			'target_type' => 'nullable|in:entire_store,category,product,tag',
-			'target_ids' => 'required_if:target_type,category,product,tag|array_of_integers',
+			'target_type'        => 'nullable|in:entire_store,category,product,tag',
+			'target_ids'         => 'required_if:target_type,category,product,tag|array_of_integers',
 			'exclude_sale_items' => 'required|boolean',
-			'is_exclude' => 'nullable|boolean',
+			'is_exclude'         => 'nullable|boolean',
 
-			'schedule_enabled' => 'boolean|required_if:status,scheduled',
-			'start_datetime' => 'datetime|nullable',
-			'end_datetime' => 'datetime|nullable',
+			'schedule_enabled'   => 'boolean|required_if:status,scheduled',
+			'start_datetime'     => 'datetime|nullable',
+			'end_datetime'       => 'datetime|nullable',
 
-			'settings' => 'nullable|array',
-			'conditions' => 'nullable|object',
-			'usage_limit' => 'nullable|integer'
-		];
-		if ($args['schedule_enabled'] === true) {
-			if (($args['start_datetime'] === null || $args['start_datetime'] === '') && ($args['end_datetime'] === null || $args['end_datetime'] === '')) {
+			'settings'           => 'nullable|array',
+			'conditions'         => 'nullable|object',
+			'usage_limit'        => 'nullable|integer',
+		);
+		if ( $args['schedule_enabled'] === true ) {
+			if ( ( $args['start_datetime'] === null || $args['start_datetime'] === '' ) && ( $args['end_datetime'] === null || $args['end_datetime'] === '' ) ) {
 				$rules['start_datetime'] = 'required|datetime';
 				// $rules['end_datetime'] = 'required|datetime';
 			}
@@ -416,7 +433,7 @@ class Campaign
 		 *
 		 * @param array $rules The array of validation rules.
 		 */
-		return apply_filters('campaignbay_get_campaign_validation_rules', $rules);
+		return apply_filters( 'campaignbay_get_campaign_validation_rules', $rules );
 	}
 
 	/**
@@ -431,30 +448,29 @@ class Campaign
 	 * @param string $type The type of the campaign (e.g., 'quantity', 'earlybird', 'bogo').
 	 * @return array The array of validation rules for a single tier.
 	 */
-	private static function get_tiers_validation_rules($type)
-	{
-		$rules = [];
-		if ($type === 'quantity') {
-			$rules = [
-				'id' => 'nullable|integer',
-				'min' => 'required|integer|min:1|gte:previous_tier_max',
-				'max' => 'required|integer|min:1|gte:min',
+	private static function get_tiers_validation_rules( $type ) {
+		$rules = array();
+		if ( $type === 'quantity' ) {
+			$rules = array(
+				'id'    => 'nullable|integer',
+				'min'   => 'required|integer|min:1|gte:previous_tier_max',
+				'max'   => 'required|integer|min:1|gte:min',
 				'value' => 'required|numeric|min:0|max_if:type,percentage,100',
-				'type' => 'required|in:percentage,currency',
-			];
-		} elseif ($type === 'earlybird') {
-			$rules = [
-				'id' => 'nullable|integer',
+				'type'  => 'required|in:percentage,currency',
+			);
+		} elseif ( $type === 'earlybird' ) {
+			$rules = array(
+				'id'       => 'nullable|integer',
 				'quantity' => 'required|integer|min:1',
-				'value' => 'required|numeric|min:0|max_if:type,percentage,100',
-				'type' => 'required|in:percentage,currency',
-				'total' => 'required|integer|min:0'
-			];
-		} elseif ($type === 'bogo') {
-			$rules = [
+				'value'    => 'required|numeric|min:0|max_if:type,percentage,100',
+				'type'     => 'required|in:percentage,currency',
+				'total'    => 'required|integer|min:0',
+			);
+		} elseif ( $type === 'bogo' ) {
+			$rules = array(
 				'buy_quantity' => 'required|integer|min:1',
 				'get_quantity' => 'required|integer|min:1',
-			];
+			);
 		}
 
 		/**
@@ -466,20 +482,19 @@ class Campaign
 		 * @param array  $rules The array of validation rules for a tier.
 		 * @param string $type  The type of the campaign being validated.
 		 */
-		return apply_filters('campaignbay_get_tiers_validation_rules', $rules, $type);
+		return apply_filters( 'campaignbay_get_tiers_validation_rules', $rules, $type );
 	}
 
 	/**
 	 * checking if campaign type need tiers validation
-	 * 
+	 *
 	 * @since 1.0.0
 	 * @param string $type The type of the campaign.
 	 * @return bool True if the campaign type requires tier validation, false otherwise.
 	 */
-	private static function need_tier_validation($type)
-	{
+	private static function need_tier_validation( $type ) {
 		$result = false;
-		if ($type === 'quantity' || $type === 'earlybird' || $type === 'bogo') {
+		if ( $type === 'quantity' || $type === 'earlybird' || $type === 'bogo' ) {
 			$result = true;
 		}
 		/**
@@ -491,7 +506,7 @@ class Campaign
 		 * @param bool   $result The result of the need-tier-validation check.
 		 * @param string  $type   The type of the campaign being validated.
 		 */
-		return apply_filters('campaignbay_need_tier_validation', $result, $type);
+		return apply_filters( 'campaignbay_need_tier_validation', $result, $type );
 	}
 
 
@@ -503,74 +518,73 @@ class Campaign
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array $settings The settings to validate.
+	 * @param array  $settings The settings to validate.
 	 * @param string $type The type of the campaign being validated.
 	 * @return array|null|WP_Error The validated settings, or null if validation fails.
 	 */
-	public static function get_validated_settings($settings, $type)
-	{
-		if ($settings === null || !is_array($settings) || empty($settings)) {
+	public static function get_validated_settings( $settings, $type ) {
+		if ( $settings === null || ! is_array( $settings ) || empty( $settings ) ) {
 			return null;
 		}
-		$rules = [];
-		$default = [];
-		if ($type === 'scheduled' || $type === 'earlybird') {
-			$default = [
+		$rules   = array();
+		$default = array();
+		if ( $type === 'scheduled' || $type === 'earlybird' ) {
+			$default = array(
 				'display_as_regular_price' => false,
-				'show_product_message' => true,
-				'message_format' => '',
-			];
-			$rules = [
+				'show_product_message'     => true,
+				'message_format'           => '',
+			);
+			$rules   = array(
 				'display_as_regular_price' => 'required|boolean',
-				'show_product_message' => 'required_if:display_as_regular_price,0|boolean',
-				'message_format' => 'nullable|string',
-			];
-		} elseif ($type === 'quantity') {
-			$default = [
-				'apply_as' => 'line_total',
-				'cart_quantity_message_format' => '',
+				'show_product_message'     => 'required_if:display_as_regular_price,0|boolean',
+				'message_format'           => 'nullable|string',
+			);
+		} elseif ( $type === 'quantity' ) {
+			$default = array(
+				'apply_as'                       => 'line_total',
+				'cart_quantity_message_format'   => '',
 				'cart_quantity_message_location' => 'line_item_name',
-			];
-			$rules = [
-				'apply_as' => 'required|string|in:line_total,fee,coupon',
-				'cart_quantity_message_format' => 'nullable|string',
+			);
+			$rules   = array(
+				'apply_as'                       => 'required|string|in:line_total,fee,coupon',
+				'cart_quantity_message_format'   => 'nullable|string',
 				'cart_quantity_message_location' => 'required|string|in:line_item_name,notice,dont_show',
-			];
-		} elseif ($type === 'bogo') {
-			$default = [
-				'show_bogo_message' => true,
+			);
+		} elseif ( $type === 'bogo' ) {
+			$default = array(
+				'show_bogo_message'          => true,
 				'bogo_banner_message_format' => '',
-				'cart_bogo_message_format' => '',
+				'cart_bogo_message_format'   => '',
 				'bogo_cart_message_location' => 'line_item_name',
-			];
-			$rules = [
-				'show_bogo_message' => 'required|boolean',
+			);
+			$rules   = array(
+				'show_bogo_message'          => 'required|boolean',
 				'bogo_banner_message_format' => 'nullable|string',
-				'cart_bogo_message_format' => 'nullable|string',
+				'cart_bogo_message_format'   => 'nullable|string',
 				'bogo_cart_message_location' => 'required|string|in:line_item_name,notice,dont_show',
-			];
+			);
 		}
 		/**
 		 * Filters the settings validation rules for a campaign.
 		 *
 		 * @since 1.0.0
 		 * @hook campaignbay_get_settings_validation_rules
-		 * 
+		 *
 		 * @param array $rules The array of validation rules.
 		 * @param string $type The type of the campaign being validated.
 		 */
-		$rules = apply_filters('campaignbay_get_settings_validation_rules', $rules, $type);
+		$rules = apply_filters( 'campaignbay_get_settings_validation_rules', $rules, $type );
 
-		$validator = new Validator(array_merge($default, $settings));
+		$validator = new Validator( array_merge( $default, $settings ) );
 
-		if (!$validator->validate($rules)) {
-			wpab_campaignbay_log('Validation failed for settings: ' . $validator->get_first_error(), 'WARNING');
+		if ( ! $validator->validate( $rules ) ) {
+			wpab_campaignbay_log( 'Validation failed for settings: ' . $validator->get_first_error(), 'WARNING' );
 			return new WP_Error(
 				'rest_validation_error',
 				$validator->get_first_error(),
 				array(
-					'status' => 400,
-					'details' => array('settings' => $validator->get_errors())
+					'status'  => 400,
+					'details' => array( 'settings' => $validator->get_errors() ),
 				)
 			);
 		}
@@ -579,76 +593,75 @@ class Campaign
 	}
 
 
-	public static function get_validated_conditions($conditions)
-	{
-		//old campaigns dont have match_type default , raising error on import
+	public static function get_validated_conditions( $conditions ) {
+		// old campaigns dont have match_type default , raising error on import
 		$conditions['match_type'] = $conditions['match_type'] ?? 'all';
-		$validator = new Validator($conditions);
-		$rules = [
+		$validator                = new Validator( $conditions );
+		$rules                    = array(
 			'match_type' => 'required|string|in:all,any',
-			'rules' => 'nullable|array',
-		];
-		if (!$validator->validate($rules)) {
-			wpab_campaignbay_log('Validation failed for conditions: ' . $validator->get_first_error(), 'WARNING');
+			'rules'      => 'nullable|array',
+		);
+		if ( ! $validator->validate( $rules ) ) {
+			wpab_campaignbay_log( 'Validation failed for conditions: ' . $validator->get_first_error(), 'WARNING' );
 			return new WP_Error(
 				'rest_validation_error',
 				$validator->get_first_error(),
 				array(
-					'status' => 400,
-					'details' => array('conditions' => $validator->get_errors())
+					'status'  => 400,
+					'details' => array( 'conditions' => $validator->get_errors() ),
 				)
 			);
 		}
-		$validated_data = $validator->get_validated_data();
-		$validated_rules_data = [];
-		$default_rules = [
-			'user_role' => [
-				'option' => 'required|string',
+		$validated_data       = $validator->get_validated_data();
+		$validated_rules_data = array();
+		$default_rules        = array(
+			'user_role'  => array(
+				'option'      => 'required|string',
 				'is_included' => 'required|boolean',
-			],
-			'user_roles' => [
-				'options' => 'required|array',
+			),
+			'user_roles' => array(
+				'options'     => 'required|array',
 				'is_included' => 'required|boolean',
-			],
-			'users' => [
-				'options' => 'required|array',
+			),
+			'users'      => array(
+				'options'     => 'required|array',
 				'is_included' => 'required|boolean',
-			],
-			'cart_total' => [
-				'value' => 'required|numeric|min:0',
+			),
+			'cart_total' => array(
+				'value'    => 'required|numeric|min:0',
 				'operator' => 'required|string|in:>=,<=,==,>,<',
-			],
-		];
+			),
+		);
 		/**
 		 * Filters the default conditions validation rules.
-		 * 
+		 *
 		 * This filter allows adding or modifying validation rules for different condition types.
 		 *
 		 * @since 1.0.0
 		 * @hook campaignbay_get_conditions_validation_rules
-		 * 
+		 *
 		 * @param array $default_rules The array of default validation rules.
 		 * @return array The array of default validation rules.
 		 */
-		$default_rules = apply_filters('campaignbay_get_conditions_validation_rules', $default_rules);
-		foreach ($conditions['rules'] as $index => $rule) {
-			$condition_validator = new Validator($rule['condition']);
-			$validation_rules = $default_rules[$rule['type']];
-			if (!$condition_validator->validate($validation_rules)) {
-				wpab_campaignbay_log('Condition validation failed: ' . $condition_validator->get_first_error(), 'ERROR');
-				wpab_campaignbay_log($condition_validator->get_errors(), 'WARNING');
-				wpab_campaignbay_log($rule['condition'], 'WARNING');
+		$default_rules = apply_filters( 'campaignbay_get_conditions_validation_rules', $default_rules );
+		foreach ( $conditions['rules'] as $index => $rule ) {
+			$condition_validator = new Validator( $rule['condition'] );
+			$validation_rules    = $default_rules[ $rule['type'] ];
+			if ( ! $condition_validator->validate( $validation_rules ) ) {
+				wpab_campaignbay_log( 'Condition validation failed: ' . $condition_validator->get_first_error(), 'ERROR' );
+				wpab_campaignbay_log( $condition_validator->get_errors(), 'WARNING' );
+				wpab_campaignbay_log( $rule['condition'], 'WARNING' );
 				return new WP_Error(
 					'rest_validation_error',
 					$condition_validator->get_first_error(),
 					array(
-						'status' => 400,
-						'details' => array('rules' => array($index => $condition_validator->get_errors())),
+						'status'  => 400,
+						'details' => array( 'rules' => array( $index => $condition_validator->get_errors() ) ),
 					)
 				);
 			}
 			$validated_rules_data[] = array(
-				'type' => $rule['type'],
+				'type'      => $rule['type'],
 				'condition' => $condition_validator->get_validated_data(),
 			);
 		}
@@ -665,10 +678,9 @@ class Campaign
 	 * @param bool $force_delete Whether to force delete (unused for compatibility).
 	 * @return bool True on success, false on failure.
 	 */
-	public static function delete($campaign_id, $force_delete = true)
-	{
-		$campaign = new self($campaign_id);
-		$title = $campaign->get_title();
+	public static function delete( $campaign_id, $force_delete = true ) {
+		$campaign = new self( $campaign_id );
+		$title    = $campaign->get_title();
 
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'campaignbay_campaigns';
@@ -677,27 +689,27 @@ class Campaign
 		 *
 		 * @since 1.0.0
 		 * @hook campaignbay_before_campaign_delete
-		 * 
+		 *
 		 * @param int $campaign_id The ID of the deleted campaign.
 		 */
-		do_action('campaignbay_before_campaign_delete', $campaign_id);
+		do_action( 'campaignbay_before_campaign_delete', $campaign_id );
 
 		//phpcs:ignore
 		$result = $wpdb->delete(
 			$table_name,
-			array('id' => $campaign_id),
-			array('%d')
+			array( 'id' => $campaign_id ),
+			array( '%d' )
 		);
 
 		/**
 		 * Fires after a campaign is deleted.
-		 * 
+		 *
 		 * @since 1.0.0
 		 * @hook campaignbay_campaign_delete
 		 *
 		 * @param int $campaign_id The ID of the deleted campaign.
 		 */
-		do_action('campaignbay_campaign_delete', $campaign_id);
+		do_action( 'campaignbay_campaign_delete', $campaign_id );
 
 		// Log the activity.
 		Logger::get_instance()->log(
@@ -705,9 +717,9 @@ class Campaign
 			'deleted',
 			array(
 				'campaign_id' => $campaign_id,
-				'extra_data' => array(
+				'extra_data'  => array(
 					'title' => $title,
-				)
+				),
 			)
 		);
 
@@ -722,8 +734,7 @@ class Campaign
 	 * @access public
 	 * @return object|null The campaign data object.
 	 */
-	public function get_data()
-	{
+	public function get_data() {
 		return $this->data;
 	}
 	/**
@@ -733,8 +744,7 @@ class Campaign
 	 * @access public
 	 * @return int The campaign ID.
 	 */
-	public function get_id()
-	{
+	public function get_id() {
 		return $this->id;
 	}
 
@@ -745,8 +755,7 @@ class Campaign
 	 * @access public
 	 * @return int The campaign title.
 	 */
-	public function get_title()
-	{
+	public function get_title() {
 		return $this->data->title;
 	}
 
@@ -757,8 +766,7 @@ class Campaign
 	 * @access public
 	 * @return int The campaign status.
 	 */
-	public function get_status()
-	{
+	public function get_status() {
 		return $this->data->status;
 	}
 
@@ -770,16 +778,15 @@ class Campaign
 	 * @param string $status The campaign status.
 	 * @return bool True if the status was updated successfully, false otherwise.
 	 */
-	public function set_status($status)
-	{
-		if (empty($status)) {
+	public function set_status( $status ) {
+		if ( empty( $status ) ) {
 			return false;
 		}
-		$allowed_statuses = array('active', 'inactive', 'scheduled', 'expired');
-		if (!in_array($status, $allowed_statuses, true)) {
+		$allowed_statuses = array( 'active', 'inactive', 'scheduled', 'expired' );
+		if ( ! in_array( $status, $allowed_statuses, true ) ) {
 			wpab_campaignbay_log(
 				// Translators: %s is the invalid status provided.
-				sprintf(__('Invalid status "%s" provided. Status must be one of: active, inactive, scheduled, expired.', 'campaignbay'), $status),
+				sprintf( __( 'Invalid status "%s" provided. Status must be one of: active, inactive, scheduled, expired.', 'campaignbay' ), $status ),
 				'ERROR'
 			);
 			return false;
@@ -791,15 +798,15 @@ class Campaign
 			$table_name = $wpdb->prefix . 'campaignbay_campaigns';
 
 			$new_schedule_enabled = $this->data->status === 'expired' ? 0 : $this->data->schedule_enabled;
-			wpab_campaignbay_log('________ name: ' . $this->data->name, 'INFO');
-			wpab_campaignbay_log('________ status: ' . $this->data->status, 'INFO');
-			wpab_campaignbay_log('New schedule enabled: ' . $new_schedule_enabled, 'INFO');
+			wpab_campaignbay_log( '________ name: ' . $this->data->name, 'INFO' );
+			wpab_campaignbay_log( '________ status: ' . $this->data->status, 'INFO' );
+			wpab_campaignbay_log( 'New schedule enabled: ' . $new_schedule_enabled, 'INFO' );
 
 			//phpcs:ignore
 			$result = $wpdb->update(
 				$table_name,
 				array(
-					'status' => $status,
+					'status'           => $status,
 					'schedule_enabled' => $new_schedule_enabled,
 				),
 				array(
@@ -813,7 +820,7 @@ class Campaign
 					'%d',
 				)
 			);
-			if (is_wp_error($result) || false === $result) {
+			if ( is_wp_error( $result ) || false === $result ) {
 				return false;
 			}
 
@@ -822,14 +829,14 @@ class Campaign
 
 			/**
 			 * Fires after a campaign is updated and all its data is saved.
-			 * 
+			 *
 			 * @since 1.0.0
 			 * @hook campaignbay_campaign_save
 			 *
 			 * @param int      $campaign_id The ID of the updated campaign.
 			 * @param Campaign $campaign    The campaign object.
 			 */
-			do_action('campaignbay_campaign_save', $this->id, $this);
+			do_action( 'campaignbay_campaign_save', $this->id, $this );
 
 			// Log the activity.
 			Logger::get_instance()->log(
@@ -837,16 +844,23 @@ class Campaign
 				'updated',
 				array(
 					'campaign_id' => $this->get_id(),
-					'extra_data' => array(
+					'extra_data'  => array(
 						'title' => $this->get_title(),
-					)
+					),
 				)
 			);
 
 			return true;
-		} catch (Exception $e) {
-			wpab_campaignbay_log('Error updating campaign: ' . $e->getMessage(), 'ERROR');
-			return new WP_Error('rest_cannot_update', __('Cannot update campaign.', 'campaignbay'), array('status' => 500, 'error' => $e->getMessage()));
+		} catch ( Exception $e ) {
+			wpab_campaignbay_log( 'Error updating campaign: ' . $e->getMessage(), 'ERROR' );
+			return new WP_Error(
+				'rest_cannot_update',
+				__( 'Cannot update campaign.', 'campaignbay' ),
+				array(
+					'status' => 500,
+					'error'  => $e->getMessage(),
+				)
+			);
 		}
 	}
 
@@ -858,8 +872,7 @@ class Campaign
 	 * @access public
 	 * @return int The campaign type.
 	 */
-	public function get_type()
-	{
+	public function get_type() {
 		return $this->data->type;
 	}
 
@@ -869,8 +882,7 @@ class Campaign
 	 * @since 1.0.0
 	 * @return string|null The discount type.
 	 */
-	public function get_discount_type()
-	{
+	public function get_discount_type() {
 		return $this->data->discount_type ?? null;
 	}
 
@@ -880,9 +892,8 @@ class Campaign
 	 * @since 1.0.0
 	 * @return float|null The discount value.
 	 */
-	public function get_discount_value()
-	{
-		return isset($this->data->discount_value) ? floatval($this->data->discount_value) : null;
+	public function get_discount_value() {
+		return isset( $this->data->discount_value ) ? floatval( $this->data->discount_value ) : null;
 	}
 
 	/**
@@ -891,8 +902,7 @@ class Campaign
 	 * @since 1.0.0
 	 * @return array The campaign tiers.
 	 */
-	public function get_tiers()
-	{
+	public function get_tiers() {
 		return $this->data->tiers ?? array();
 	}
 
@@ -902,10 +912,10 @@ class Campaign
 	 * @since 1.0.0
 	 * @return array The campaign conditions.
 	 */
-	public function get_conditions()
-	{
-		if (is_string($this->data->conditions))
-			return json_decode($this->data->conditions, true) ?? array();
+	public function get_conditions() {
+		if ( is_string( $this->data->conditions ) ) {
+			return json_decode( $this->data->conditions, true ) ?? array();
+		}
 		return $this->data->conditions ?? array();
 	}
 
@@ -915,10 +925,10 @@ class Campaign
 	 * @since 1.0.0
 	 * @return array The campaign settings.
 	 */
-	public function get_settings()
-	{
-		if (is_string($this->data->settings))
-			return json_decode($this->data->settings, true) ?? array();
+	public function get_settings() {
+		if ( is_string( $this->data->settings ) ) {
+			return json_decode( $this->data->settings, true ) ?? array();
+		}
 		return $this->data->settings ?? array();
 	}
 
@@ -928,8 +938,7 @@ class Campaign
 	 * @since 1.0.0
 	 * @return string|null The target type.
 	 */
-	public function get_target_type()
-	{
+	public function get_target_type() {
 		return $this->data->target_type ?? null;
 	}
 
@@ -939,8 +948,7 @@ class Campaign
 	 * @since 1.0.0
 	 * @return array The target IDs.
 	 */
-	public function get_target_ids()
-	{
+	public function get_target_ids() {
 		return $this->data->target_ids ?? array();
 	}
 
@@ -950,9 +958,8 @@ class Campaign
 	 * @since 1.0.0
 	 * @return bool True if sale items are excluded, false otherwise.
 	 */
-	public function get_exclude_sale_items()
-	{
-		return !empty($this->data->exclude_sale_items);
+	public function get_exclude_sale_items() {
+		return ! empty( $this->data->exclude_sale_items );
 	}
 
 	/**
@@ -961,9 +968,8 @@ class Campaign
 	 * @since 1.0.0
 	 * @return bool True if products are excluded, false otherwise.
 	 */
-	public function get_is_exclude()
-	{
-		return !empty($this->data->is_exclude);
+	public function get_is_exclude() {
+		return ! empty( $this->data->is_exclude );
 	}
 
 	/**
@@ -972,9 +978,8 @@ class Campaign
 	 * @since 1.0.0
 	 * @return int|null The usage limit, or null if unlimited.
 	 */
-	public function get_usage_limit()
-	{
-		return isset($this->data->usage_limit) ? intval($this->data->usage_limit) : null;
+	public function get_usage_limit() {
+		return isset( $this->data->usage_limit ) ? intval( $this->data->usage_limit ) : null;
 	}
 
 	/**
@@ -983,9 +988,8 @@ class Campaign
 	 * @since 1.0.0
 	 * @return bool True if scheduling is enabled, false otherwise.
 	 */
-	public function get_schedule_enabled()
-	{
-		return !empty($this->data->schedule_enabled);
+	public function get_schedule_enabled() {
+		return ! empty( $this->data->schedule_enabled );
 	}
 
 
@@ -996,9 +1000,8 @@ class Campaign
 	 * @since 1.0.0
 	 * @return string|null The start datetime in 'Y-m-d H:i:s' format, or null if not set.
 	 */
-	public function get_start_datetime()
-	{
-		if (empty($this->data->start_datetime)) {
+	public function get_start_datetime() {
+		if ( empty( $this->data->start_datetime ) ) {
 			return null;
 		}
 		return $this->data->start_datetime;
@@ -1010,34 +1013,31 @@ class Campaign
 	 * @since 1.0.0
 	 * @return string|null The end datetime in 'Y-m-d H:i:s' format, or null if not set.
 	 */
-	public function get_end_datetime()
-	{
-		if (empty($this->data->end_datetime)) {
+	public function get_end_datetime() {
+		if ( empty( $this->data->end_datetime ) ) {
 			return null;
 		}
 		return $this->data->end_datetime;
 	}
 
-	public function get_utc_time($date_string)
-	{
+	public function get_utc_time( $date_string ) {
 
-		if (empty($date_string)) {
+		if ( empty( $date_string ) ) {
 			return null;
 		}
 
 		try {
-			$date = new DateTime($date_string, new DateTimeZone(wp_timezone_string()));
-			$date->setTimezone(new DateTimeZone('UTC'));
-			return $date->format('Y-m-d H:i:s');
-		} catch (Exception $e) {
+			$date = new DateTime( $date_string, new DateTimeZone( wp_timezone_string() ) );
+			$date->setTimezone( new DateTimeZone( 'UTC' ) );
+			return $date->format( 'Y-m-d H:i:s' );
+		} catch ( Exception $e ) {
 			return null;
 		}
 	}
 
-	public function get_time_stamp($date_string)
-	{
-		$utc_datetime = $this->get_utc_time($date_string);
-		return $utc_datetime ? strtotime($utc_datetime) : null;
+	public function get_time_stamp( $date_string ) {
+		$utc_datetime = $this->get_utc_time( $date_string );
+		return $utc_datetime ? strtotime( $utc_datetime ) : null;
 	}
 
 	/**
@@ -1046,20 +1046,19 @@ class Campaign
 	 * @since 1.0.0
 	 * @return string|null The start datetime in 'Y-m-d H:i:s' format (UTC), or null if not set.
 	 */
-	public function get_start_datetime_utc()
-	{
+	public function get_start_datetime_utc() {
 		$start_datetime_site = $this->data->start_datetime;
 
-		if (empty($start_datetime_site)) {
+		if ( empty( $start_datetime_site ) ) {
 			return null;
 		}
 
 		try {
-			$date = new DateTime($start_datetime_site, new DateTimeZone(wp_timezone_string()));
-			$date->setTimezone(new DateTimeZone('UTC'));
-			return $date->format('Y-m-d H:i:s');
-		} catch (Exception $e) {
-			wpab_campaignbay_log('Invalid start_datetime format for campaign #' . $this->id, 'ERROR');
+			$date = new DateTime( $start_datetime_site, new DateTimeZone( wp_timezone_string() ) );
+			$date->setTimezone( new DateTimeZone( 'UTC' ) );
+			return $date->format( 'Y-m-d H:i:s' );
+		} catch ( Exception $e ) {
+			wpab_campaignbay_log( 'Invalid start_datetime format for campaign #' . $this->id, 'ERROR' );
 			return null;
 		}
 	}
@@ -1070,20 +1069,19 @@ class Campaign
 	 * @since 1.0.0
 	 * @return string|null The end datetime in 'Y-m-d H:i:s' format (UTC), or null if not set.
 	 */
-	public function get_end_datetime_utc()
-	{
+	public function get_end_datetime_utc() {
 		$end_datetime_site = $this->data->end_datetime;
 
-		if (empty($end_datetime_site)) {
+		if ( empty( $end_datetime_site ) ) {
 			return null;
 		}
 
 		try {
-			$date = new DateTime($end_datetime_site, new DateTimeZone(wp_timezone_string()));
-			$date->setTimezone(new DateTimeZone('UTC'));
-			return $date->format('Y-m-d H:i:s');
-		} catch (Exception $e) {
-			wpab_campaignbay_log('Invalid end_datetime format for campaign #' . $this->id, 'ERROR');
+			$date = new DateTime( $end_datetime_site, new DateTimeZone( wp_timezone_string() ) );
+			$date->setTimezone( new DateTimeZone( 'UTC' ) );
+			return $date->format( 'Y-m-d H:i:s' );
+		} catch ( Exception $e ) {
+			wpab_campaignbay_log( 'Invalid end_datetime format for campaign #' . $this->id, 'ERROR' );
 			return null;
 		}
 	}
@@ -1094,10 +1092,9 @@ class Campaign
 	 * @since 1.0.0
 	 * @return int|null The Unix timestamp, or null if no start date is set.
 	 */
-	public function get_start_timestamp()
-	{
+	public function get_start_timestamp() {
 		$utc_datetime = $this->get_start_datetime_utc();
-		return $utc_datetime ? strtotime($utc_datetime) : null;
+		return $utc_datetime ? strtotime( $utc_datetime ) : null;
 	}
 
 	/**
@@ -1106,10 +1103,9 @@ class Campaign
 	 * @since 1.0.0
 	 * @return int|null The Unix timestamp, or null if no end date is set.
 	 */
-	public function get_end_timestamp()
-	{
+	public function get_end_timestamp() {
 		$utc_datetime = $this->get_end_datetime_utc();
-		return $utc_datetime ? strtotime($utc_datetime) : null;
+		return $utc_datetime ? strtotime( $utc_datetime ) : null;
 	}
 
 	/**
@@ -1118,8 +1114,7 @@ class Campaign
 	 * @since 1.0.0
 	 * @return string|null The last modified date.
 	 */
-	public function get_date_modified()
-	{
+	public function get_date_modified() {
 		return $this->data->date_modified ?: null;
 	}
 
@@ -1130,8 +1125,7 @@ class Campaign
 	 * @since 1.0.0
 	 * @return int The number of times the campaign has been used on successful orders.
 	 */
-	public function get_usage_count()
-	{
+	public function get_usage_count() {
 		return (int) $this->data->usage_count;
 	}
 
@@ -1142,8 +1136,7 @@ class Campaign
 	 * @since 1.0.0
 	 * @access private
 	 */
-	private function load_data()
-	{
+	private function load_data() {
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'campaignbay_campaigns';
 
@@ -1157,11 +1150,11 @@ class Campaign
 		);
 
 		// Decode JSON fields
-		if ($this->data) {
-			$this->data->target_ids = !empty($this->data->target_ids) ? json_decode($this->data->target_ids, true) : array();
-			$this->data->tiers = !empty($this->data->tiers) ? json_decode($this->data->tiers, true) : array();
-			$this->data->conditions = !empty($this->data->conditions) ? json_decode($this->data->conditions, true) : array();
-			$this->data->settings = !empty($this->data->settings) ? json_decode($this->data->settings, true) : array();
+		if ( $this->data ) {
+			$this->data->target_ids = ! empty( $this->data->target_ids ) ? json_decode( $this->data->target_ids, true ) : array();
+			$this->data->tiers      = ! empty( $this->data->tiers ) ? json_decode( $this->data->tiers, true ) : array();
+			$this->data->conditions = ! empty( $this->data->conditions ) ? json_decode( $this->data->conditions, true ) : array();
+			$this->data->settings   = ! empty( $this->data->settings ) ? json_decode( $this->data->settings, true ) : array();
 		}
 	}
 
@@ -1176,8 +1169,7 @@ class Campaign
 	 * @access public
 	 * @return bool True on success, false on failure.
 	 */
-	public function increment_usage_count()
-	{
+	public function increment_usage_count() {
 		global $wpdb;
 		$campaigns_table = $wpdb->prefix . 'campaignbay_campaigns';
 
@@ -1198,29 +1190,29 @@ class Campaign
 			)
 		);
 
-		if (is_wp_error($result) || false === $result) {
-			wpab_campaignbay_log('Failed to increment usage count for campaign: #' . $this->get_id(), 'ERROR');
+		if ( is_wp_error( $result ) || false === $result ) {
+			wpab_campaignbay_log( 'Failed to increment usage count for campaign: #' . $this->get_id(), 'ERROR' );
 			return false;
 		}
 
 		$this->data->usage_count = (int) $this->data->usage_count + 1;
 
-		if ($this->data->usage_limit !== null && $this->data->usage_limit > 0 && $this->data->usage_count >= $this->data->usage_limit) {
+		if ( $this->data->usage_limit !== null && $this->data->usage_limit > 0 && $this->data->usage_count >= $this->data->usage_limit ) {
 			$this->data->status = 'expired';
 		}
 
-		wpab_campaignbay_log('Usage count incremented for campaign: #' . $this->get_id() . ' ' . $this->get_title() . ' - New count: ' . $this->data->usage_count, 'INFO');
+		wpab_campaignbay_log( 'Usage count incremented for campaign: #' . $this->get_id() . ' ' . $this->get_title() . ' - New count: ' . $this->data->usage_count, 'INFO' );
 
 		/**
 		 * Fires after a campaign's usage count is updated.
-		 * 
+		 *
 		 * @since 1.0.0
 		 * @hook campaignbay_campaign_usage_incremented
 		 *
 		 * @param int      $campaign_id The ID of the updated campaign.
 		 * @param Campaign $campaign    The campaign object with the new usage count.
 		 */
-		do_action('campaignbay_campaign_usage_incremented', $this->id, $this);
+		do_action( 'campaignbay_campaign_usage_incremented', $this->id, $this );
 
 		return true;
 	}
@@ -1232,8 +1224,7 @@ class Campaign
 	 * @access public
 	 * @return bool True on success, false on failure.
 	 */
-	public function decrement_usage_count()
-	{
+	public function decrement_usage_count() {
 		global $wpdb;
 		$campaigns_table = $wpdb->prefix . 'campaignbay_campaigns';
 
@@ -1258,30 +1249,30 @@ class Campaign
 			)
 		);
 
-		if (is_wp_error($result) || false === $result) {
-			wpab_campaignbay_log('Failed to decrement usage count for campaign: #' . $this->get_id(), 'ERROR');
+		if ( is_wp_error( $result ) || false === $result ) {
+			wpab_campaignbay_log( 'Failed to decrement usage count for campaign: #' . $this->get_id(), 'ERROR' );
 			return false;
 		}
 
-		//UPDATING LOCAL DATA
-		$this->data->usage_count = max(0, (int) $this->data->usage_count - 1);
+		// UPDATING LOCAL DATA
+		$this->data->usage_count = max( 0, (int) $this->data->usage_count - 1 );
 
-		if ($this->data->usage_limit !== null && $this->data->usage_limit > 0 && $this->data->usage_count >= $this->data->usage_limit) {
+		if ( $this->data->usage_limit !== null && $this->data->usage_limit > 0 && $this->data->usage_count >= $this->data->usage_limit ) {
 			$this->data->status = 'expired';
 		}
 
-		wpab_campaignbay_log('Usage count decremented for campaign: #' . $this->get_id() . ' ' . $this->get_title() . ' - New count: ' . $this->data->usage_count, 'INFO');
+		wpab_campaignbay_log( 'Usage count decremented for campaign: #' . $this->get_id() . ' ' . $this->get_title() . ' - New count: ' . $this->data->usage_count, 'INFO' );
 
 		/**
 		 * Fires after a campaign's usage count is updated.
-		 * 
+		 *
 		 * @since 1.0.0
 		 * @hook campaignbay_campaign_usage_decremented
 		 *
 		 * @param int      $campaign_id The ID of the updated campaign.
 		 * @param Campaign $campaign    The campaign object with the new usage count.
 		 */
-		do_action('campaignbay_campaign_usage_decremented', $this->id, $this);
+		do_action( 'campaignbay_campaign_usage_decremented', $this->id, $this );
 
 		return true;
 	}
@@ -1294,10 +1285,9 @@ class Campaign
 	 * @param int|WC_Product $product The product ID or WC_Product object.
 	 * @return bool True if the campaign applies to the product, false otherwise.
 	 */
-	public function is_applicable_to_product($product)
-	{
+	public function is_applicable_to_product( $product ) {
 
-		$result = Filter::get_instance()->match($product, $this);
+		$result = Filter::get_instance()->match( $product, $this );
 		return $result;
 	}
 }

@@ -17,7 +17,7 @@ use WpabCampaignBay\Engine\CampaignManager;
  */
 
 // Exit if accessed directly.
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -31,8 +31,8 @@ if (!defined('ABSPATH')) {
  * @subpackage WPAB_CampaignBay/includes
  * @author     WP Anchor Bay <wpanchorbay@gmail.com>
  */
-class Activator
-{
+class Activator {
+
 
 	/**
 	 * The main activation method.
@@ -43,14 +43,13 @@ class Activator
 	 * @access public
 	 * @return void
 	 */
-	public static function activate()
-	{
+	public static function activate() {
 
 		CampaignManager::get_instance()->clear_cache();
 
 		// Set up the default options if they don't exist.
-		if (!get_option(CAMPAIGNBAY_OPTION_NAME)) {
-			Common::get_instance()->update_settings(Common::get_instance()->get_default_settings());
+		if ( ! get_option( CAMPAIGNBAY_OPTION_NAME ) ) {
+			Common::get_instance()->update_settings( Common::get_instance()->get_default_settings() );
 		}
 
 		// Create custom database tables.
@@ -73,8 +72,7 @@ class Activator
 	 * @access private
 	 * @return void
 	 */
-	private static function create_custom_tables()
-	{
+	private static function create_custom_tables() {
 		DbManager::get_instance()->create_tables();
 	}
 
@@ -85,32 +83,31 @@ class Activator
 	 * @access private
 	 * @return void
 	 */
-	private static function secure_log_directory()
-	{
+	private static function secure_log_directory() {
 		$upload_dir = wp_upload_dir();
-		$log_dir = $upload_dir['basedir'] . '/' . CAMPAIGNBAY_TEXT_DOMAIN . '-logs/';
+		$log_dir    = $upload_dir['basedir'] . '/' . CAMPAIGNBAY_TEXT_DOMAIN . '-logs/';
 
-		if (!is_dir($log_dir)) {
-			wp_mkdir_p($log_dir);
+		if ( ! is_dir( $log_dir ) ) {
+			wp_mkdir_p( $log_dir );
 		}
 
 		$htaccess_file = $log_dir . '.htaccess';
-		if (!file_exists($htaccess_file)) {
-			$htaccess_content = "
+		if ( ! file_exists( $htaccess_file ) ) {
+			$htaccess_content = '
 			# Protect log files from direct access
 			<Files *.log>
 				Order allow,deny
 				Deny from all
 			</Files>
-			";
-			file_put_contents($htaccess_file, $htaccess_content); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
+			';
+			file_put_contents( $htaccess_file, $htaccess_content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
 		}
 
 		// --- Create blank index.php file for security ---
 		$index_file = $log_dir . 'index.php';
-		if (!file_exists($index_file)) {
+		if ( ! file_exists( $index_file ) ) {
 			$index_content = "<?php\n// Silence is golden.\n";
-			file_put_contents($index_file, $index_content); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
+			file_put_contents( $index_file, $index_content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
 		}
 	}
 
@@ -127,26 +124,24 @@ class Activator
 	 * @access private
 	 * @static
 	 */
-	private static function add_plugin_roles_and_capabilities()
-	{
+	private static function add_plugin_roles_and_capabilities() {
 		// Define the unique capability slug for your plugin.
 		$custom_capability = 'manage_campaignbay';
 
-		$admin_role = get_role('administrator');
-		if ($admin_role && !$admin_role->has_cap($custom_capability)) {
-			$admin_role->add_cap($custom_capability);
+		$admin_role = get_role( 'administrator' );
+		if ( $admin_role && ! $admin_role->has_cap( $custom_capability ) ) {
+			$admin_role->add_cap( $custom_capability );
 		}
 
 		// woocommerce role
-		$manager_role = get_role('shop_manager');
-		if ($manager_role && !$manager_role->has_cap($custom_capability)) {
-			$manager_role->add_cap($custom_capability);
+		$manager_role = get_role( 'shop_manager' );
+		if ( $manager_role && ! $manager_role->has_cap( $custom_capability ) ) {
+			$manager_role->add_cap( $custom_capability );
 		}
 		// only for demo user
 		// $contributor = get_role('contributor');
 		// if ($contributor && !$contributor->has_cap($custom_capability)) {
-		// 	$contributor->add_cap($custom_capability);
+		// $contributor->add_cap($custom_capability);
 		// }
-
 	}
 }

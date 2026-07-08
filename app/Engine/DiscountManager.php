@@ -18,7 +18,7 @@ use WpabCampaignBay\Core\Common;
  */
 
 // Exit if accessed directly.
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -32,13 +32,13 @@ if (!defined('ABSPATH')) {
  * @package    WPAB_CampaignBay
  * @author     WP Anchor Bay <wpanchorbay@gmail.com>
  */
-class DiscountManager extends Base
-{
+class DiscountManager extends Base {
+
 
 
 
 	/**
-	 * 
+	 *
 	 * @since 1.0.0
 	 * @access private
 	 * @var array
@@ -51,8 +51,7 @@ class DiscountManager extends Base
 	 *
 	 * @since 1.0.0
 	 */
-	protected function __construct()
-	{
+	protected function __construct() {
 		parent::__construct();
 		$this->settings = Common::get_instance()->get_settings();
 		$this->define_hooks();
@@ -64,13 +63,12 @@ class DiscountManager extends Base
 	 * @since 1.0.0
 	 * @access private
 	 */
-	private function define_hooks()
-	{
-		$hooks = [
-			['filter', 'campaignbay_get_product', 'add_discount_data', 20, 2],
-		];
-		foreach ($hooks as $hook) {
-			$this->add_hook(...$hook);
+	private function define_hooks() {
+		$hooks = array(
+			array( 'filter', 'campaignbay_get_product', 'add_discount_data', 20, 2 ),
+		);
+		foreach ( $hooks as $hook ) {
+			$this->add_hook( ...$hook );
 		}
 	}
 
@@ -80,14 +78,12 @@ class DiscountManager extends Base
 	 * @since 1.0.0
 	 *
 	 * @param object $product The product object.
-	 * @param int $product_id The product ID.
+	 * @param int    $product_id The product ID.
 	 * @return object The product object with discount data added.
 	 */
-	public function add_discount_data($product, $product_id)
-	{
-		$product = ProductDiscount::create($product)->apply_discounts()->get_product();
+	public function add_discount_data( $product, $product_id ) {
+		$product = ProductDiscount::create( $product )->apply_discounts()->get_product();
 
 		return $product;
 	}
-
 }

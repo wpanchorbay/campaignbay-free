@@ -3,7 +3,7 @@
 namespace WpabCampaignBay\Api;
 
 // Exit if accessed directly.
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -16,7 +16,6 @@ use WP_REST_Response;
 
 /**
  * The parent class of all api class of this plugin.
- *
  *
  * @since      1.0.0
  *
@@ -40,8 +39,8 @@ use WP_REST_Response;
  * @package    WPAB_CampaignBay
  * @since 1.0.1
  */
-class ApiController extends WP_REST_Controller
-{
+class ApiController extends WP_REST_Controller {
+
 
 	/**
 	 * The single instance of the class.
@@ -71,7 +70,7 @@ class ApiController extends WP_REST_Controller
 	 * @since 1.0.0
 	 * @var array
 	 */
-	protected $allow_batch = array('v1' => true);
+	protected $allow_batch = array( 'v1' => true );
 
 	/**
 	 * Table name.
@@ -85,17 +84,15 @@ class ApiController extends WP_REST_Controller
 	 *
 	 * @since    1.0.0
 	 */
-	public function __construct()
-	{
+	public function __construct() {
 	}
 
 	/**
 	 * Initialize the class
 	 */
-	public function run()
-	{
+	public function run() {
 		/*Custom Rest Routes*/
-		add_action('rest_api_init', array($this, 'register_routes'));
+		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 	}
 
 	/**
@@ -107,11 +104,10 @@ class ApiController extends WP_REST_Controller
 	 * @return object
 	 * @since 1.0.0
 	 */
-	public static function get_instance()
-	{
+	public static function get_instance() {
 		// Store the instance locally to avoid private static replication.
 		static $instance = null;
-		if (null === self::$instance) {
+		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
 		return self::$instance;
@@ -127,10 +123,9 @@ class ApiController extends WP_REST_Controller
 	 * @return void
 	 * @since 1.0.0
 	 */
-	public function __clone()
-	{
+	public function __clone() {
 		// Cloning instances of the class is forbidden.
-		_doing_it_wrong(__FUNCTION__, esc_html__('Cheatin&#8217; huh?', 'campaignbay'), '1.0.0');
+		_doing_it_wrong( __FUNCTION__, esc_html__( 'Cheatin&#8217; huh?', 'campaignbay' ), '1.0.0' );
 	}
 
 	/**
@@ -140,10 +135,9 @@ class ApiController extends WP_REST_Controller
 	 * @return void
 	 * @since 1.0.0
 	 */
-	public function __wakeup()
-	{
+	public function __wakeup() {
 		// Unserializing instances of the class is forbidden.
-		_doing_it_wrong(__FUNCTION__, esc_html__('Cheatin&#8217; huh?', 'campaignbay'), '1.0.0');
+		_doing_it_wrong( __FUNCTION__, esc_html__( 'Cheatin&#8217; huh?', 'campaignbay' ), '1.0.0' );
 	}
 	/**
 	 * Checks if a given request has access to read and manage settings.
@@ -153,19 +147,18 @@ class ApiController extends WP_REST_Controller
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return bool True if the request has read access for the item, otherwise false.
 	 */
-	public function get_item_permissions_check($request)
-	{
-		if (!current_user_can('manage_campaignbay')) {
+	public function get_item_permissions_check( $request ) {
+		if ( ! current_user_can( 'manage_campaignbay' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
-				__('Sorry, you are not allowed to manage campaigns.', 'campaignbay'),
-				array('status' => rest_authorization_required_code())
+				__( 'Sorry, you are not allowed to manage campaigns.', 'campaignbay' ),
+				array( 'status' => rest_authorization_required_code() )
 			);
 		}
 
-		$nonce = $request->get_header('X-WP-Nonce');
-		if (!$nonce || !wp_verify_nonce($nonce, 'wp_rest')) {
-			return new WP_Error('rest_nonce_invalid', __('The security token is invalid.', 'campaignbay'), array('status' => 403));
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new WP_Error( 'rest_nonce_invalid', __( 'The security token is invalid.', 'campaignbay' ), array( 'status' => 403 ) );
 		}
 
 		return true;
@@ -180,28 +173,27 @@ class ApiController extends WP_REST_Controller
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return bool|WP_Error True if the request has update access for the item and nonce is valid, otherwise false or WP_Error.
 	 */
-	public function update_item_permissions_check($request)
-	{
-		if (!current_user_can('manage_campaignbay')) {
+	public function update_item_permissions_check( $request ) {
+		if ( ! current_user_can( 'manage_campaignbay' ) ) {
 			// return false;
 			return new WP_Error(
 				'rest_forbidden',
-				__('Sorry, you are not allowed to manage campaigns.', 'campaignbay'),
-				array('status' => rest_authorization_required_code())
+				__( 'Sorry, you are not allowed to manage campaigns.', 'campaignbay' ),
+				array( 'status' => rest_authorization_required_code() )
 			);
 		}
 
-		$nonce = $request->get_header('X-WP-Nonce');
+		$nonce = $request->get_header( 'X-WP-Nonce' );
 
-		if (!$nonce) {
-			$nonce = isset($_REQUEST['_wpnonce']) ? sanitize_text_field(wp_unslash($_REQUEST['_wpnonce'])) : '';
+		if ( ! $nonce ) {
+			$nonce = isset( $_REQUEST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['_wpnonce'] ) ) : '';
 		}
 
-		if (!wp_verify_nonce($nonce, 'wp_rest')) {
+		if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 			return new WP_Error(
 				'rest_invalid_nonce',
-				__('Invalid or missing nonce.', 'campaignbay'),
-				array('status' => 403)
+				__( 'Invalid or missing nonce.', 'campaignbay' ),
+				array( 'status' => 403 )
 			);
 		}
 

@@ -2,7 +2,6 @@
 
 namespace WpabCampaignBay\Core;
 
-
 /**
  * The file that defines the Base class.
  *
@@ -17,7 +16,7 @@ namespace WpabCampaignBay\Core;
  */
 
 // Exit if accessed directly.
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -31,8 +30,8 @@ if (!defined('ABSPATH')) {
  * @package    WPAB_CampaignBay
  * @author     WP Anchor Bay <wpanchorbay@gmail.com>
  */
-abstract class Base
-{
+abstract class Base {
+
 
 	/**
 	 * An array of instances of the extending classes.
@@ -64,15 +63,14 @@ abstract class Base
 	 * @since 1.0.0
 	 * @return object The single instance of the calling class.
 	 */
-	public static function get_instance()
-	{
+	public static function get_instance() {
 		// `static::class` gets the name of the class that called this method
 		$class = static::class;
-		if (!isset(self::$instances[$class])) {
+		if ( ! isset( self::$instances[ $class ] ) ) {
 			// `new static()` creates an instance of the calling class.
-			self::$instances[$class] = new static();
+			self::$instances[ $class ] = new static();
 		}
-		return self::$instances[$class];
+		return self::$instances[ $class ];
 	}
 
 	/**
@@ -81,8 +79,7 @@ abstract class Base
 	 *
 	 * @since    1.0.0
 	 */
-	protected function __construct()
-	{
+	protected function __construct() {
 		// The child class will define its hooks here.
 	}
 
@@ -96,9 +93,8 @@ abstract class Base
 	 * @param int    $priority The priority.
 	 * @param int    $accepted_args The number of accepted arguments.
 	 */
-	protected function add_action($hook, $callback, $priority = 10, $accepted_args = 1)
-	{
-		$this->add_hook('action', $hook, $callback, $priority, $accepted_args);
+	protected function add_action( $hook, $callback, $priority = 10, $accepted_args = 1 ) {
+		$this->add_hook( 'action', $hook, $callback, $priority, $accepted_args );
 	}
 
 	/**
@@ -111,9 +107,8 @@ abstract class Base
 	 * @param int    $priority The priority.
 	 * @param int    $accepted_args The number of accepted arguments.
 	 */
-	protected function add_filter($hook, $callback, $priority = 10, $accepted_args = 2)
-	{
-		$this->add_hook('filter', $hook, $callback, $priority, $accepted_args);
+	protected function add_filter( $hook, $callback, $priority = 10, $accepted_args = 2 ) {
+		$this->add_hook( 'filter', $hook, $callback, $priority, $accepted_args );
 	}
 
 	/**
@@ -127,14 +122,13 @@ abstract class Base
 	 * @param int    $priority The priority.
 	 * @param int    $accepted_args The number of accepted arguments.
 	 */
-	protected function add_hook($type, $hook, $callback, $priority, $accepted_args)
-	{
+	protected function add_hook( $type, $hook, $callback, $priority, $accepted_args ) {
 		$this->hooks[] = array(
-			'type' => $type,
-			'hook' => $hook,
-			'component' => $this, // The component is the instance of the child class itself.
-			'callback' => $callback,
-			'priority' => $priority,
+			'type'          => $type,
+			'hook'          => $hook,
+			'component'     => $this, // The component is the instance of the child class itself.
+			'callback'      => $callback,
+			'priority'      => $priority,
 			'accepted_args' => $accepted_args,
 		);
 	}
@@ -146,8 +140,7 @@ abstract class Base
 	 * @access public
 	 * @return array
 	 */
-	public function get_hooks()
-	{
+	public function get_hooks() {
 		return $this->hooks;
 	}
 
@@ -157,8 +150,7 @@ abstract class Base
 	 *
 	 * @since 1.0.0
 	 */
-	private function __clone()
-	{
+	private function __clone() {
 	}
 
 	/**
@@ -166,7 +158,6 @@ abstract class Base
 	 *
 	 * @since 1.0.0
 	 */
-	public function __wakeup()
-	{
+	public function __wakeup() {
 	}
 }

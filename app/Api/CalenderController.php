@@ -2,8 +2,7 @@
 
 namespace WpabCampaignBay\Api;
 
-
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -41,8 +40,8 @@ use WpabCampaignBay\Engine\CalenderManager;
  * @package    WPAB_CampaignBay
  * @since 1.0.0
  */
-class CalenderController extends ApiController
-{
+class CalenderController extends ApiController {
+
 
 	/**
 	 * The single instance of the class.
@@ -59,13 +58,12 @@ class CalenderController extends ApiController
 	 * @access public
 	 * @return void
 	 */
-	public function run()
-	{
-		$this->type = 'campaignbay_api_calender';
+	public function run() {
+		$this->type      = 'campaignbay_api_calender';
 		$this->rest_base = 'calendar';
 
 		/*Custom Rest Routes*/
-		add_action('rest_api_init', array($this, 'register_routes'));
+		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 	}
 
 	/**
@@ -75,8 +73,7 @@ class CalenderController extends ApiController
 	 * @access public
 	 * @return void
 	 */
-	public function register_routes()
-	{
+	public function register_routes() {
 		$namespace = $this->namespace . $this->version;
 
 		register_rest_route(
@@ -85,17 +82,16 @@ class CalenderController extends ApiController
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE, // POST
-					'callback'            => array($this, 'get_campaigns'),
-					'permission_callback' => array($this, 'get_item_permissions_check'),
+					'callback'            => array( $this, 'get_campaigns' ),
+					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 				),
 			)
 		);
 	}
 
-	public function get_campaigns($request)
-	{
+	public function get_campaigns( $request ) {
 		$campaigns = CalenderManager::get_instance()->get_campaigns();
-		return rest_ensure_response(array_values($campaigns));
+		return rest_ensure_response( array_values( $campaigns ) );
 	}
 
 
@@ -107,11 +103,10 @@ class CalenderController extends ApiController
 	 * @access public
 	 * @return ResourceController
 	 */
-	public static function get_instance()
-	{
+	public static function get_instance() {
 		// Store the instance locally to avoid private static replication.
 		static $instance = null;
-		if (null === self::$instance) {
+		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
 		return self::$instance;
