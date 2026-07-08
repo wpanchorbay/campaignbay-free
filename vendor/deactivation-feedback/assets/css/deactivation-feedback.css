@@ -1,0 +1,62 @@
+.df-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 100000;
+    align-items: center;
+    justify-content: center;
+}
+
+.df-modal {
+    background: #fff;
+    border-radius: 4px;
+    max-width: 480px;
+    width: 90%;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.df-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    line-height: 1;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+}
+
+.df-close:hover {
+    color: #d63638;
+}
+
+.df-modal h2 {
+    margin-top: 0;
+}
+
+.df-reason {
+    display: block;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.df-reason-input {
+    display: block;
+    width: 100%;
+    margin: 4px 0 12px 24px;
+    max-width: calc(100% - 24px);
+}
+
+.df-modal-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
