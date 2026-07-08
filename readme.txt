@@ -46,6 +46,7 @@ With its intuitive dashboard, flexible campaign types, and high-performance disc
 *   Flexible Targeting – Target entire store, specific products, or categories.
 *   Product & Category Exclusions – Fine-tune which items are excluded from discounts.
 *   User Role Conditions – Restrict campaigns to Wholesalers, VIPs, or any role.
+*   Cart Total Conditions – Apply discounts only when the cart total meets specific criteria.
 *   Smart Stacking Logic – Control how discounts interact with each other.
 *   Coupon Compatibility – Works seamlessly with WooCommerce coupons.
 *   Customizable Messages – Dynamic placeholders for promotional text.
@@ -179,6 +180,13 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 
 == Changelog ==
 
+= 1.1.7 =
+*   New Feature: Cart Total Conditions — now you can restrict campaigns based on the total value of the customer's cart.
+*   Enhancement: Improved condition evaluation engine for better performance.
+
+= 1.1.6 =
+*   Fix: Minor stability improvements and UI refinements.
+
 = 1.1.5 =
 *   Fix: Minor Bug Fixes.
 
@@ -245,6 +253,12 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 *   Initial release of CampaignBay.
 
 == Upgrade Notice ==
+
+= 1.1.7 =
+New Cart Total Conditions feature! Apply discounts based on how much customers spend.
+
+= 1.1.6 =
+Stability improvements.
 
 = 1.1.5 =
 Minor Bug Fixes. Seamless upgrade.

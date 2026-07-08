@@ -1,6 +1,6 @@
 {
   "name": "campaignbay",
-  "version": "1.1.4", 
+  "version": "1.1.4",
   "description": "CampaignBay for WooCommerce Product Discount WordPress Plugin.",
   "main": "index.js",
   "scripts": {
@@ -28,6 +28,7 @@
     "npm-run-all": "^4.1.5",
     "postcss": "^8.5.6",
     "postcss-loader": "^8.2.0",
+    "puppeteer": "^25.3.0",
     "sass": "^1.93.2",
     "sass-loader": "^16.0.5",
     "style-loader": "^4.0.0",

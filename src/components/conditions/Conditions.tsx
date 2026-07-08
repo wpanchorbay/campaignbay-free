@@ -196,4 +196,8 @@ const defaultConditions: Record<string, AllConditionsType> = {
     options: [],
     is_included: true,
   },
+  cart_total: {
+    operator: "==",
+    value: 0,
+  },
 };

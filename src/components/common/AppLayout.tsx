@@ -40,7 +40,7 @@ export default AppLayout;
 
 const Notifications = () => {
   const { campaignbay_settings } = useCbStore();
-  const [showPromoBanner, setShowPromoBanner] = useState<boolean>(true);
+  const [showPromoBanner, setShowPromoBanner] = useState<boolean>(false);
 
   const showNotification =
     !campaignbay_settings?.global_enableAddon || showPromoBanner;
@@ -58,7 +58,7 @@ const Notifications = () => {
           >
             <p className="campaignbay-text-[#07090C] campaignbay-font-semibold campaignbay-text-[15px]">
               {__(
-                "⚡ Limited Time Offer: Get Flat 80% off on CampaignBayPro!",
+                "⚡ Limited Time Offer: Get Flat 50% off on CampaignBayPro!",
                 "campaignbay",
               )}
             </p>

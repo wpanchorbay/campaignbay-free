@@ -34,6 +34,15 @@ define('CAMPAIGNBAY_PLUGIN_BASENAME', plugin_basename(__FILE__));
 define('CAMPAIGNBAY_DEV_MODE', true);
 
 spl_autoload_register(function ($class) {
+	// Autoload DeactivationFeedback
+	if (strpos($class, 'WPAB\\DeactivationFeedback\\') === 0) {
+		$file = CAMPAIGNBAY_PATH . 'vendor/deactivation-feedback/src/' . str_replace('\\', '/', substr($class, 25)) . '.php';
+		if (file_exists($file)) {
+			require_once $file;
+			return;
+		}
+	}
+
 	// Only handle our plugin's classes
 	if (strpos($class, 'WpabCampaignBay\\') !== 0) {
 		return;
@@ -70,6 +79,82 @@ if (!function_exists('wpab_campaignbay_run')) {
 			add_action('admin_notices', 'wpab_campaignbay_woocommerce_not_active_notice');
 		}
 
+		// Initialize Deactivation Feedback on init to avoid early translation loading
+		add_action(
+			'init',
+			function () {
+				if (is_admin() && class_exists('\WPAB\DeactivationFeedback\DeactivationFeedback')) {
+					new \WPAB\DeactivationFeedback\DeactivationFeedback(
+						array(
+							'plugin_file'           => CAMPAIGNBAY_PLUGIN_BASENAME,
+							'plugin_slug'           => CAMPAIGNBAY_PLUGIN_NAME,
+							'remote_endpoint'       => 'https://dfs.wpanchorbay.com',
+							'reasons'               => array(
+								array(
+									'id'          => 'couldnt_get_working',
+									'label'       => __("I couldn't get it working", 'campaignbay'),
+									'has_input'   => true,
+									'placeholder' => __('What were you trying to configure?', 'campaignbay'),
+								),
+								array(
+									'id'          => 'missing_feature',
+									'label'       => __("It's missing a feature I need", 'campaignbay'),
+									'has_input'   => true,
+									'placeholder' => __('What feature?', 'campaignbay'),
+								),
+								array(
+									'id'          => 'conflict',
+									'label'       => __('It conflicted with my theme or another plugin', 'campaignbay'),
+									'has_input'   => true,
+									'placeholder' => __('Which theme/plugin?', 'campaignbay'),
+								),
+								array(
+									'id'          => 'slowed_site',
+									'label'       => __('It slowed down my site', 'campaignbay'),
+									'has_input'   => true,
+									'placeholder' => __('Please describe (we will investigate your site automatically)', 'campaignbay'),
+								),
+								array(
+									'id'          => 'better_alternative',
+									'label'       => __('I found a better alternative', 'campaignbay'),
+									'has_input'   => true,
+									'placeholder' => __('Which plugin?', 'campaignbay'),
+								),
+								array(
+									'id'          => 'too_complicated',
+									'label'       => __("It's too complicated to set up", 'campaignbay'),
+									'has_input'   => true,
+									'placeholder' => __('What part was confusing?', 'campaignbay'),
+								),
+								array(
+									'id'        => 'no_longer_needed',
+									'label'     => __('I no longer need discount campaigns on my store', 'campaignbay'),
+									'has_input' => false,
+								),
+								array(
+									'id'        => 'temporary',
+									'label'     => __("It's temporary — I'm troubleshooting/debugging", 'campaignbay'),
+									'has_input' => false,
+								),
+								array(
+									'id'          => 'other',
+									'label'       => __('Other', 'campaignbay'),
+									'has_input'   => true,
+									'placeholder' => __('Please share the reason', 'campaignbay'),
+								),
+							),
+							'review_notice_enabled' => true,
+							'review_delay_days'     => 3,
+							'review_snooze_days'    => 7,
+							'review_url'            => 'https://wordpress.org/support/plugin/campaignbay/reviews/#new-post',
+							'support_url'           => 'https://wordpress.org/support/plugin/campaignbay/',
+							'review_notice_title'   => __('Enjoying CampaignBay?', 'campaignbay'),
+							'review_notice_message' => __("You've been using CampaignBay for a few days now. If it's been helpful, would you mind leaving a quick review? It really helps!", 'campaignbay'),
+						)
+					);
+				}
+			}
+		);
 	}
 }
 wpab_campaignbay_run();
@@ -78,6 +163,11 @@ function wpab_campaignbay_activate()
 {
 	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 	\WpabCampaignBay\Core\Activator::activate();
+
+	// Record activation time for the review notice logic.
+	if (!get_option('wpab_activated_at_campaignbay')) {
+		update_option('wpab_activated_at_campaignbay', time(), false);
+	}
 }
 
 function wpab_campaignbay_deactivate()
