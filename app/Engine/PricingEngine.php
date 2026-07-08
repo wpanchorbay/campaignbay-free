@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Engine;
 
@@ -128,7 +133,6 @@ class PricingEngine extends Base {
 			array( 'action', 'woocommerce_before_mini_cart', 'ensure_cart_calculate_totals', 20, 1 ),
 			array( 'action', 'woocommerce_before_mini_cart_contents', 'ensure_cart_calculate_totals', 20, 1 ),
 
-			// ['action', 'woocommerce_before_calculate_totals', 'before_calculate_totals', 20, 1],
 			array( 'filter', 'woocommerce_get_shop_coupon_data', 'validate_fake_coupon_data', 10, 2 ),
 			array( 'filter', 'woocommerce_cart_totals_coupon_label', 'change_virtual_coupon_label', 10, 2 ),
 			array( 'filter', 'woocommerce_coupon_is_valid', 'validate_fake_coupon', 10, 3 ),
@@ -247,7 +251,7 @@ class PricingEngine extends Base {
 		$prices = Woocommerce::get_variation_prices( $product );
 		foreach ( $meta['simple'] as $key => $value ) {
 			$prices['price'][ $key ] = $value['price'];
-			if ( $value['display_as_regular_price'] !== null && $value['display_as_regular_price'] === true ) {
+			if ( null !== $value['display_as_regular_price'] && true === $value['display_as_regular_price'] ) {
 				$prices['regular_price'][ $key ] = $value['price'];
 			}
 		}
@@ -282,9 +286,8 @@ class PricingEngine extends Base {
 	 * @return string The price HTML.
 	 */
 	public function cart_item_price( $price_html, $cart_item, $cart_item_key ) {
-		// wpab_campaignbay_log('cart item price ' . $cart_item['data']->get_name());
 		$meta = isset( $cart_item['campaignbay'] ) ? $cart_item['campaignbay'] : null;
-		if ( $meta === null || ! isset( $meta['on_discount'] ) || ! $meta['on_discount'] ) {
+		if ( null === $meta || ! isset( $meta['on_discount'] ) || ! $meta['on_discount'] ) {
 			return $price_html;
 		}
 
@@ -294,10 +297,10 @@ class PricingEngine extends Base {
 		if ( isset( $meta['quantity'] ) ) {
 			$quantity = $meta['quantity'];
 			// seting simple discount as base price
-			if ( isset( $meta['simple']['display_as_regular_price'] ) && $meta['simple']['display_as_regular_price'] === true ) {
+			if ( isset( $meta['simple']['display_as_regular_price'] ) && true === $meta['simple']['display_as_regular_price'] ) {
 				$base_price = $quantity['base_price'];
 			}
-			if ( $quantity['settings']['apply_as'] === 'line_total' ) {
+			if ( 'line_total' === $quantity['settings']['apply_as'] ) {
 				$price = $quantity['price'];
 			}
 		} elseif ( isset( $meta['simple'] ) ) {
@@ -329,7 +332,7 @@ class PricingEngine extends Base {
 	public function cart_item_subtotal( $price_html, $cart_item, $cart_item_key ) {
 
 		$meta = isset( $cart_item['campaignbay'] ) ? $cart_item['campaignbay'] : null;
-		if ( $meta === null || ! isset( $meta['on_discount'] ) || ! $meta['on_discount'] ) {
+		if ( null === $meta || ! isset( $meta['on_discount'] ) || ! $meta['on_discount'] ) {
 			return $price_html;
 		}
 
@@ -341,10 +344,10 @@ class PricingEngine extends Base {
 		if ( isset( $meta['quantity'] ) ) {
 			$quantity = $meta['quantity'];
 			// seting simple discount as base price
-			if ( isset( $meta['simple']['display_as_regular_price'] ) && $meta['simple']['display_as_regular_price'] === true ) {
+			if ( isset( $meta['simple']['display_as_regular_price'] ) && true === $meta['simple']['display_as_regular_price'] ) {
 				$base_price = $quantity['base_price'];
 			}
-			if ( $quantity['settings']['apply_as'] === 'line_total' ) {
+			if ( 'line_total' === $quantity['settings']['apply_as'] ) {
 				$price = $quantity['price'];
 			}
 		} elseif ( isset( $meta['simple'] ) ) {
@@ -374,12 +377,12 @@ class PricingEngine extends Base {
 	 * @return string The name.
 	 */
 	public function cart_item_name( $name, $cart_item, $cart_item_key ) {
-		if ( isset( $cart_item['is_campaignbay_free_product'] ) && $cart_item['is_campaignbay_free_product'] === true ) {
+		if ( isset( $cart_item['is_campaignbay_free_product'] ) && true === $cart_item['is_campaignbay_free_product'] ) {
 			$data     = wpab_campaignbay_get_value( $cart_item, 'campaignbay_parent.data' );
 			$message  = Helper::get_bogo_cart_message( $data );
 			$location = wpab_campaignbay_get_value( $data, 'settings.bogo_cart_message_location' );
-			if ( $message !== '' || $message !== null ) {
-				if ( $location === 'line_item_name' ) {
+			if ( '' !== $message || null !== $message ) {
+				if ( 'line_item_name' === $location ) {
 					$name .= '<br/><span>' . $message . '</span>';
 				}
 			}
@@ -391,15 +394,14 @@ class PricingEngine extends Base {
 		$meta = $cart_item['campaignbay'];
 		if ( isset( $meta['quantity_next_tier'] ) ) {
 			$cart_quantity_message_location = wpab_campaignbay_get_value( $meta['quantity_next_tier'], 'settings.cart_quantity_message_location', 'line_item_name' );
-			if ( $cart_quantity_message_location !== 'line_item_name' ) {
+			if ( 'line_item_name' !== $cart_quantity_message_location ) {
 				return $name;
 			}
 			$message = Helper::get_quantity_message( $meta['quantity_next_tier'] );
-			if ( $message !== '' || $message !== null ) {
+			if ( '' !== $message || null !== $message ) {
 				$name .= '<br/><span>' . $message . '</span>';
 			}
 		}
-		// if (
 		// isset($meta['is_bogo']) &&
 		// $meta['is_bogo'] === true &&
 		// isset($meta['bogo'])
@@ -430,7 +432,7 @@ class PricingEngine extends Base {
 		}
 
 		$meta = Woocommerce::get_product( $product->get_id() )->get_meta( 'campaignbay' );
-		if ( is_array( $meta ) && ! empty( $meta ) && isset( $meta['is_on_sale'] ) && $meta['is_on_sale'] === true ) {
+		if ( is_array( $meta ) && ! empty( $meta ) && isset( $meta['is_on_sale'] ) && true === $meta['is_on_sale'] ) {
 			return true;
 		}
 
@@ -487,7 +489,7 @@ class PricingEngine extends Base {
 				if ( wpab_campaignbay_get_value( $simple, 'display_as_regular_price', false ) ) {
 					return;
 				}
-				if ( wpab_campaignbay_get_value( $simple, 'show_product_message', false ) === false ) {
+				if ( false === wpab_campaignbay_get_value( $simple, 'show_product_message', false ) ) {
 					return;
 				}
 				$value  = wpab_campaignbay_get_value( $simple, 'value', 0 );
@@ -503,11 +505,11 @@ class PricingEngine extends Base {
 			);
 		} else {
 			// if the simple campaign is set to display as regular price, return
-			if ( wpab_campaignbay_get_value( $meta['simple'], 'display_as_regular_price', false ) === true ) {
+			if ( true === wpab_campaignbay_get_value( $meta['simple'], 'display_as_regular_price', false ) ) {
 				return;
 			}
 			wpab_campaignbay_log( '________ simple: ' . print_r( $meta['simple'], true ), 'INFO' );
-			if ( wpab_campaignbay_get_value( $meta['simple'], 'show_product_message', true ) === false ) {
+			if ( false === wpab_campaignbay_get_value( $meta['simple'], 'show_product_message', true ) ) {
 				return;
 			}
 			$format  = wpab_campaignbay_get_value( $meta['simple'], 'message_format' );
@@ -533,7 +535,7 @@ class PricingEngine extends Base {
 		 * @param string     $format  The message format string.
 		 */
 		$message = apply_filters( 'campaignbay_product_display_product_discount_message', $message, $product, $meta, $format );
-		if ( $message !== '' ) {
+		if ( '' !== $message ) {
 			Woocommerce::print_notice(
 				$message,
 				'success'
@@ -586,7 +588,7 @@ class PricingEngine extends Base {
 		} else {
 			$price = $meta['base_price'];
 			if ( $this->settings['cart_allowCampaignStacking'] ) {
-				if ( isset( $meta['simple'] ) && $meta['is_simple'] === true && isset( $meta['simple']['price'] ) ) {
+				if ( isset( $meta['simple'] ) && true === $meta['is_simple'] && isset( $meta['simple']['price'] ) ) {
 					$price = $meta['simple']['price'];
 				}
 			}
@@ -599,8 +601,6 @@ class PricingEngine extends Base {
 
 		// escaping just before echo
 		Helper::generate_quantity_table( $tiers );
-
-		return;
 	}
 
 	/**
@@ -679,7 +679,7 @@ class PricingEngine extends Base {
 	 * @return array The data.
 	 */
 	public function validate_fake_coupon_data( $data, $coupon_code ) {
-		if ( $coupon_code !== false && $coupon_code !== 0 && isset( $this->coupons[ $coupon_code ] ) ) {
+		if ( false !== $coupon_code && 0 !== $coupon_code && isset( $this->coupons[ $coupon_code ] ) ) {
 
 			$data = array(
 				'id'                         => $coupon_code,
@@ -703,7 +703,7 @@ class PricingEngine extends Base {
 				'customer_email'             => '',
 				'discount_type'              => $this->coupons[ $coupon_code ]['type'],
 			);
-		} elseif ( $this->calculated_totals === false && is_string( $coupon_code ) && strlen( $coupon_code ) >= 11 && substr( $coupon_code, 0, 11 ) === 'campaignbay' ) {
+		} elseif ( false === $this->calculated_totals && is_string( $coupon_code ) && strlen( $coupon_code ) >= 11 && 'campaignbay' === substr( $coupon_code, 0, 11 ) ) {
 			// before calculating total
 			$data = array(
 				'id'                         => $coupon_code,
@@ -778,7 +778,7 @@ class PricingEngine extends Base {
 		}
 
 		if ( function_exists( 'WC' ) ) {
-			if ( isset( WC()->cart ) && WC()->cart != null ) {
+			if ( isset( WC()->cart ) && null !== WC()->cart ) {
 				if ( is_object( WC()->cart ) && method_exists( WC()->cart, 'calculate_totals' ) ) {
 					WC()->cart->calculate_totals();
 				}

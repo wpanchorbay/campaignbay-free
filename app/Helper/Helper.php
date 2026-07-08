@@ -1,5 +1,4 @@
 <?php
-
 /**
  * The main Helper class.
  *
@@ -75,7 +74,7 @@ class Helper {
 	 *
 	 * @return string|void The sanitized HTML string, or void if $echo is true.
 	 */
-	public static function get_clean_html( $html, $echo = false ) {
+	public static function get_clean_html( $html, $should_echo = false ) {
 		try {
 			$html         = html_entity_decode( $html );
 			$html         = preg_replace( '/(<(script|style|iframe)\b[^>]*>).*?(<\/\2>)/is', '$1$3', $html );
@@ -156,7 +155,7 @@ class Helper {
 	 */
 	public static function generate_message( $format, $args ) {
 		$format = self::get_clean_html( $format );
-		if ( $format == '' ) {
+		if ( '' === $format ) {
 			return '';
 		}
 		return self::get_clean_message( str_replace( array_keys( $args ), array_values( $args ), $format ) );
@@ -178,7 +177,7 @@ class Helper {
 	 */
 	public static function get_clean_message( $message ) {
 		/**
-		 * we will implement it later. It is for failsafe if anyone forgot to clean before printing.
+		 * We will implement it later. It is for failsafe if anyone forgot to clean before printing.
 		 *
 		 * Currently cleaned before printing
 		 */
@@ -240,7 +239,7 @@ class Helper {
 			if ( $campaign->get_type() !== $type ) {
 				continue;
 			}
-			if ( $product === null ) {
+			if ( null === $product ) {
 				$campaigns[] = $campaign;
 			} else {
 				$is_applicable = $campaign->is_applicable_to_product( $product );
@@ -346,8 +345,8 @@ class Helper {
 		$message_format = $tier['settings']['cart_quantity_message_format'] ?? '';
 		$type           = $tier['type'];
 		$value          = $tier['value'];
-		if ( $message_format === '' || $message_format === null ) {
-			$message_format = self::get_settings( $type === 'percentage' ? 'cart_quantity_message_format_percentage' : 'cart_quantity_message_format_fixed' );
+		if ( '' === $message_format || null === $message_format ) {
+			$message_format = self::get_settings( 'percentage' === $type ? 'cart_quantity_message_format_percentage' : 'cart_quantity_message_format_fixed' );
 		}
 		$message = self::generate_message(
 			$message_format,
@@ -477,7 +476,7 @@ class Helper {
 		 * @param array      $tier    The current tier.
 		 */
 		$message = apply_filters( 'campaignbay_product_page_bogo_message', $message, $product, $format, $tier );
-		if ( $message === '' || $message === null ) {
+		if ( '' === $message || null === $message ) {
 			return '';
 		}
 
@@ -517,13 +516,13 @@ class Helper {
 				break;
 			}
 		}
-		if ( $current_tier === null ) {
+		if ( null === $current_tier ) {
 			foreach ( $bogo_tiers as $key => $tier ) {
-				if ( $next_tier === null || $next_tier['buy_quantity'] > $tier['buy_quantity'] ) {
+				if ( null === $next_tier || $next_tier['buy_quantity'] > $tier['buy_quantity'] ) {
 					$next_tier = $tier;
 				}
 			}
-			if ( $next_tier !== null ) {
+			if ( null !== $next_tier ) {
 				$meta['on_discount']       = true;
 				$meta['is_bogo']           = false;
 				$meta['bogo']['next_tier'] = $next_tier;
@@ -590,19 +589,19 @@ class Helper {
 	 * @return bool True if $new_price is considered better than $current_best_price.
 	 */
 	public static function is_better_price( $current_best_price, $new_price ) {
-		if ( $new_price === null ) {
+		if ( null === $new_price ) {
 			return false;
 		}
-		if ( $current_best_price === null ) {
+		if ( null === $current_best_price ) {
 			return true;
 		}
 		$setting = Common::get_instance()->get_settings( 'product_priorityMethod' );
-		if ( $setting === 'apply_highest' ) {
+		if ( 'apply_highest' === $setting ) {
 			return $new_price < $current_best_price;
-		} elseif ( $setting === 'apply_lowest' ) {
+		} elseif ( 'apply_lowest' === $setting ) {
 			return $new_price > $current_best_price;
-		} elseif ( $setting === 'apply_first' ) {
-			return $current_best_price === null;
+		} elseif ( 'apply_first' === $setting ) {
+			return null === $current_best_price;
 		}
 		return false;
 	}
@@ -623,10 +622,10 @@ class Helper {
 	 * @return float|null The calculated price, or null if inputs are invalid.
 	 */
 	public static function get_quantity_price( $base_price, $tier ) {
-		if ( $base_price === null || $tier === null || empty( $tier ) ) {
+		if ( null === $base_price || null === $tier || empty( $tier ) ) {
 			return null;
 		}
-		$price = $tier['type'] === 'percentage' ? self::calculate_percentage_price( $base_price, $tier['value'] ) : self::calculate_fixed_price( $base_price, $tier['value'] );
+		$price = 'percentage' === $tier['type'] ? self::calculate_percentage_price( $base_price, $tier['value'] ) : self::calculate_fixed_price( $base_price, $tier['value'] );
 		return max( 0, $price );
 	}
 
@@ -686,20 +685,20 @@ class Helper {
 		$table    = '<table class="campaignbay-discount-table"> ';
 		// show table header
 		if (
-			$settings['show_header'] === true && (
-				$settings['title']['show'] === true ||
-				$settings['range']['show'] === true ||
-				$settings['discount']['show'] === true
+			true === $settings['show_header'] && (
+				true === $settings['title']['show'] ||
+				true === $settings['range']['show'] ||
+				true === $settings['discount']['show']
 			)
 		) {
 			$table .= '<thead><tr>';
-			if ( $settings['title']['show'] === true ) {
+			if ( true === $settings['title']['show'] ) {
 				$table .= '<th>' . ( $settings['title']['label'] ?? 'Title' ) . '</th>';
 			}
-			if ( $settings['range']['show'] === true ) {
+			if ( true === $settings['range']['show'] ) {
 				$table .= '<th>' . ( $settings['range']['label'] ?? 'Range' ) . '</th>';
 			}
-			if ( $settings['discount']['show'] === true ) {
+			if ( true === $settings['discount']['show'] ) {
 				$table .= '<th>' . ( $settings['discount']['label'] ?? 'Discount' ) . '</th>';
 			}
 			$table .= '</tr></thead>';
@@ -708,17 +707,17 @@ class Helper {
 		$table .= '<tbody>';
 		foreach ( $tiers as $tier ) {
 			$table .= '<tr>';
-			if ( $settings['title']['show'] === true ) {
+			if ( true === $settings['title']['show'] ) {
 				$table .= '<td>' . $tier['campaign_title'] . '</td>';
 			}
-			if ( $settings['range']['show'] === true ) {
+			if ( true === $settings['range']['show'] ) {
 				$table .= '<td>' . $tier['min'] . ' - ' . $tier['max'] . '</td>';
 			}
-			if ( $settings['discount']['show'] === true && $settings['discount']['content'] === 'price' ) {
+			if ( true === $settings['discount']['show'] && 'price' === $settings['discount']['content'] ) {
 				$table .= '<td>' . Woocommerce::format_price( $tier['price'] ) . '</td>';
 			} else {
-				$table .= '<td>' . ( $tier['type'] === 'currency' ? Woocommerce::format_price( $tier['value'] ) : $tier['value'] );
-				$table .= $tier['type'] === 'percentage' ? '%' : ' /PCS';
+				$table .= '<td>' . ( 'currency' === $tier['type'] ? Woocommerce::format_price( $tier['value'] ) : $tier['value'] );
+				$table .= 'percentage' === $tier['type'] ? '%' : ' /PCS';
 				$table .= '</td>';
 			}
 
@@ -726,7 +725,6 @@ class Helper {
 		}
 		$table .= '</tbody></table>';
 		self::get_clean_html( $table, true );
-		return;
 	}
 
 	/**
@@ -777,7 +775,6 @@ class Helper {
 
 		foreach ( $cart->cart_contents as $key => $values ) {
 			$cart_session[ $key ] = $values;
-			// wpab_campaignbay_log($key . ' : ' . $values['quantity']);
 			unset( $cart_session[ $key ]['data'] ); // Unset product object.
 		}
 		return $cart_session;
@@ -801,9 +798,9 @@ class Helper {
 	 * @return float The calculated final price.
 	 */
 	public static function calculate_price( $base_price, $discount_value, $discount_type ) {
-		if ( $discount_type === 'fixed' ) {
+		if ( 'fixed' === $discount_type ) {
 			return self::calculate_fixed_price( $base_price, $discount_value );
-		} elseif ( $discount_type === 'percentage' ) {
+		} elseif ( 'percentage' === $discount_type ) {
 			return self::calculate_percentage_price( $base_price, $discount_value );
 		}
 		return $base_price;
@@ -822,7 +819,7 @@ class Helper {
 	 * @param array    $data The discount data to add.
 	 */
 	public static function add_data( $cart, $data = array() ) {
-		if ( $data['type'] === 'percent' ) {
+		if ( 'percent' === $data['type'] ) {
 			$code = 'campaignbay_' . $data['campaign'] . '_' . $data['discount'];
 
 			if ( ! isset( $cart->campaignbay['coupon'][ $code ] ) ) {

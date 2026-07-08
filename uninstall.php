@@ -49,6 +49,7 @@ function wpab_cb_drop_custom_tables() {
 	);
 
 	foreach ( $tables as $table ) {
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 		$wpdb->query( "DROP TABLE IF EXISTS {$table}" );
 	}
 }
@@ -81,10 +82,12 @@ function wpab_cb_cleanup_user_data() {
 	$placeholders = implode( ', ', array_fill( 0, count( $meta_keys ), '%s' ) );
 
 	$query = $wpdb->prepare(
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 		"DELETE FROM {$wpdb->usermeta} WHERE meta_key IN ( $placeholders )",
 		$meta_keys
 	);
 
+	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 	$wpdb->query( $query );
 }
 

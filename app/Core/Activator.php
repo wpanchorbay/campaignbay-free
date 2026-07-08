@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Core;
 
@@ -100,6 +105,7 @@ class Activator {
 				Deny from all
 			</Files>
 			';
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			file_put_contents( $htaccess_file, $htaccess_content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
 		}
 
@@ -107,6 +113,7 @@ class Activator {
 		$index_file = $log_dir . 'index.php';
 		if ( ! file_exists( $index_file ) ) {
 			$index_content = "<?php\n// Silence is golden.\n";
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			file_put_contents( $index_file, $index_content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
 		}
 	}
@@ -138,7 +145,6 @@ class Activator {
 		if ( $manager_role && ! $manager_role->has_cap( $custom_capability ) ) {
 			$manager_role->add_cap( $custom_capability );
 		}
-		// only for demo user
 		// $contributor = get_role('contributor');
 		// if ($contributor && !$contributor->has_cap($custom_capability)) {
 		// $contributor->add_cap($custom_capability);

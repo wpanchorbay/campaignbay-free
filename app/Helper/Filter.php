@@ -1,5 +1,4 @@
 <?php
-
 /**
  * The Filter helper class.
  *
@@ -142,7 +141,6 @@ class Filter {
 			} elseif ( 'category' === $type ) {
 				$result = $this->compareWithCategories( $product, $campaign->get_target_ids(), $is_exclude );
 			}
-			// elseif ('tags' === $type) {
 			// $product = Woocommerce::getParentProduct($product);
 			// return $this->compareWithTags($product, $values, $method);
 			// }
@@ -203,7 +201,6 @@ class Filter {
 	 * @param $is_exclude
 	 * @return bool
 	 */
-	// protected function compareWithTags($product, $target_ids, $is_exclude)
 	// {
 	// $tag_ids = Woocommerce::getProductTags($product);
 	// $is_product_has_tag = count(array_intersect($tag_ids, $target_ids)) > 0;
@@ -257,6 +254,7 @@ class Filter {
 	 *
 	 * @return bool True if product matches the product criteria.
 	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 	protected function compareWithProducts( $target_ids, $is_exclude, $product_id, $product ) {
 		$result = $this->checkInList( $product_id, $is_exclude, $target_ids );
 		return $result;

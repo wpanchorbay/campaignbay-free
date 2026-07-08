@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Api;
 
@@ -111,8 +116,8 @@ class ResourceController extends ApiController {
 	 *
 	 * @since    1.1.5
 	 * @access public
-	 * @param WP_REST_Request $request
 	 * @return WP_REST_Response
+	 * @param mixed $request Description.
 	 */
 	public function get_user( $request ) {
 		$args = array(
@@ -145,8 +150,8 @@ class ResourceController extends ApiController {
 	 *
 	 * @since    1.1.5
 	 * @access public
-	 * @param WP_REST_Request $request
 	 * @return WP_REST_Response
+	 * @param mixed $request Description.
 	 */
 	public function get_products( $request ) {
 		$args = array(
@@ -210,8 +215,8 @@ class ResourceController extends ApiController {
 	 *
 	 * @since    1.1.5
 
-	 * @param WP_REST_Request $request
 	 * @return WP_REST_Response
+	 * @param mixed $request Description.
 	 */
 	public function get_buyable_products( $request ) {
 		$search_term = $request->get_param( 'search' );
@@ -268,8 +273,8 @@ class ResourceController extends ApiController {
 	 *
 	 * @since    1.1.5
 
-	 * @param WP_REST_Request $request
 	 * @return WP_REST_Response
+	 * @param mixed $request Description.
 	 */
 	public function get_categories( $request ) {
 		$args = array(

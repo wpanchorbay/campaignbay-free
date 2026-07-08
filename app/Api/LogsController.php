@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Api;
 

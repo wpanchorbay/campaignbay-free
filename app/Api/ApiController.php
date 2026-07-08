@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Api;
 
@@ -175,7 +180,6 @@ class ApiController extends WP_REST_Controller {
 	 */
 	public function update_item_permissions_check( $request ) {
 		if ( ! current_user_can( 'manage_campaignbay' ) ) {
-			// return false;
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'Sorry, you are not allowed to manage campaigns.', 'campaignbay' ),

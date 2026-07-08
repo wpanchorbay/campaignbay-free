@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Engine;
 
@@ -7,6 +12,8 @@ use WpabCampaignBay\Core\Campaign;
 use WpabCampaignBay\Helper\Helper;
 
 /**
+ * Description.
+ *
  * @link       https://wpanchorbay.com
  * @since      1.1.1
  *
@@ -20,6 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Description.
  *
  * @since      1.1.1
  * @package    WPAB_CampaignBay

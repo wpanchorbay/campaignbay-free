@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Engine;
 
@@ -50,12 +55,12 @@ class OrderManager extends Base {
 	 * @param WC_Order $order       The order object.
 	 */
 	public function handle_order_status_change( $order_id, $old_status, $new_status, $order ) {
-		if ( $old_status === 'processing' || $old_status === 'completed' ) {
+		if ( 'processing' === $old_status || 'completed' === $old_status ) {
 			wpab_campaignbay_log( sprintf( 'Order #%d status changed canceled for old status. from "%s" to "%s". Handling event.', $order_id, $old_status, $new_status ), 'INFO' );
 			$this->reverse_order( $order_id, $old_status, $new_status, $order );
 			return;
 		}
-		if ( $new_status !== 'processing' && $new_status !== 'completed' ) {
+		if ( 'processing' !== $new_status && 'completed' !== $new_status ) {
 			wpab_campaignbay_log( sprintf( 'Order #%d status changed canceled for new status. from "%s" to "%s". Handling event.', $order_id, $old_status, $new_status ), 'INFO' );
 			$this->reverse_order( $order_id, $old_status, $new_status, $order );
 			return;
@@ -78,12 +83,15 @@ class OrderManager extends Base {
 		}
 	}
 
+	/**
+	 * Function.
+	 */
 	private function reverse_order( $order_id, $old_status, $new_status, $order ) {
-		if ( $old_status !== 'processing' && $old_status !== 'completed' ) {
+		if ( 'processing' !== $old_status && 'completed' !== $old_status ) {
 			wpab_campaignbay_log( sprintf( 'Order #%d status reversed for old status. from "%s" to "%s". Handling event.', $order_id, $old_status, $new_status ), 'INFO' );
 			return;
 		}
-		if ( $new_status === 'processing' || $new_status === 'completed' ) {
+		if ( 'processing' === $new_status || 'completed' === $new_status ) {
 			wpab_campaignbay_log( sprintf( 'Order #%d status reversed for new status. from "%s" to "%s". Handling event.', $order_id, $old_status, $new_status ), 'INFO' );
 			return;
 		}

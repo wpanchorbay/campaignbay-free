@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Api;
 
@@ -532,7 +537,7 @@ class DashboardController extends ApiController {
 	 * @return float Percentage change.
 	 */
 	private function calculate_percentage_change( $current, $previous ) {
-		if ( 0 == $previous || $previous === null || $previous === '' || $previous == false || $previous == 0 ) {
+		if ( 0 === $previous || null === $previous || '' === $previous || false === $previous || 0 === $previous ) {
 			return $current > 0 ? 100 : 0;
 		}
 		return round( ( ( $current - $previous ) / $previous ) * 100, 2 );

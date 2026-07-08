@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Core;
 
@@ -75,11 +80,10 @@ class Validator {
 			$value           = $this->data[ $field ] ?? null;
 
 			foreach ( $rules_for_field as $rule ) {
-				if ( $rule === 'datetime' && ! is_null( $value ) ) {
+				if ( 'datetime' === $rule && ! is_null( $value ) ) {
 					$value                = self::validate_datetime( $value );
 					$this->data[ $field ] = $value;
 				}
-				// wpab_campaignbay_log('field : ' . $field);
 				$this->apply_rule( $field, $value, $rule );
 			}
 
@@ -111,8 +115,7 @@ class Validator {
 			case 'datetime':
 				break;
 			case 'required':
-				// $value === null || ( is_string( $value ) && trim( $value ) === '' ) || ( is_array( $value ) && empty( $value ) )
-				if ( $value === null || ( is_string( $value ) && trim( $value ) === '' ) || ( is_array( $value ) && empty( $value ) ) ) {
+				if ( null === $value || ( is_string( $value ) && '' === trim( $value ) ) || ( is_array( $value ) && empty( $value ) ) ) {
 					$this->add_error( $field, __( 'This field is required.', 'campaignbay' ) );
 				}
 				break;
@@ -123,26 +126,23 @@ class Validator {
 				$required_values = $rule_params;
 				$other_value     = $this->data[ $other_field ] ?? null;
 
-				if ( $other_field && in_array( $other_value, $required_values, false ) ) {
+				if ( $other_field && in_array( $other_value, $required_values, false, true ) ) {
 					if ( is_array( $value ) ) {
 						if ( empty( $value ) ) {
 							$this->add_error( $field, __( 'This field cannot be empty.', 'campaignbay' ) );
 						}
-					} elseif ( ( is_null( $value ) || trim( (string) $value ) === '' || $value == 0 ) ) {
+					} elseif ( ( is_null( $value ) || '' === trim( (string) $value ) || 0 === $value ) ) {
 
 						$this->add_error( $field, __( 'This field is required.', 'campaignbay' ) );
 					}
 				}
 
-				// if ( $other_field && (is_array($required_values) && in_array( $other_value, $required_values, true )) && ( is_null( $value ) || trim( (string) $value ) === '' || $value == 0 ) ) {
 				// $this->add_error( $field, sprintf( __( 'This field is required when %s is one of %s.', 'campaignbay' ), $other_field, implode( ', ', $required_values ) ) );
 				// }
 
-				// if ( $other_field && $other_value == $required_values && ( is_null( $value ) || trim( (string) $value ) === '' || $value == 0 ) ) {
 				// $this->add_error( $field, sprintf( __( 'This field is required when %s is %s.', 'campaignbay' ), $other_field, implode( ', ', $required_values ) ) );
 				// }
 
-				// wpab_campaignbay_log( "other_field: $other_field, other_value: $other_value, required_values: " . implode( ', ', (array) $required_values ) . ", value: $value" );
 				break;
 
 			case 'in':
@@ -159,7 +159,7 @@ class Validator {
 				break;
 
 			case 'integer':
-				if ( $value !== null && filter_var( $value, FILTER_VALIDATE_INT ) === false ) {
+				if ( null !== $value && false === filter_var( $value, FILTER_VALIDATE_INT ) ) {
 					$this->add_error( $field, __( 'This field must be an integer.', 'campaignbay' ) );
 				}
 				break;

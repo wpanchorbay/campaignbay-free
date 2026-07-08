@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Api;
 
@@ -89,6 +94,9 @@ class CalenderController extends ApiController {
 		);
 	}
 
+	/**
+	 * Function.
+	 */
 	public function get_campaigns( $request ) {
 		$campaigns = CalenderManager::get_instance()->get_campaigns();
 		return rest_ensure_response( array_values( $campaigns ) );

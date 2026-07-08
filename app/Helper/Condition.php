@@ -1,5 +1,4 @@
 <?php
-
 /**
  * The Condition helper class.
  *
@@ -66,7 +65,7 @@ class Condition {
 		} else {
 			wpab_campaignbay_log( 'Not evaluating cart level conditions yet (pre-calculation).', 'INFO' );
 		}
-		if ( $match_type === 'any' && ! $checking_cart_level_conditions ) {
+		if ( 'any' === $match_type && ! $checking_cart_level_conditions ) {
 			foreach ( $rules as $rule ) {
 				if ( self::is_cart_level_condition( $rule ) ) {
 					$is_cart_level_condition = true;
@@ -83,7 +82,7 @@ class Condition {
 			}
 			// none of the product level are met
 			return false;
-		} elseif ( $match_type === 'all' && ! $checking_cart_level_conditions ) { // $match type === 'all'
+		} elseif ( 'all' === $match_type && ! $checking_cart_level_conditions ) { // $match type === 'all'
 			foreach ( $rules as $rule ) {
 				if ( self::is_cart_level_condition( $rule ) ) {
 					$is_cart_level_condition = true;
@@ -101,7 +100,7 @@ class Condition {
 				return false;
 			}
 			return true;
-		} elseif ( $match_type === 'any' && $checking_cart_level_conditions ) {
+		} elseif ( 'any' === $match_type && $checking_cart_level_conditions ) {
 			foreach ( $rules as $rule ) {
 				if ( ! self::is_cart_level_condition( $rule ) ) {
 					continue;
@@ -113,7 +112,7 @@ class Condition {
 			}
 			// none of the cart level are met
 			return false;
-		} elseif ( $match_type === 'all' && $checking_cart_level_conditions ) {
+		} elseif ( 'all' === $match_type && $checking_cart_level_conditions ) {
 			foreach ( $rules as $rule ) {
 				if ( ! self::is_cart_level_condition( $rule ) ) {
 					continue;
@@ -207,9 +206,9 @@ class Condition {
 
 		$user_roles = $user->roles;
 		if ( $is_included ) {
-			$result = in_array( $role, $user_roles );
+			$result = in_array( $role, $user_roles, true );
 		} else {
-			$result = ! in_array( $role, $user_roles );
+			$result = ! in_array( $role, $user_roles, true );
 		}
 		return $result;
 	}
@@ -227,7 +226,7 @@ class Condition {
 	 */
 	public static function is_cart_level_condition( $rule ) {
 		$type = $rule['type'];
-		if ( in_array( $type, array( 'cart_total' ) ) ) {
+		if ( in_array( $type, array( 'cart_total', true ) ) ) {
 			return true;
 		}
 		return false;
@@ -278,6 +277,7 @@ class Condition {
 	 *
 	 * @return bool True if the condition is satisfied, false otherwise.
 	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 	public static function check_cart_total( $condition, $product = null ) {
 		$result     = true;
 		$operator   = $condition['operator'];
@@ -299,7 +299,7 @@ class Condition {
 				$result = $cart_total < $value;
 				break;
 			case '==':
-				$result = $cart_total == $value;
+				$result = $cart_total === $value;
 				break;
 			default:
 				$result = false;

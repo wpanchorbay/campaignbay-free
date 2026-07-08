@@ -34,9 +34,9 @@ define( 'CAMPAIGNBAY_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'CAMPAIGNBAY_DEV_MODE', true );
 
 spl_autoload_register(
-	function ( $class ) {
+	function ( $class_name ) {
 		// Autoload DeactivationFeedback
-		if ( strpos( $class, 'WPAB\\DeactivationFeedback\\' ) === 0 ) {
+		if ( 0 === strpos( $class, 'WPAB\\DeactivationFeedback\\' ) ) {
 			$file = CAMPAIGNBAY_PATH . 'vendor/deactivation-feedback/src/' . str_replace( '\\', '/', substr( $class, 25 ) ) . '.php';
 			if ( file_exists( $file ) ) {
 				require_once $file;
@@ -45,7 +45,7 @@ spl_autoload_register(
 		}
 
 		// Only handle our plugin's classes
-		if ( strpos( $class, 'WpabCampaignBay\\' ) !== 0 ) {
+		if ( 0 !== strpos( $class, 'WpabCampaignBay\\' ) ) {
 			return;
 		}
 		// Convert namespace to file path
@@ -71,11 +71,13 @@ register_deactivation_hook( __FILE__, 'wpab_campaignbay_deactivate' );
  * @since    1.0.0
  */
 if ( ! function_exists( 'wpab_campaignbay_run' ) ) {
+	/**
+	 * Function.
+	 */
 	function wpab_campaignbay_run() {
 		if ( is_plugin_active( 'woocommerce/woocommerce.php' ) ) {
 			$plugin = \WpabCampaignBay\Core\Plugin::get_instance();
 			add_action( 'plugins_loaded', array( $plugin, 'run' ) );
-			// $plugin->run();
 		} else {
 			add_action( 'admin_notices', 'wpab_campaignbay_woocommerce_not_active_notice' );
 		}
@@ -160,6 +162,9 @@ if ( ! function_exists( 'wpab_campaignbay_run' ) ) {
 }
 wpab_campaignbay_run();
 
+/**
+ * Function.
+ */
 function wpab_campaignbay_activate() {
 	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 	\WpabCampaignBay\Core\Activator::activate();
@@ -170,6 +175,9 @@ function wpab_campaignbay_activate() {
 	}
 }
 
+/**
+ * Function.
+ */
 function wpab_campaignbay_deactivate() {
 	\WpabCampaignBay\Core\Deactivator::deactivate();
 }
@@ -177,6 +185,9 @@ function wpab_campaignbay_deactivate() {
 
 
 
+/**
+ * Function.
+ */
 function wpab_campaignbay_woocommerce_not_active_notice() {
 	?>
 	<div class="notice notice-error">

@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Core;
 
@@ -247,8 +252,9 @@ class Campaign {
 	 * Updates the campaign with new data.
 	 *
 	 * @since 1.0.0
-	 * @param array $args The campaign arguments to update.
 	 * @return bool|WP_Error True on success, false on failure.
+	 * @param mixed $partial Description.
+	 * @param mixed $partial Description.
 	 */
 	public function update( $args, $partial = false ) {
 		if ( $partial ) {
@@ -395,6 +401,7 @@ class Campaign {
 	 * @since 1.0.0
 	 * @access private
 	 * @return array The array of validation rules for a campaign.
+	 * @param mixed $args Description.
 	 */
 	private static function get_validation_rules( $args = null ) {
 		$rules = array(
@@ -419,10 +426,9 @@ class Campaign {
 			'conditions'         => 'nullable|object',
 			'usage_limit'        => 'nullable|integer',
 		);
-		if ( $args['schedule_enabled'] === true ) {
-			if ( ( $args['start_datetime'] === null || $args['start_datetime'] === '' ) && ( $args['end_datetime'] === null || $args['end_datetime'] === '' ) ) {
+		if ( true === $args['schedule_enabled'] ) {
+			if ( ( null === $args['start_datetime'] || '' === $args['start_datetime'] ) && ( null === $args['end_datetime'] || '' === $args['end_datetime'] ) ) {
 				$rules['start_datetime'] = 'required|datetime';
-				// $rules['end_datetime'] = 'required|datetime';
 			}
 		}
 		/**
@@ -450,7 +456,7 @@ class Campaign {
 	 */
 	private static function get_tiers_validation_rules( $type ) {
 		$rules = array();
-		if ( $type === 'quantity' ) {
+		if ( 'quantity' === $type ) {
 			$rules = array(
 				'id'    => 'nullable|integer',
 				'min'   => 'required|integer|min:1|gte:previous_tier_max',
@@ -458,7 +464,7 @@ class Campaign {
 				'value' => 'required|numeric|min:0|max_if:type,percentage,100',
 				'type'  => 'required|in:percentage,currency',
 			);
-		} elseif ( $type === 'earlybird' ) {
+		} elseif ( 'earlybird' === $type ) {
 			$rules = array(
 				'id'       => 'nullable|integer',
 				'quantity' => 'required|integer|min:1',
@@ -466,7 +472,7 @@ class Campaign {
 				'type'     => 'required|in:percentage,currency',
 				'total'    => 'required|integer|min:0',
 			);
-		} elseif ( $type === 'bogo' ) {
+		} elseif ( 'bogo' === $type ) {
 			$rules = array(
 				'buy_quantity' => 'required|integer|min:1',
 				'get_quantity' => 'required|integer|min:1',
@@ -486,7 +492,7 @@ class Campaign {
 	}
 
 	/**
-	 * checking if campaign type need tiers validation
+	 * Checking if campaign type need tiers validation
 	 *
 	 * @since 1.0.0
 	 * @param string $type The type of the campaign.
@@ -494,7 +500,7 @@ class Campaign {
 	 */
 	private static function need_tier_validation( $type ) {
 		$result = false;
-		if ( $type === 'quantity' || $type === 'earlybird' || $type === 'bogo' ) {
+		if ( 'quantity' === $type || 'earlybird' === $type || 'bogo' === $type ) {
 			$result = true;
 		}
 		/**
@@ -523,12 +529,12 @@ class Campaign {
 	 * @return array|null|WP_Error The validated settings, or null if validation fails.
 	 */
 	public static function get_validated_settings( $settings, $type ) {
-		if ( $settings === null || ! is_array( $settings ) || empty( $settings ) ) {
+		if ( null === $settings || ! is_array( $settings ) || empty( $settings ) ) {
 			return null;
 		}
 		$rules   = array();
 		$default = array();
-		if ( $type === 'scheduled' || $type === 'earlybird' ) {
+		if ( 'scheduled' === $type || 'earlybird' === $type ) {
 			$default = array(
 				'display_as_regular_price' => false,
 				'show_product_message'     => true,
@@ -539,7 +545,7 @@ class Campaign {
 				'show_product_message'     => 'required_if:display_as_regular_price,0|boolean',
 				'message_format'           => 'nullable|string',
 			);
-		} elseif ( $type === 'quantity' ) {
+		} elseif ( 'quantity' === $type ) {
 			$default = array(
 				'apply_as'                       => 'line_total',
 				'cart_quantity_message_format'   => '',
@@ -550,7 +556,7 @@ class Campaign {
 				'cart_quantity_message_format'   => 'nullable|string',
 				'cart_quantity_message_location' => 'required|string|in:line_item_name,notice,dont_show',
 			);
-		} elseif ( $type === 'bogo' ) {
+		} elseif ( 'bogo' === $type ) {
 			$default = array(
 				'show_bogo_message'          => true,
 				'bogo_banner_message_format' => '',
@@ -593,6 +599,9 @@ class Campaign {
 	}
 
 
+	/**
+	 * Function.
+	 */
 	public static function get_validated_conditions( $conditions ) {
 		// old campaigns dont have match_type default , raising error on import
 		$conditions['match_type'] = $conditions['match_type'] ?? 'all';
@@ -678,6 +687,7 @@ class Campaign {
 	 * @param bool $force_delete Whether to force delete (unused for compatibility).
 	 * @return bool True on success, false on failure.
 	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 	public static function delete( $campaign_id, $force_delete = true ) {
 		$campaign = new self( $campaign_id );
 		$title    = $campaign->get_title();
@@ -797,7 +807,7 @@ class Campaign {
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'campaignbay_campaigns';
 
-			$new_schedule_enabled = $this->data->status === 'expired' ? 0 : $this->data->schedule_enabled;
+			$new_schedule_enabled = 'expired' === $this->data->status ? 0 : $this->data->schedule_enabled;
 			wpab_campaignbay_log( '________ name: ' . $this->data->name, 'INFO' );
 			wpab_campaignbay_log( '________ status: ' . $this->data->status, 'INFO' );
 			wpab_campaignbay_log( 'New schedule enabled: ' . $new_schedule_enabled, 'INFO' );
@@ -1020,6 +1030,9 @@ class Campaign {
 		return $this->data->end_datetime;
 	}
 
+	/**
+	 * Function.
+	 */
 	public function get_utc_time( $date_string ) {
 
 		if ( empty( $date_string ) ) {
@@ -1035,6 +1048,9 @@ class Campaign {
 		}
 	}
 
+	/**
+	 * Function.
+	 */
 	public function get_time_stamp( $date_string ) {
 		$utc_datetime = $this->get_utc_time( $date_string );
 		return $utc_datetime ? strtotime( $utc_datetime ) : null;
@@ -1197,7 +1213,7 @@ class Campaign {
 
 		$this->data->usage_count = (int) $this->data->usage_count + 1;
 
-		if ( $this->data->usage_limit !== null && $this->data->usage_limit > 0 && $this->data->usage_count >= $this->data->usage_limit ) {
+		if ( null !== $this->data->usage_limit && $this->data->usage_limit > 0 && $this->data->usage_count >= $this->data->usage_limit ) {
 			$this->data->status = 'expired';
 		}
 
@@ -1257,7 +1273,7 @@ class Campaign {
 		// UPDATING LOCAL DATA
 		$this->data->usage_count = max( 0, (int) $this->data->usage_count - 1 );
 
-		if ( $this->data->usage_limit !== null && $this->data->usage_limit > 0 && $this->data->usage_count >= $this->data->usage_limit ) {
+		if ( null !== $this->data->usage_limit && $this->data->usage_limit > 0 && $this->data->usage_count >= $this->data->usage_limit ) {
 			$this->data->status = 'expired';
 		}
 

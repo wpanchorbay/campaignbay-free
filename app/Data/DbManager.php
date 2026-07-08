@@ -12,6 +12,7 @@
  * @package    WPAB_CampaignBay
  * @subpackage WPAB_CampaignBay/Data
  */
+
 namespace WpabCampaignBay\Data;
 
 // Exit if accessed directly.

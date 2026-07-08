@@ -151,7 +151,7 @@ class CampaignsController extends ApiController {
 		// campaigns/duplicate
 		register_rest_route(
 			$namespace,
-			'/' . $this->rest_base . '/(?P<id>[\d]+)' . '/duplicate',
+			'/' . $this->rest_base . '/(?P<id>[\d]+)/duplicate',
 			array(
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
@@ -362,7 +362,7 @@ class CampaignsController extends ApiController {
 		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
 			$orderby = 'date_modified';
 		}
-		$order = strtoupper( $order ) === 'ASC' ? 'ASC' : 'DESC';
+		$order = 'ASC' === strtoupper( $order ) ? 'ASC' : 'DESC';
 
 		// Handle pagination
 		$per_page = (int) ( $request->get_param( 'per_page' ) ?: 10 );
@@ -494,7 +494,6 @@ class CampaignsController extends ApiController {
 			return new WP_Error( 'rest_campaign_not_found', __( 'Campaign not found.', 'campaignbay' ), array( 'status' => 404 ) );
 		}
 
-		// $result = Campaign::delete( $campaign_id, $force );
 		$result = $campaign->delete( $campaign_id, $force );
 		if ( ! $result ) {
 			return new WP_Error( 'rest_cannot_delete', __( 'Failed to delete campaign.', 'campaignbay' ), array( 'status' => 500 ) );
@@ -530,8 +529,8 @@ class CampaignsController extends ApiController {
 				$title  = $campaign->get_title();
 				$result = $campaign->set_status( $status );
 
-				if ( $result === true && ! is_wp_error( $result ) ) {
-					wpab_campaignbay_log( 'title : ' . $campaign->get_title() . ' ' . $status, 'ERROR' );
+				if ( true === $result && ! is_wp_error( $result ) ) {
+					wpab_campaignbay_log( 'title : ' . $campaign->get_title() . $status, 'ERROR' );
 					++$updated_count;
 					// Log the activity.
 					Logger::get_instance()->log(
@@ -599,6 +598,9 @@ class CampaignsController extends ApiController {
 		);
 	}
 
+	/**
+	 * Function.
+	 */
 	public function duplicate_item( $request ) {
 		try {
 			$id       = (int) $request['id'];
@@ -1063,7 +1065,7 @@ class CampaignsController extends ApiController {
 
 		// Step 4: Final check. If json_decode failed, it returns null.
 		// We also check json_last_error to be certain.
-		if ( json_last_error() !== JSON_ERROR_NONE ) {
+		if ( JSON_ERROR_NONE !== json_last_error() ) {
 			return null;
 		}
 

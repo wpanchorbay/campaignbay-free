@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Core;
 
@@ -53,7 +58,6 @@ class Scheduler extends Base {
 	 * @return void
 	 */
 	public function run() {
-		// $this->check_scheduled_campaigns();
 		// $this->run_scheduled_campaigns_cron();
 	}
 
@@ -102,7 +106,7 @@ class Scheduler extends Base {
 		wpab_campaignbay_log( sprintf( 'Start timestamp: %d, End timestamp: %d', $start_timestamp, $end_timestamp ), 'INFO' );
 		wpab_campaignbay_log( sprintf( 'Campaign status: %s, Schedule enabled: %s', $campaign->get_status(), $campaign->get_schedule_enabled() ), 'INFO' );
 
-		if ( $campaign->get_status() === 'scheduled' && $campaign->get_schedule_enabled() ) {
+		if ( 'scheduled' === $campaign->get_status() && $campaign->get_schedule_enabled() ) {
 			if ( ! $start_timestamp ) {
 				wpab_campaignbay_log( sprintf( 'Campaign #%d is missing start timestamps. Cannot schedule. %d', $campaign_id, $start_timestamp ), 'ERROR' );
 			} else {
@@ -172,7 +176,7 @@ class Scheduler extends Base {
 			$start_timestamp = $campaign->get_start_timestamp();
 			$end_timestamp   = $campaign->get_end_timestamp();
 
-			if ( ( $campaign->get_status() === 'scheduled' && $campaign->get_schedule_enabled() ) && $start_timestamp && $start_timestamp <= $current_timestamp ) {
+			if ( ( 'scheduled' === $campaign->get_status() && $campaign->get_schedule_enabled() ) && $start_timestamp && $start_timestamp <= $current_timestamp ) {
 				//phpcs:ignore
 				wpab_campaignbay_log(sprintf('Failsafe: Activating campaign #%d (%s) as its start time (%s) has passed. Current time: %s.', $campaign->get_id(), $campaign->get_title(), date('Y-m-d H:i:s', $start_timestamp), date('Y-m-d H:i:s', $current_timestamp)), 'INFO');
 				$this->run_campaign_activation( $campaign->get_id() );

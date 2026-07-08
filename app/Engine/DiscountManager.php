@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Engine;
 
@@ -38,6 +43,7 @@ class DiscountManager extends Base {
 
 
 	/**
+	 * Description.
 	 *
 	 * @since 1.0.0
 	 * @access private

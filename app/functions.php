@@ -78,7 +78,6 @@ if ( ! function_exists( 'wpab_campaignbay_get_white_label' ) ) :
 				'author_uri'  => 'https://wpanchorbay.com',
 				'support_uri' => 'https://wpanchorbay.com/support',
 				'docs_uri'    => 'https://docs.wpanchorbay.com',
-				// 'menu_icon'        => 'dashicons-awards',
 				'position'    => 57,
 			)
 		);
@@ -101,11 +100,10 @@ if ( ! function_exists( 'wpab_campaignbay_log' ) ) {
 	 * @param string $level The log level (e.g.,'DEBUG', 'INFO', 'ERROR', 'NOTICE', 'WARNING', 'CRITICAL', 'ALERT', 'EMERGENCY' ).
 	 * @param bool   $dev_mode Whether to log messages in development mode.
 	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 	function wpab_campaignbay_log( $message, $level = 'INFO', $dev_mode = true ) {
 		$enable_logging = WpabCampaignBay\Core\Common::get_instance()->get_settings( 'debug_enableMode' );
-		// if (!$enable_logging && !defined('WP_DEBUG') && !WP_DEBUG && $level !== 'error') {
-		if ( ! $enable_logging && ( $level !== 'ERROR' && $level !== 'error' && $level !== 'DEBUG' && $level !== 'debug' ) ) {
-			// error_log(print_r(array(
+		if ( ! $enable_logging && ( 'ERROR' !== $level && 'error' !== $level && 'DEBUG' !== $level && 'debug' !== $level ) ) {
 			// 'Message' => $message,
 			// 'Level' => $level
 			// ), true));
@@ -135,6 +133,7 @@ if ( ! function_exists( 'wpab_campaignbay_log' ) ) {
 			$log_level,
 			$formatted_message
 		);
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 		file_put_contents( $log_file, $log_entry, FILE_APPEND | LOCK_EX );
 	}
 }
@@ -152,8 +151,8 @@ if ( ! function_exists( 'wpab_campaignbay_get_value' ) ) {
 	 * @param mixed        $default The default value if key is not found or is empty string.
 	 * @return mixed
 	 */
-	function wpab_campaignbay_get_value( $target, $key, $default = null ) {
-		if ( is_null( $key ) || trim( $key ) == '' ) {
+	function wpab_campaignbay_get_value( $target, $key, $default_value = null ) {
+		if ( is_null( $key ) || '' === trim( $key ) ) {
 			return $target;
 		}
 
@@ -171,7 +170,7 @@ if ( ! function_exists( 'wpab_campaignbay_get_value' ) ) {
 		}
 
 		// If the found value is exactly an empty string, return default.
-		if ( $target === '' ) {
+		if ( '' === $target ) {
 			return $default;
 		}
 

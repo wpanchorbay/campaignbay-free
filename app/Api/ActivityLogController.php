@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Api;
 
@@ -185,7 +190,7 @@ class ActivityLogController extends ApiController {
 		$query_params = array();
 
 		if ( ! empty( $log_type ) ) {
-			if ( $log_type === 'activity' ) {
+			if ( 'activity' === $log_type ) {
 				$sql       .= ' AND l.log_type IN ( "campaign_created", "campaign_updated", "campaign_deleted" )';
 				$count_sql .= ' AND l.log_type IN ( "campaign_created", "campaign_updated", "campaign_deleted" )';
 			} else {
@@ -251,7 +256,7 @@ class ActivityLogController extends ApiController {
 				break;
 		}
 
-		$sql .= $order === 'ASC' ? 'ASC' : 'DESC';
+		$sql .= 'ASC' === $order ? 'ASC' : 'DESC';
 
 		//phpcs:ignore
 		$total_items = $wpdb->get_var($count_sql);

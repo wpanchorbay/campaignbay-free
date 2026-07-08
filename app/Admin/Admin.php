@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Admin;
 
@@ -131,7 +136,7 @@ class Admin {
 	 * Add "Campaign" to the admin bar "New" dropdown.
 	 *
 	 * @since 1.0.7
-	 * @param WP_Admin_Bar $wp_admin_bar The admin bar object.
+	 * @param mixed $admin_bar Description.
 	 */
 	public function add_admin_bar_new_item( $admin_bar ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -143,7 +148,7 @@ class Admin {
 		// 3. Add the Node
 		$args = array(
 			'id'     => 'wpab_cb_new_campaign',
-			'title'  => __( 'Campaign', CAMPAIGNBAY_TEXT_DOMAIN ),
+			'title'  => __( 'Campaign', 'campaignbay' ),
 			'href'   => $href,
 			'parent' => 'new-content',
 		);
@@ -471,7 +476,8 @@ class Admin {
 				/*
 				==================================================
 				* Global Settings Tab
-				==================================================*/
+				==================================================
+			*/
 				'global_enableAddon'                      => array(
 					'type'    => 'boolean',
 					'default' => true,
@@ -495,7 +501,8 @@ class Admin {
 				/*
 				==================================================
 				* Performance & Caching (from Global Tab)
-				==================================================*/
+				==================================================
+			*/
 				'perf_enableCaching'                      => array(
 					'type'    => 'boolean',
 					'default' => true,
@@ -504,7 +511,8 @@ class Admin {
 				/*
 				==================================================
 				* Debugging & Logging (from Global Tab)
-				==================================================*/
+				==================================================
+			*/
 				'debug_enableMode'                        => array(
 					'type'    => 'boolean',
 					'default' => false,
@@ -513,7 +521,8 @@ class Admin {
 				/*
 				==================================================
 				* Product Settings Tab
-				==================================================*/
+				==================================================
+			*/
 				'product_message_format_percentage'       => array(
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
@@ -598,7 +607,8 @@ class Admin {
 				/*
 				==================================================
 				* Cart Settings Tab
-				==================================================*/
+				==================================================
+			*/
 				'cart_allowWcCouponStacking'              => array(
 					'type'    => 'boolean',
 					'default' => false,
@@ -626,7 +636,8 @@ class Admin {
 				/*
 				==================================================
 				* Advance Settings Tab
-				==================================================*/
+				==================================================
+			*/
 				'advanced_deleteAllOnUninstall'           => array(
 					'type'    => 'boolean',
 					'default' => false,
@@ -677,6 +688,8 @@ class Admin {
 	 * @param array $input The raw array of settings data submitted for saving.
 	 * @return array The sanitized array of settings data.
 	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	 // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 	public function sanitize_settings_object( $input ) {
 		$schema          = $this->get_settings_schema();
 		$properties      = $schema['properties'] ?? array();
@@ -746,6 +759,7 @@ class Admin {
 	 *                              'mustuse', 'dropins', and 'search'.
 	 * @return array settings schema for this plugin.
 	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 	public function add_plugin_action_links( $actions, $plugin_file, $plugin_data, $context ) {
 		$actions[] = '<a href="' . esc_url( menu_page_url( $this->menu_info['menu_slug'], false ) ) . '">' . esc_html__( 'Settings', 'campaignbay' ) . '</a>';
 		return $actions;

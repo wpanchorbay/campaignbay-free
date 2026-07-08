@@ -52,7 +52,8 @@ class Common {
 		/*
 			==================================================
 		* Global Settings Tab
-		==================================================*/
+		==================================================
+	*/
 		'global_enableAddon'                      => true,
 		'global_calculate_discount_from'          => 'regular_price',
 		'position_to_show_bulk_table'             => 'woocommerce_after_add_to_cart_form',
@@ -61,19 +62,22 @@ class Common {
 		/*
 			==================================================
 		* Performance & Caching (from Global Tab)
-		==================================================*/
+		==================================================
+	*/
 		'perf_enableCaching'                      => true,
 
 		/*
 			==================================================
 		* Debugging & Logging (from Global Tab)
-		==================================================*/
+		==================================================
+	*/
 		'debug_enableMode'                        => true,
 
 		/*
 			==================================================
 		* Product Settings Tab
-		==================================================*/
+		==================================================
+	*/
 		'product_message_format_percentage'       => 'You save {percentage_off}%',
 		'product_message_format_fixed'            => 'You save {amount_off} per item',
 		'bogo_banner_message_format'              => 'Buy {buy_quantity} and {get_quantity} free!!!!!!',
@@ -100,7 +104,8 @@ class Common {
 		/*
 			==================================================
 		* Cart Settings Tab
-		==================================================*/
+		==================================================
+	*/
 		'cart_allowWcCouponStacking'              => false,
 		'cart_allowCampaignStacking'              => false,
 		'cart_quantity_message_format_percentage' => 'Add {remainging_quantity_for_next_offer} more and get {percentage_off}% off',
@@ -110,7 +115,8 @@ class Common {
 		/*
 			==================================================
 		* Advance Settings Tab
-		==================================================*/
+		==================================================
+	*/
 		'advanced_deleteAllOnUninstall'           => false,
 	);
 

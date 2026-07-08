@@ -195,7 +195,6 @@ class Plugin {
 	 */
 	private function define_admin_hooks() {
 		$plugin_admin = Admin::get_instance();
-		// if (!is_admin()) {
 		// return;
 		// }
 		$this->loader->add_filter( 'all_plugins', $this, 'change_plugin_display_name' );

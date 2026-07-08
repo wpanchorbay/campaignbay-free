@@ -1,4 +1,9 @@
 <?php
+/**
+ * File.
+ *
+ * @package campaignbay
+ */
 
 namespace WpabCampaignBay\Engine;
 
@@ -136,7 +141,7 @@ class ProductDiscount {
 		);
 
 		foreach ( $this->campaigns as $campaign ) {
-			if ( $campaign->get_type() !== 'scheduled' && $campaign->get_type() !== 'earlybird' ) {
+			if ( 'scheduled' !== $campaign->get_type() && 'earlybird' !== $campaign->get_type() ) {
 				/**
 				 * Fires when a product-level campaign type not native to the free version is being processed.
 				 *
@@ -164,10 +169,10 @@ class ProductDiscount {
 			if ( ! $campaign->is_applicable_to_product( $this->product ) ) {
 				continue;
 			}
-			if ( $campaign->get_type() === 'earlybird' ) {
+			if ( 'earlybird' === $campaign->get_type() ) {
 				$tier      = Helper::earlybird_current_tier( $campaign );
 				$new_price = $this->calculate_earlybird_price( $tier, $base_price );
-			} elseif ( $campaign->get_type() === 'scheduled' ) {
+			} elseif ( 'scheduled' === $campaign->get_type() ) {
 				$new_price = $this->calculate_scheduled_price( $campaign, $base_price );
 			}
 
@@ -177,7 +182,7 @@ class ProductDiscount {
 				$applied_tier     = $tier ?? null;
 			}
 		}
-		if ( $applied_campaign !== null ) {
+		if ( null !== $applied_campaign ) {
 
 			/**
 			 * Fires within the campaign loop, just before the current campaign's price is compared to the best price.
@@ -212,11 +217,11 @@ class ProductDiscount {
 				'show_product_message'     => $applied_campaign->get_settings()['show_product_message'] ?? true,
 				'display_as_regular_price' => $applied_campaign->get_settings()['display_as_regular_price'] ?? false,
 			);
-			if ( $applied_campaign->get_type() === 'scheduled' ) {
+			if ( 'scheduled' === $applied_campaign->get_type() ) {
 				$data['value'] = $applied_campaign->get_discount_value() ?? null;
 				$data['type']  = $applied_campaign->get_discount_type() ?? null;
 			}
-			if ( $applied_campaign->get_type() === 'earlybird' ) {
+			if ( 'earlybird' === $applied_campaign->get_type() ) {
 				$data['value'] = $applied_tier['value'];
 				$data['type']  = $applied_tier['type'];
 			}
@@ -345,9 +350,9 @@ class ProductDiscount {
 		$discount_value   = $campaign->get_discount_value();
 		$calculated_price = $base_price;
 
-		if ( $discount_type === 'percentage' ) {
+		if ( 'percentage' === $discount_type ) {
 			$calculated_price = $this->calculate_percentage_price( $base_price, $discount_value );
-		} elseif ( $discount_type === 'fixed' ) {
+		} elseif ( 'fixed' === $discount_type ) {
 			$calculated_price = $this->calculate_fixed_price( $base_price, $discount_value );
 		}
 
@@ -367,9 +372,9 @@ class ProductDiscount {
 		$discount_type    = $tier['type'];
 		$discount_value   = $tier['value'];
 		$calculated_price = $base_price;
-		if ( $discount_type === 'percentage' ) {
+		if ( 'percentage' === $discount_type ) {
 			$calculated_price = $this->calculate_percentage_price( $base_price, $discount_value );
-		} elseif ( $discount_type === 'fixed' || $discount_type === 'currency' ) {
+		} elseif ( 'fixed' === $discount_type || 'currency' === $discount_type ) {
 			$calculated_price = $this->calculate_fixed_price( $base_price, $discount_value );
 		}
 		return $calculated_price;
@@ -409,20 +414,20 @@ class ProductDiscount {
 	 * @return bool True if the new price is better, false otherwise.
 	 */
 	public function is_better_price( $new_price, $current_best_price ) {
-		if ( $new_price === null ) {
+		if ( null === $new_price ) {
 			return false;
 		}
-		if ( $current_best_price === null ) {
+		if ( null === $current_best_price ) {
 			return true;
 		}
 		$setting = Common::get_instance()->get_settings( 'product_priorityMethod' );
 
-		if ( $setting === 'apply_highest' ) {
+		if ( 'apply_highest' === $setting ) {
 			return $new_price < $current_best_price;
-		} elseif ( $setting === 'apply_lowest' ) {
+		} elseif ( 'apply_lowest' === $setting ) {
 			return $new_price > $current_best_price;
-		} elseif ( $setting === 'apply_first' ) {
-			return $current_best_price === null;
+		} elseif ( 'apply_first' === $setting ) {
+			return null === $current_best_price;
 		}
 		return false;
 	}
