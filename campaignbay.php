@@ -36,8 +36,8 @@ define( 'CAMPAIGNBAY_DEV_MODE', true );
 spl_autoload_register(
 	function ( $class_name ) {
 		// Autoload DeactivationFeedback
-		if ( 0 === strpos( $class, 'WPAB\\DeactivationFeedback\\' ) ) {
-			$file = CAMPAIGNBAY_PATH . 'vendor/deactivation-feedback/src/' . str_replace( '\\', '/', substr( $class, 25 ) ) . '.php';
+		if ( 0 === strpos( $class_name, 'WPAB\\DeactivationFeedback\\' ) ) {
+			$file = CAMPAIGNBAY_PATH . 'vendor/deactivation-feedback/src/' . str_replace( '\\', '/', substr( $class_name, 25 ) ) . '.php';
 			if ( file_exists( $file ) ) {
 				require_once $file;
 				return;
@@ -45,11 +45,11 @@ spl_autoload_register(
 		}
 
 		// Only handle our plugin's classes
-		if ( 0 !== strpos( $class, 'WpabCampaignBay\\' ) ) {
+		if ( 0 !== strpos( $class_name, 'WpabCampaignBay\\' ) ) {
 			return;
 		}
 		// Convert namespace to file path
-		$file = CAMPAIGNBAY_PATH . 'app/' . str_replace( '\\', '/', substr( $class, 16 ) ) . '.php';
+		$file = CAMPAIGNBAY_PATH . 'app/' . str_replace( '\\', '/', substr( $class_name, 16 ) ) . '.php';
 
 		// Load the file if it exists
 		if ( file_exists( $file ) ) {
