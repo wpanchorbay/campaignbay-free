@@ -537,7 +537,7 @@ class DashboardController extends ApiController {
 	 * @return float Percentage change.
 	 */
 	private function calculate_percentage_change( $current, $previous ) {
-		if ( 0 === $previous || null === $previous || '' === $previous || false === $previous || 0 === $previous ) {
+		if ( null === $previous || '' === $previous || false === $previous || 0.0 === (float) $previous ) {
 			return $current > 0 ? 100 : 0;
 		}
 		return round( ( ( $current - $previous ) / $previous ) * 100, 2 );

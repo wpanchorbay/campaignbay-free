@@ -530,7 +530,7 @@ class CampaignsController extends ApiController {
 				$result = $campaign->set_status( $status );
 
 				if ( true === $result && ! is_wp_error( $result ) ) {
-					wpab_campaignbay_log( 'title : ' . $campaign->get_title() . $status, 'ERROR' );
+					wpab_campaignbay_log( 'title : ' . $campaign->get_title() . ' ' . $status, 'ERROR' );
 					++$updated_count;
 					// Log the activity.
 					Logger::get_instance()->log(

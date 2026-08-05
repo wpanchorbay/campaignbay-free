@@ -165,13 +165,13 @@ if ( ! function_exists( 'wpab_campaignbay_get_value' ) ) {
 				$target = $target->{$segment};
 			} else {
 				// Key not found, return default
-				return $default;
+				return $default_value;
 			}
 		}
 
 		// If the found value is exactly an empty string, return default.
 		if ( '' === $target ) {
-			return $default;
+			return $default_value;
 		}
 
 		return $target;

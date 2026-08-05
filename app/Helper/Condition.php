@@ -226,7 +226,7 @@ class Condition {
 	 */
 	public static function is_cart_level_condition( $rule ) {
 		$type = $rule['type'];
-		if ( in_array( $type, array( 'cart_total', true ) ) ) {
+		if ( in_array( $type, array( 'cart_total' ), true ) ) {
 			return true;
 		}
 		return false;
@@ -299,7 +299,7 @@ class Condition {
 				$result = $cart_total < $value;
 				break;
 			case '==':
-				$result = $cart_total === $value;
+				$result = (float) $cart_total === (float) $value;
 				break;
 			default:
 				$result = false;

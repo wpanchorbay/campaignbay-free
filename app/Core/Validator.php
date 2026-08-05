@@ -126,7 +126,7 @@ class Validator {
 				$required_values = $rule_params;
 				$other_value     = $this->data[ $other_field ] ?? null;
 
-				if ( $other_field && in_array( $other_value, $required_values, false, true ) ) {
+				if ( $other_field && in_array( $other_value, $required_values, true ) ) {
 					if ( is_array( $value ) ) {
 						if ( empty( $value ) ) {
 							$this->add_error( $field, __( 'This field cannot be empty.', 'campaignbay' ) );

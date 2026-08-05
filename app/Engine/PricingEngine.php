@@ -381,7 +381,7 @@ class PricingEngine extends Base {
 			$data     = wpab_campaignbay_get_value( $cart_item, 'campaignbay_parent.data' );
 			$message  = Helper::get_bogo_cart_message( $data );
 			$location = wpab_campaignbay_get_value( $data, 'settings.bogo_cart_message_location' );
-			if ( '' !== $message || null !== $message ) {
+			if ( '' !== $message && null !== $message ) {
 				if ( 'line_item_name' === $location ) {
 					$name .= '<br/><span>' . $message . '</span>';
 				}
@@ -398,7 +398,7 @@ class PricingEngine extends Base {
 				return $name;
 			}
 			$message = Helper::get_quantity_message( $meta['quantity_next_tier'] );
-			if ( '' !== $message || null !== $message ) {
+			if ( '' !== $message && null !== $message ) {
 				$name .= '<br/><span>' . $message . '</span>';
 			}
 		}

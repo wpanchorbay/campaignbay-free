@@ -4,7 +4,7 @@ Tags: discount manager, bulk discount, dynamic pricing, woocommerce, bogo
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.0
-Stable tag: 1.1.8
+Stable tag: 1.1.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -180,6 +180,12 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 
 == Changelog ==
 
+= 1.1.10 =
+*   Fix: Resolved several bugs affecting campaign conditions, dashboard statistics, and cart discounts.
+
+= 1.1.9 =
+*   Fix: Bug fixes.
+
 = 1.1.8 =
 *   New Feature: Deactivation Feedback — a friendly modal now asks for optional feedback when you deactivate, helping us improve CampaignBay.
 *   New Feature: Review Reminder — a non-intrusive admin notice gently asks for a review after a few days of use (easily dismissible per user).
@@ -257,6 +263,12 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 *   Initial release of CampaignBay.
 
 == Upgrade Notice ==
+
+= 1.1.10 =
+Bug fixes. Seamless upgrade.
+
+= 1.1.9 =
+Bug Fixes. Seamless upgrade.
 
 = 1.1.8 =
 New deactivation feedback modal and review reminder notice. Seamless upgrade.

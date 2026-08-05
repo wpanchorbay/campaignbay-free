@@ -492,7 +492,7 @@ class CartDiscount {
 			if ( ! $cart->has_discount( $coupon_code ) ) {
 				if ( $cart->applied_coupons ) {
 					foreach ( $cart->applied_coupons as $code ) {
-						$coupon = new \WC_Coupon( $coupon_code );
+						$coupon = new \WC_Coupon( $code );
 						if ( true === $coupon->get_individual_use() ) {
 							return false;
 						}

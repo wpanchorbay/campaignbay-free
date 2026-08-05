@@ -118,7 +118,7 @@ class Helper {
 					'style' => array(),
 				),
 			);
-			if ( $echo ) {
+			if ( $should_echo ) {
 				echo wp_kses( $html, $allowed_html );
 				return;
 			}
