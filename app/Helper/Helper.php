@@ -351,7 +351,12 @@ class Helper {
 		$message = self::generate_message(
 			$message_format,
 			array(
+				// Both spellings map to the same value: the shipped defaults and any
+				// already-saved custom messages use the "remainging" typo, while the
+				// admin UI's placeholder chip (correctly) shows "remaining" — supporting
+				// both keeps existing messages working while the correct spelling resolves too.
 				'{remainging_quantity_for_next_offer}' => $tier['remaining'],
+				'{remaining_quantity_for_next_offer}'  => $tier['remaining'],
 				'{percentage_off}'                     => $value,
 				'{amount_off}'                         => $value,
 			)
@@ -378,14 +383,20 @@ class Helper {
 		$bogo_campaigns = self::get_bogo_campaigns( $product );
 		$tiers          = array();
 		foreach ( $bogo_campaigns as $campaign ) {
+			$campaign_tiers = $campaign->get_tiers();
+			// A campaign with no (or corrupted) tier data has no buy/get quantities to build a
+			// ratio from; skip it rather than dividing by an empty buy_quantity.
+			if ( empty( $campaign_tiers[0]['buy_quantity'] ) ) {
+				continue;
+			}
 			// get all tiers with campaigns necessary data
 			$tiers[] = array(
 				'campaign'       => $campaign->get_id(),
 				'campaign_title' => $campaign->get_title(),
 				'settings'       => $campaign->get_settings(),
-				'buy_quantity'   => $campaign->get_tiers()[0]['buy_quantity'],
-				'get_quantity'   => $campaign->get_tiers()[0]['get_quantity'],
-				'ratio'          => (int) ( ( $campaign->get_tiers()[0]['get_quantity'] / $campaign->get_tiers()[0]['buy_quantity'] ) * 100 ),
+				'buy_quantity'   => $campaign_tiers[0]['buy_quantity'],
+				'get_quantity'   => $campaign_tiers[0]['get_quantity'],
+				'ratio'          => (int) ( ( $campaign_tiers[0]['get_quantity'] / $campaign_tiers[0]['buy_quantity'] ) * 100 ),
 			);
 		}
 		// remove duplicates

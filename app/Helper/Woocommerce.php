@@ -579,7 +579,11 @@ class Woocommerce
                 if (self::product_type_is($product, 'variation')) {
                     $variant = $product;
                     $parent_id = self::get_product_parent_id($product);
-                    $product = self::get_product($parent_id);
+                    // Use the raw WC lookup here, not self::get_product(): that goes through the
+                    // campaignbay_get_product filter, which for variable products re-enters this
+                    // same code path while the parent's cache slot is still unresolved, causing
+                    // unbounded recursion.
+                    $product = wc_get_product($parent_id);
                 }
                 $categories = $product->get_category_ids();
             }

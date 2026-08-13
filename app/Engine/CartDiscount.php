@@ -382,7 +382,7 @@ class CartDiscount {
 		$current_tier = null;
 		$next_tier    = null;
 		foreach ( $tiers as $key => $tier ) {
-			if ( ( null === $current_tier || $current_tier['price'] > $tier['price'] ) && $tier['min'] <= $quantity && $tier['max'] >= $quantity ) {
+			if ( ( null === $current_tier || $current_tier['price'] > $tier['price'] ) && $tier['min'] <= $quantity && ( null === $tier['max'] || $tier['max'] >= $quantity ) ) {
 				$current_tier = $tier;
 				$next_tier    = null;
 			} elseif ( ( null === $current_tier || ( $current_tier['min'] < $tier['min'] && $current_tier['price'] > $tier['price'] ) ) && null === $next_tier && $tier['min'] > $quantity ) {

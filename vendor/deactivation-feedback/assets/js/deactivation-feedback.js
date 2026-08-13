@@ -66,6 +66,19 @@
                 }
             });
 
+            // Data-collection disclosure. The text is always in the DOM and
+            // always in the accessibility tree; this toggle only controls
+            // whether sighted users see it expanded.
+            var disclosureToggle = modal.querySelector('.df-disclosure-toggle');
+            var disclosureText = modal.querySelector('.df-disclosure-text');
+            if (disclosureToggle && disclosureText) {
+                disclosureToggle.addEventListener('click', function () {
+                    var expanded = disclosureToggle.getAttribute('aria-expanded') === 'true';
+                    disclosureToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                    disclosureText.classList.toggle('is-collapsed', expanded);
+                });
+            }
+
             // Show/hide the free-text field tied to the selected reason.
             var radios = form.querySelectorAll('input[name="df_reason"]');
             radios.forEach(function (radio) {

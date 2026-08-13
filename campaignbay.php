@@ -8,8 +8,8 @@
  * Requires PHP:      7.0
  * Requires Plugins:  woocommerce
  * WC requires at least: 6.1
- * Version:           1.1.10
- * Stable tag:        1.1.10
+ * Version:           1.1.11
+ * Stable tag:        1.1.11
  * Author:            WPAnchorBay
  * Author URI:        https://wpanchorbay.com
  * License:           GPLv2 or later
@@ -26,7 +26,7 @@ if ( ! defined( 'WPINC' ) ) {
 define( 'CAMPAIGNBAY_PATH', plugin_dir_path( __FILE__ ) );
 define( 'CAMPAIGNBAY_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CAMPAIGNBAY_URL', plugin_dir_url( __FILE__ ) );
-define( 'CAMPAIGNBAY_VERSION', '1.1.10' );
+define( 'CAMPAIGNBAY_VERSION', '1.1.11' );
 define( 'CAMPAIGNBAY_PLUGIN_NAME', 'campaignbay' );
 define( 'CAMPAIGNBAY_TEXT_DOMAIN', 'campaignbay' );
 define( 'CAMPAIGNBAY_OPTION_NAME', 'campaignbay' );
@@ -91,7 +91,11 @@ if ( ! function_exists( 'wpab_campaignbay_run' ) ) {
 						array(
 							'plugin_file'           => CAMPAIGNBAY_PLUGIN_BASENAME,
 							'plugin_slug'           => CAMPAIGNBAY_PLUGIN_NAME,
-							'remote_endpoint'       => 'https://dfs.wpanchorbay.com',
+							// The receiver only answers on this route; the bare origin returns
+							// 400, and the POST is non-blocking so that failure never surfaced.
+							'remote_endpoint'       => 'https://dfs.wpanchorbay.com/wp-json/wpab/v1/feedback',
+							'disclosure_label'      => __( 'What information is sent?', 'campaignbay' ),
+							'disclosure_text'       => __( 'Pressing submit sends the reason you select and any note you type, together with your site address, the email address of your account, and your WordPress version. Choose "Skip & Deactivate" to send nothing.', 'campaignbay' ),
 							'reasons'               => array(
 								array(
 									'id'          => 'couldnt_get_working',

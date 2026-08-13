@@ -128,7 +128,7 @@ class Campaign {
 		// validating tiers
 		$tmp_tiers = array();
 		if ( self::need_tier_validation( $data['type'] ) ) {
-			foreach ( $data['tiers'] as $tier ) {
+			foreach ( (array) $data['tiers'] as $tier ) {
 				$tier_validator = new Validator( $tier );
 				$tier_rules     = self::get_tiers_validation_rules( $data['type'] );
 				if ( ! $tier_validator->validate( $tier_rules ) ) {
@@ -162,16 +162,20 @@ class Campaign {
 		// json encoding json fields
 
 		$data['tiers']      = wp_json_encode( $tmp_tiers ? $tmp_tiers : array() );
-		$data['target_ids'] = wp_json_encode( isset( $data['target_ids'] ) ? $data['target_ids'] : '[]' );
-		$data['settings']   = wp_json_encode( $validated_settings ? $validated_settings : '[]' );
-		$data['conditions'] = wp_json_encode( $validated_conditions ? $validated_conditions : '[]' );
+		$data['target_ids'] = wp_json_encode( isset( $data['target_ids'] ) ? $data['target_ids'] : array() );
+		$data['settings']   = wp_json_encode( $validated_settings ? $validated_settings : array() );
+		$data['conditions'] = wp_json_encode( $validated_conditions ? $validated_conditions : array() );
 
 		// adding other default data
-		$data['usage_count']   = 0;
-		$data['date_created']  = current_time( 'mysql' );
-		$data['date_modified'] = current_time( 'mysql' );
-		$data['created_by']    = get_current_user_id();
-		$data['updated_by']    = get_current_user_id();
+		$data['usage_count']      = 0;
+		$data['date_created']     = current_time( 'mysql' );
+		$data['date_modified']    = current_time( 'mysql' );
+		$data['created_by']       = get_current_user_id();
+		$data['updated_by']       = get_current_user_id();
+		// is_exclude/schedule_enabled are NOT NULL columns; a null here (allowed by the nullable
+		// validation rule) would make $wpdb->insert fail under strict SQL mode.
+		$data['is_exclude']       = $data['is_exclude'] ?? false;
+		$data['schedule_enabled'] = $data['schedule_enabled'] ?? false;
 		try {
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'campaignbay_campaigns';
@@ -272,7 +276,7 @@ class Campaign {
 		// validating tiers
 		$tmp_tiers = array();
 		if ( self::need_tier_validation( $data['type'] ) ) {
-			foreach ( $data['tiers'] as $tier ) {
+			foreach ( (array) $data['tiers'] as $tier ) {
 				$tier_validator = new Validator( $tier );
 				$tier_rules     = self::get_tiers_validation_rules( $data['type'] );
 				if ( ! $tier_validator->validate( $tier_rules ) ) {
@@ -300,11 +304,24 @@ class Campaign {
 		if ( is_wp_error( $validated_conditions ) ) {
 			return $validated_conditions;
 		}
-		// json encoding json fields
-		$data['target_ids'] = isset( $data['target_ids'] ) ? wp_json_encode( $data['target_ids'] ) : wp_json_encode( $this->data->target_ids ?? '[]' );
-		$data['settings']   = $validated_settings ? wp_json_encode( $validated_settings ) : wp_json_encode( $this->data->settings ?? '[]' );
-		$data['conditions'] = $validated_conditions ? wp_json_encode( $validated_conditions ) : wp_json_encode( $this->data->conditions ?? '[]' );
-		$data['tiers']      = wp_json_encode( isset( $tmp_tiers ) ? $tmp_tiers : $this->data->tiers ?? '[]' );
+		// json encoding json fields. The fallback branches re-encode $this->data's existing
+		// value, which is normally already-decoded (Campaign::load_data() decodes it) but isn't
+		// guaranteed to be (some call sites construct Campaign from a raw, undecoded $wpdb row) --
+		// self::encode_json_field() reuses an already-JSON string as-is instead of wp_json_encode()-ing
+		// it a second time, to avoid double-encoding in that case.
+		$data['target_ids'] = isset( $data['target_ids'] ) ? wp_json_encode( $data['target_ids'] ) : self::encode_json_field( $this->data->target_ids ?? array() );
+		$data['settings']   = $validated_settings ? wp_json_encode( $validated_settings ) : self::encode_json_field( $this->data->settings ?? array() );
+		$data['conditions'] = $validated_conditions ? wp_json_encode( $validated_conditions ) : self::encode_json_field( $this->data->conditions ?? array() );
+		// array_key_exists on the raw $args (not isset($tmp_tiers), which is always true since
+		// it's declared unconditionally above) so an update that doesn't send 'tiers' at all
+		// preserves the existing tiers instead of silently wiping them to [].
+		$data['tiers'] = array_key_exists( 'tiers', $args ) && $tmp_tiers ? wp_json_encode( $tmp_tiers ) : self::encode_json_field( $this->data->tiers ?? array() );
+		// is_exclude/schedule_enabled are NOT NULL columns; a null here (allowed by the nullable
+		// validation rule) would make $wpdb->update fail under strict SQL mode. Fall back to the
+		// existing stored value (not false) when the request simply didn't send the field, so a
+		// partial update (e.g. a status-only toggle) doesn't silently reset it.
+		$data['is_exclude']       = array_key_exists( 'is_exclude', $args ) ? ( $data['is_exclude'] ?? false ) : ( $this->data->is_exclude ?? false );
+		$data['schedule_enabled'] = array_key_exists( 'schedule_enabled', $args ) ? ( $data['schedule_enabled'] ?? false ) : ( $this->data->schedule_enabled ?? false );
 		// adding other default data
 		$data['date_modified'] = current_time( 'mysql' );
 		$data['updated_by']    = get_current_user_id();
@@ -391,6 +408,24 @@ class Campaign {
 	}
 
 	/**
+	 * Encodes a JSON-column fallback value for storage, without double-encoding.
+	 *
+	 * $this->data's JSON columns (tiers, target_ids, settings, conditions) are normally
+	 * already-decoded arrays (Campaign::load_data() decodes them on hydration), but a Campaign
+	 * can also be constructed from a raw, undecoded $wpdb row elsewhere in the codebase -- in
+	 * that case the value here would still be the raw JSON string, and wp_json_encode()-ing it
+	 * again would double-encode it.
+	 *
+	 * @since 1.1.11
+	 * @access private
+	 * @param mixed $value The value to encode; either an already-decoded array or a raw JSON string.
+	 * @return string The JSON-encoded value, safe to store.
+	 */
+	private static function encode_json_field( $value ) {
+		return is_string( $value ) ? $value : wp_json_encode( $value );
+	}
+
+	/**
 	 * Defines the primary validation rules for a campaign's data.
 	 *
 	 * This static method returns an associative array where each key represents a
@@ -460,7 +495,7 @@ class Campaign {
 			$rules = array(
 				'id'    => 'nullable|integer',
 				'min'   => 'required|integer|min:1|gte:previous_tier_max',
-				'max'   => 'required|integer|min:1|gte:min',
+				'max'   => 'nullable|integer|min:1|gte:min',
 				'value' => 'required|numeric|min:0|max_if:type,percentage,100',
 				'type'  => 'required|in:percentage,currency',
 			);
@@ -653,7 +688,9 @@ class Campaign {
 		 * @return array The array of default validation rules.
 		 */
 		$default_rules = apply_filters( 'campaignbay_get_conditions_validation_rules', $default_rules );
-		foreach ( $conditions['rules'] as $index => $rule ) {
+		// A campaign with no conditions configured has no 'rules' key at all (not an empty
+		// array), which would otherwise trigger a foreach-on-null warning on every such save.
+		foreach ( $conditions['rules'] ?? array() as $index => $rule ) {
 			$condition_validator = new Validator( $rule['condition'] );
 			$validation_rules    = $default_rules[ $rule['type'] ];
 			if ( ! $condition_validator->validate( $validation_rules ) ) {
@@ -913,6 +950,9 @@ class Campaign {
 	 * @return array The campaign tiers.
 	 */
 	public function get_tiers() {
+		if ( is_string( $this->data->tiers ) ) {
+			return json_decode( $this->data->tiers, true ) ?? array();
+		}
 		return $this->data->tiers ?? array();
 	}
 
@@ -959,6 +999,9 @@ class Campaign {
 	 * @return array The target IDs.
 	 */
 	public function get_target_ids() {
+		if ( is_string( $this->data->target_ids ) ) {
+			return json_decode( $this->data->target_ids, true ) ?? array();
+		}
 		return $this->data->target_ids ?? array();
 	}
 

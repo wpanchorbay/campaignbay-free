@@ -299,7 +299,9 @@ class Condition {
 				$result = $cart_total < $value;
 				break;
 			case '==':
-				$result = (float) $cart_total === (float) $value;
+				// Strict float equality is unreliable for a computed cart total (rounding
+				// noise); compare at the store's configured price precision instead.
+				$result = Woocommerce::round( (float) $cart_total ) === Woocommerce::round( (float) $value );
 				break;
 			default:
 				$result = false;

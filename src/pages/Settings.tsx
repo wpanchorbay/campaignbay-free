@@ -589,7 +589,7 @@ const Settings = () => {
     product_message_format_percentage: "You save {percentage_off}%",
     product_message_format_fixed: "You save {amount_off} per item",
     bogo_banner_message_format:
-      "Buy {buy_quantity} and {get_quantity} free!!!!!!",
+      "Buy {buy_quantity} and get {get_quantity} free!",
     show_discount_table: true,
     product_priorityMethod: "apply_highest",
     product_enableQuantityTable: true,
@@ -603,9 +603,9 @@ const Settings = () => {
     cart_allowWcCouponStacking: false,
     cart_allowCampaignStacking: false,
     cart_quantity_message_format_percentage:
-      "Add {remaining_quantity_for_next_offer} more and get {next_offer}",
+      "Add {remaining_quantity_for_next_offer} more and get {percentage_off}% off",
     cart_quantity_message_format_fixed:
-      "Add {remaining_quantity_for_next_offer} more and get {next_offer}",
+      "Add {remaining_quantity_for_next_offer} more and get {amount_off} off per item!",
     cart_bogo_message_format: "{title} discount applied.",
     cart_bogo_cart_message_format: "Buy {buy_quantity} get {get_quantity} free",
 

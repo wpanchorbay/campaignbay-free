@@ -241,7 +241,7 @@ const CampaignSettings: FC<CampaignSettingsProps> = ({
                 )}
                 <Placeholders
                   options={[
-                    "remainging_quantity_for_next_offer",
+                    "remaining_quantity_for_next_offer",
                     "percentage_off",
                     "amount_off",
                   ]}

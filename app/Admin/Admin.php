@@ -536,7 +536,7 @@ class Admin {
 				'bogo_banner_message_format'              => array(
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
-					'default'           => 'Buy {buy_quantity} and {get_quantity} free!!!!!!',
+					'default'           => 'Buy {buy_quantity} and get {get_quantity} free!',
 				),
 				'product_priorityMethod'                  => array(
 					'type'              => 'string',
@@ -620,12 +620,12 @@ class Admin {
 				'cart_quantity_message_format_percentage' => array(
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
-					'default'           => 'Add {remainging_quantity_for_next_offer} more and get {discount_value}% off',
+					'default'           => 'Add {remaining_quantity_for_next_offer} more and get {percentage_off}% off',
 				),
 				'cart_quantity_message_format_fixed'      => array(
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
-					'default'           => 'Add {remainging_quantity_for_next_offer} more and get {discount_value} off per item!!',
+					'default'           => 'Add {remaining_quantity_for_next_offer} more and get {amount_off} off per item!',
 				),
 				'cart_bogo_message_format'                => array(
 					'type'              => 'string',

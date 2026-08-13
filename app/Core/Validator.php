@@ -305,7 +305,8 @@ class Validator {
 	 * @return string The first error message, or an empty string if no errors exist.
 	 */
 	public function get_first_error() {
-		return ! empty( $this->errors ) ? reset( $this->errors ) : '';
+		$first_error = ! empty( $this->errors ) ? reset( $this->errors ) : null;
+		return $first_error['message'] ?? '';
 	}
 
 	/**

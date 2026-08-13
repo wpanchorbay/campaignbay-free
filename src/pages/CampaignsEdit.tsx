@@ -70,6 +70,11 @@ const CampaignsEdit: FC = () => {
     const campaignData = {
       ...campaign,
       discount_value: Number(campaign.discount_value),
+      // An empty max on the last quantity tier means "no upper bound" and must reach the
+      // API as null, not "" (the backend rejects an empty string as an invalid integer).
+      tiers: campaign.tiers?.map((tier) =>
+        "max" in tier && tier.max === "" ? { ...tier, max: null } : tier,
+      ),
     };
 
     try {

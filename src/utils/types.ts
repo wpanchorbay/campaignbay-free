@@ -77,7 +77,7 @@ export type TargetType = "entire_store" | "category" | "product" | "tag";
 export interface QuantityTier {
     id: number;
     min: number;
-    max?: number | "";
+    max?: number | "" | null;
     value?: number | "";
     type?: "percentage" | "currency";
 }

@@ -80,7 +80,7 @@ class Common {
 	*/
 		'product_message_format_percentage'       => 'You save {percentage_off}%',
 		'product_message_format_fixed'            => 'You save {amount_off} per item',
-		'bogo_banner_message_format'              => 'Buy {buy_quantity} and {get_quantity} free!!!!!!',
+		'bogo_banner_message_format'              => 'Buy {buy_quantity} and get {get_quantity} free!',
 		'product_priorityMethod'                  => 'apply_highest',
 		'show_discount_table'                     => 'true',
 		'discount_table_options'                  => array(
@@ -108,8 +108,8 @@ class Common {
 	*/
 		'cart_allowWcCouponStacking'              => false,
 		'cart_allowCampaignStacking'              => false,
-		'cart_quantity_message_format_percentage' => 'Add {remainging_quantity_for_next_offer} more and get {percentage_off}% off',
-		'cart_quantity_message_format_fixed'      => 'Add {remainging_quantity_for_next_offer} more and get {amount_off} off per item!!',
+		'cart_quantity_message_format_percentage' => 'Add {remaining_quantity_for_next_offer} more and get {percentage_off}% off',
+		'cart_quantity_message_format_fixed'      => 'Add {remaining_quantity_for_next_offer} more and get {amount_off} off per item!',
 		'cart_bogo_message_format'                => '{title} discount applied.',
 
 		/*
@@ -205,7 +205,11 @@ class Common {
 			$options                 = $this->get_settings();
 			$options[ $key_or_data ] = $val;
 		} else {
-			$options = $key_or_data;
+			// Merge onto the current settings rather than replacing wholesale, so a caller
+			// passing a partial array (e.g. SettingsController::update_item(), which only
+			// includes whatever fields the REST request actually sent) can't silently wipe
+			// every other stored setting.
+			$options = array_merge( $this->get_settings(), (array) $key_or_data );
 		}
 		update_option( CAMPAIGNBAY_OPTION_NAME, $options );
 		$this->load_settings();

@@ -401,6 +401,23 @@ class CampaignsController extends ApiController {
 	}
 
 	/**
+	 * Loads a campaign by ID, converting the "not found" exception Campaign::__construct()
+	 * throws into a proper 404 WP_Error instead of letting it escape uncaught.
+	 *
+	 * @since 1.1.11
+	 * @access private
+	 * @param int $id The campaign ID.
+	 * @return Campaign|WP_Error The campaign, or a 404 WP_Error if it doesn't exist.
+	 */
+	private function get_campaign_or_error( $id ) {
+		try {
+			return new Campaign( $id );
+		} catch ( \Exception $e ) {
+			return new WP_Error( 'rest_campaign_not_found', __( 'Campaign not found.', 'campaignbay' ), array( 'status' => 404 ) );
+		}
+	}
+
+	/**
 	 * Get a single campaign.
 	 *
 	 * @since 1.0.0
@@ -410,10 +427,10 @@ class CampaignsController extends ApiController {
 	 */
 	public function get_item( $request ) {
 		$id       = (int) $request['id'];
-		$campaign = new Campaign( $id );
+		$campaign = $this->get_campaign_or_error( $id );
 
-		if ( ! $campaign ) {
-			return new WP_Error( 'rest_campaign_not_found', __( 'Campaign not found.', 'campaignbay' ), array( 'status' => 404 ) );
+		if ( is_wp_error( $campaign ) ) {
+			return $campaign;
 		}
 
 		$data = $this->prepare_item_for_response( $campaign, $request );
@@ -454,10 +471,10 @@ class CampaignsController extends ApiController {
 	 */
 	public function update_item( $request ) {
 		$id       = (int) $request['id'];
-		$campaign = new Campaign( $id );
+		$campaign = $this->get_campaign_or_error( $id );
 
-		if ( ! $campaign ) {
-			return new WP_Error( 'rest_campaign_not_found', __( 'Campaign not found.', 'campaignbay' ), array( 'status' => 404 ) );
+		if ( is_wp_error( $campaign ) ) {
+			return $campaign;
 		}
 
 		$params = $request->get_json_params();
@@ -489,9 +506,9 @@ class CampaignsController extends ApiController {
 		$campaign_id = $request->get_param( 'id' );
 		$force       = $request->get_param( 'force' );
 
-		$campaign = new Campaign( $campaign_id );
-		if ( ! $campaign ) {
-			return new WP_Error( 'rest_campaign_not_found', __( 'Campaign not found.', 'campaignbay' ), array( 'status' => 404 ) );
+		$campaign = $this->get_campaign_or_error( $campaign_id );
+		if ( is_wp_error( $campaign ) ) {
+			return $campaign;
 		}
 
 		$result = $campaign->delete( $campaign_id, $force );
@@ -524,8 +541,8 @@ class CampaignsController extends ApiController {
 
 		$updated_count = 0;
 		foreach ( $ids as $id ) {
-			$campaign = new Campaign( $id );
-			if ( $campaign ) {
+			$campaign = $this->get_campaign_or_error( $id );
+			if ( ! is_wp_error( $campaign ) ) {
 				$title  = $campaign->get_title();
 				$result = $campaign->set_status( $status );
 
@@ -604,10 +621,10 @@ class CampaignsController extends ApiController {
 	public function duplicate_item( $request ) {
 		try {
 			$id       = (int) $request['id'];
-			$campaign = new Campaign( $id );
+			$campaign = $this->get_campaign_or_error( $id );
 
-			if ( ! $campaign ) {
-				return new WP_Error( 'rest_campaign_not_found', __( 'Campaign not found.', 'campaignbay' ), array( 'status' => 404 ) );
+			if ( is_wp_error( $campaign ) ) {
+				return $campaign;
 			}
 
 			$new_campaign = $campaign->create(

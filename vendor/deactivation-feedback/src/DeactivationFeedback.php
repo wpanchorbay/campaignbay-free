@@ -80,6 +80,15 @@ class DeactivationFeedback {
             'skip_label'      => 'Skip & Deactivate',
             'submit_label'    => 'Submit & Deactivate',
 
+            // Data-collection disclosure, shown next to the submit button.
+            // Nothing leaves the site unless the user presses submit, but the
+            // user can only consent to what they have been told, so this text
+            // is always present in the DOM and always reachable by keyboard
+            // and assistive tech — the toggle only controls visual display.
+            // Override it to match whatever your remote_endpoint receives.
+            'disclosure_label' => 'What information is sent?',
+            'disclosure_text'  => 'Pressing submit sends your selected reason and any note you type, along with your site address, the email address of your account, and your WordPress version. Choose "Skip & Deactivate" to send nothing.',
+
             // array of ['id'=>string, 'label'=>string, 'has_input'=>bool, 'placeholder'=>string]
             'reasons'         => [],
 
@@ -128,7 +137,6 @@ class DeactivationFeedback {
     }
 
     public function maybe_enqueue_assets( $hook_suffix ) {
-        error_log('DeactivationFeedback: maybe_enqueue_assets called with hook_suffix: ' . $hook_suffix);
         if ( 'plugins.php' !== $hook_suffix ) {
             return;
         }
@@ -140,7 +148,7 @@ class DeactivationFeedback {
                 $handle,
                 plugins_url( '../assets/css/deactivation-feedback.css', __FILE__ ),
                 [],
-                '1.0.0'
+                '1.1.0'
             );
         }
 
@@ -149,7 +157,7 @@ class DeactivationFeedback {
                 $handle,
                 plugins_url( '../assets/js/deactivation-feedback.js', __FILE__ ),
                 [],
-                '1.0.0',
+                '1.1.0',
                 true
             );
         }
@@ -175,7 +183,6 @@ class DeactivationFeedback {
     }
 
     public function maybe_render_modal() {
-        error_log('DeactivationFeedback: maybe_render_modal called. is_plugins_screen: ' . ($this->is_plugins_screen() ? 'true' : 'false'));
         if ( ! $this->is_plugins_screen() ) {
             return;
         }
@@ -210,9 +217,41 @@ class DeactivationFeedback {
                         <?php endif; ?>
                     <?php endforeach; ?>
 
+                    <?php if ( ! empty( $this->config['disclosure_text'] ) ) : ?>
+                        <?php $disclosure_id = $modal_id . '-disclosure'; ?>
+                        <div class="df-disclosure">
+                            <button
+                                type="button"
+                                class="df-disclosure-toggle"
+                                aria-expanded="false"
+                                aria-controls="<?php echo esc_attr( $disclosure_id ); ?>"
+                            >
+                                <span class="df-disclosure-icon" aria-hidden="true">&#9432;</span>
+                                <?php echo esc_html( $this->config['disclosure_label'] ); ?>
+                            </button>
+                            <?php
+                            /*
+                             * Collapsed with clipping, never display:none — an element
+                             * hidden that way is dropped from the accessibility tree,
+                             * which would silently break the aria-describedby link on
+                             * the submit button below.
+                             */
+                            ?>
+                            <p id="<?php echo esc_attr( $disclosure_id ); ?>" class="df-disclosure-text is-collapsed">
+                                <?php echo esc_html( $this->config['disclosure_text'] ); ?>
+                            </p>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="df-modal-actions">
                         <button type="button" class="button df-skip"><?php echo esc_html( $this->config['skip_label'] ); ?></button>
-                        <button type="submit" class="button button-primary df-submit"><?php echo esc_html( $this->config['submit_label'] ); ?></button>
+                        <button
+                            type="submit"
+                            class="button button-primary df-submit"
+                            <?php if ( ! empty( $this->config['disclosure_text'] ) ) : ?>
+                                aria-describedby="<?php echo esc_attr( $modal_id . '-disclosure' ); ?>"
+                            <?php endif; ?>
+                        ><?php echo esc_html( $this->config['submit_label'] ); ?></button>
                     </div>
                 </form>
             </div>

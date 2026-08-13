@@ -143,12 +143,14 @@ if ( ! get_option( 'wpab_activated_at_my-plugin' ) ) {
 | `ajax_action` | no | Auto-derived as `wpab_deactivation_feedback_{plugin_slug}`. Override only if you need a specific name. |
 | `nonce_action` | no | Auto-derived as `{ajax_action}_nonce`. |
 | `option_name` | no | Auto-derived as `wpab_deactivation_feedback_log_{slug}` — keeps each plugin's local feedback log separate. |
-| `asset_handle` | no | Shared on purpose (`wpab-deactivation-feedback` by default) — the JS/CSS is identical for every plugin, so it only needs to load once per page even with several instances active. |
+| `asset_handle` | no | Auto-derived **per plugin** as `wpab_deactivation_feedback_{slug}`, so every instance registers and loads its own copy of the JS/CSS. |
 | `save_locally` | no | Store responses in `wp_options` (default `true`) |
-| `remote_endpoint` | no | URL to POST each response to (JSON body). Leave empty to skip. |
+| `remote_endpoint` | no | URL to POST each response to (JSON body). Leave empty to skip. Point it at the receiver's full REST route (`.../wp-json/wpab/v1/feedback`) — the bare origin returns 400, and because the POST is non-blocking you will never see the failure. |
 | `remote_api_key` | no | Sent as `Authorization: Bearer {key}` if set |
 | `modal_title` / `modal_subtitle` | no | Modal copy |
 | `skip_label` / `submit_label` | no | Button labels |
+| `disclosure_label` | no | Label of the toggle that reveals the disclosure (default `What information is sent?`) |
+| `disclosure_text` | no | Data-collection disclosure shown above the buttons. Set an empty string to omit the whole block — but if `remote_endpoint` is set, shipping without a disclosure puts you on the wrong side of WordPress.org guideline 7. Keep the wording in sync with what `Ajax::handle()` actually sends. |
 | `reasons` | yes | Array of `['id', 'label', 'has_input', 'placeholder']` |
 
 ## How it works
@@ -163,16 +165,28 @@ if ( ! get_option( 'wpab_activated_at_my-plugin' ) ) {
   either immediately (skip) or after the AJAX save resolves/fails
   (submit).
 - Remote POSTs are fire-and-forget (`blocking => false`) so a slow or
-  down server never delays deactivation.
+  down server never delays deactivation. The flip side: a wrong URL, a
+  404, or a dead host is completely invisible. Verify delivery by
+  checking for a row on the receiver, never by reading the client code.
+- Nothing is transmitted unless the user presses submit. "Skip &
+  Deactivate", the close button, and the overlay all deactivate without
+  sending anything.
 
-## Note on running this in 10 plugins at once
+## The disclosure block
 
-Each plugin composer-installs its own copy of this package into its own
-`vendor/`. Since `asset_handle` is shared by default, whichever plugin's
-`admin_enqueue_scripts` callback runs first on a given page load is the
-one whose physical JS/CSS file actually gets loaded — the others just
-add their inline `init()` call onto that same already-enqueued script.
-This is fine as long as you keep the package version in sync across all
-10 plugins (update them together), since the JS/CSS content should be
-identical. If you ever let them drift, give the newer one a distinct
-`asset_handle` to avoid an older copy silently winning.
+`disclosure_text` renders above the action buttons behind a
+keyboard-focusable toggle, and the submit button is `aria-describedby`-linked
+to it. The text is **always** present in the DOM; the collapsed state
+clips it visually rather than using `display:none`, because a
+`display:none` element is dropped from the accessibility tree and that
+would silently sever the `aria-describedby` reference. Don't "optimise"
+that back into `display:none`.
+
+## Note on running this in several plugins at once
+
+Each plugin carries its own copy of this package in its own `vendor/`,
+and `asset_handle` is derived per-slug, so every instance registers and
+enqueues its own JS/CSS. Several instances on one `plugins.php` load are
+independent — no shared handle, no first-one-wins, and no requirement
+that the copies stay in version lockstep. The cost is one extra small
+JS/CSS pair per active instance.

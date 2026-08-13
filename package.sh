@@ -18,6 +18,16 @@ cp -r languages dist/$PLUGIN_SLUG/
 cp -r assets dist/$PLUGIN_SLUG/
 cp -r build dist/$PLUGIN_SLUG/
 
+# vendor/ was never copied, so the released zip contained no
+# deactivation-feedback package at all and class_exists() was always false.
+cp -r vendor dist/$PLUGIN_SLUG/
+
+# Strip dev-only metadata from vendored packages (avoids "hidden files" flags).
+find dist/$PLUGIN_SLUG/vendor \( -name '.gitignore' -o -name '.gitattributes' -o -name '.editorconfig' \
+    -o -name 'phpcs.xml' -o -name 'phpunit.xml*' -o -name '.php-cs-fixer*' \) -delete 2>/dev/null || true
+find dist/$PLUGIN_SLUG/vendor -type d \( -name 'tests' -o -name 'test' -o -name 'docs' -o -name '.github' \
+    -o -name 'examples' \) -exec rm -rf {} + 2>/dev/null || true
+
 # Copy files
 echo "Copying files..."
 cp index.php dist/$PLUGIN_SLUG/

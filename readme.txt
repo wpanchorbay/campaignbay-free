@@ -4,7 +4,7 @@ Tags: discount manager, bulk discount, dynamic pricing, woocommerce, bogo
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.0
-Stable tag: 1.1.10
+Stable tag: 1.1.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -180,6 +180,22 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 
 == Changelog ==
 
+= 1.1.11 =
+*   Fix: Resolved a fatal error on the storefront for category-targeted Scheduled and Early Bird campaigns involving variable products.
+*   Fix: Resolved a fatal error when BOGO campaigns were saved without a complete tier configuration.
+*   Fix: Product/category-targeted campaigns created or updated without a full set of target items no longer crash the storefront.
+*   Fix: Campaign save requests are no longer rejected with a generic server error when optional fields are left blank; the underlying validation error is now returned instead.
+*   Fix: Quantity discount tiers can now be left open-ended (no upper limit) on the final tier.
+*   Fix: Cart Total "equals" conditions now match reliably instead of being defeated by floating-point rounding.
+*   Fix: Editing or deleting a campaign that no longer exists now returns a proper "not found" response instead of a server error, including within bulk actions.
+*   Fix: A campaign's quantity tiers, target products/categories, and other settings could be unintentionally wiped when only part of the campaign was updated (e.g. a status toggle); updates now only affect the fields actually sent.
+*   Fix: Scheduled campaigns saved with an end date but no start date no longer expire silently without ever activating.
+*   Fix: Corrected a misspelled placeholder token shown in the discount message editor that could cause customer-facing messages to display unreplaced.
+*   Fix: Cleaned up default discount message wording (punctuation and phrasing).
+*   Security: License key is now masked wherever it appears in the admin UI and REST responses.
+*   Fix: Saving unrelated settings could not accidentally overwrite the stored license key or other settings.
+*   Fix: The deactivation feedback library is now correctly bundled and reaches the right endpoint.
+
 = 1.1.10 =
 *   Fix: Resolved several bugs affecting campaign conditions, dashboard statistics, and cart discounts.
 
@@ -263,6 +279,9 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 *   Initial release of CampaignBay.
 
 == Upgrade Notice ==
+
+= 1.1.11 =
+Important stability and security fixes, including storefront crash fixes for category-targeted and BOGO campaigns, and license key masking. Recommended for all users.
 
 = 1.1.10 =
 Bug fixes. Seamless upgrade.

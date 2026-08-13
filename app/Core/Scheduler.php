@@ -109,6 +109,7 @@ class Scheduler extends Base {
 		if ( 'scheduled' === $campaign->get_status() && $campaign->get_schedule_enabled() ) {
 			if ( ! $start_timestamp ) {
 				wpab_campaignbay_log( sprintf( 'Campaign #%d is missing start timestamps. Cannot schedule. %d', $campaign_id, $start_timestamp ), 'ERROR' );
+				return;
 			} else {
 				wp_schedule_single_event(
 					$start_timestamp,

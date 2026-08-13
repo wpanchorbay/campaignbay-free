@@ -143,6 +143,14 @@ class SettingsController extends ApiController {
 		$schema        = $this->get_registered_schema();
 		$response      = $this->prepare_value( $saved_options, $schema );
 
+		// Mask here unconditionally rather than relying on ProSettings::campaignbaypro_get_settings():
+		// that filter is only registered when the addon-enabled setting is on
+		// (see ProSettings::__construct()), so with the addon toggled off the filter never runs
+		// and the raw key would otherwise pass straight through from Common::get_settings().
+		if ( array_key_exists( 'license_key', $response ) && class_exists( '\WpabCampaignBayPro\Engine\ProSettings' ) ) {
+			$response['license_key'] = \WpabCampaignBayPro\Engine\ProSettings::mask_license_key( $response['license_key'] );
+		}
+
 		return $response;
 	}
 
@@ -185,7 +193,23 @@ class SettingsController extends ApiController {
 		}
 
 		$sanitized_options = $this->prepare_value( $params, $schema );
+		// license_key is served masked (see ProSettings::campaignbaypro_get_settings()), so the
+		// value round-tripped from the browser on a generic settings save is never the real key.
+		// Force it back to the authoritative stored value here; real key changes only happen
+		// through the dedicated license activation endpoint.
+		if ( array_key_exists( 'license_key', $sanitized_options ) ) {
+			$sanitized_options['license_key'] = Common::get_instance()->get_settings()['license_key'] ?? '';
+		}
 		Common::get_instance()->update_settings( $sanitized_options );
+
+		// Respond with what was actually just saved rather than re-fetching through the
+		// campaignbay_get_settings filter: the Pro add-on's filter callback reads its own
+		// separately-cached settings singleton, populated once at bootstrap, which the free
+		// plugin's update_settings() call above has no way to invalidate — so re-fetching through
+		// it here would echo back Pro's stale pre-save snapshot for every field, not just the key.
+		if ( array_key_exists( 'license_key', $sanitized_options ) && class_exists( '\WpabCampaignBayPro\Engine\ProSettings' ) ) {
+			$sanitized_options['license_key'] = \WpabCampaignBayPro\Engine\ProSettings::mask_license_key( $sanitized_options['license_key'] );
+		}
 		$response = $this->prepare_value( $sanitized_options, $schema );
 
 		return $response;
