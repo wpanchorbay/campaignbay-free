@@ -4,7 +4,7 @@
  * Plugin URI:        https://wpanchorbay.com/campaignbay
  * Source URI:        https://github.com/dipta-sdd/campaignbay
  * Description:       Automated Discount Campaigns & Flash Sales for WooCommerce.
- * Requires at least: 5.6
+ * Requires at least: 5.8
  * Requires PHP:      7.0
  * Requires Plugins:  woocommerce
  * WC requires at least: 6.1
