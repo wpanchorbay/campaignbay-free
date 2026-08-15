@@ -167,11 +167,11 @@ class Campaign {
 		$data['conditions'] = wp_json_encode( $validated_conditions ? $validated_conditions : array() );
 
 		// adding other default data
-		$data['usage_count']      = 0;
-		$data['date_created']     = current_time( 'mysql' );
-		$data['date_modified']    = current_time( 'mysql' );
-		$data['created_by']       = get_current_user_id();
-		$data['updated_by']       = get_current_user_id();
+		$data['usage_count']   = 0;
+		$data['date_created']  = current_time( 'mysql' );
+		$data['date_modified'] = current_time( 'mysql' );
+		$data['created_by']    = get_current_user_id();
+		$data['updated_by']    = get_current_user_id();
 		// is_exclude/schedule_enabled are NOT NULL columns; a null here (allowed by the nullable
 		// validation rule) would make $wpdb->insert fail under strict SQL mode.
 		$data['is_exclude']       = $data['is_exclude'] ?? false;
