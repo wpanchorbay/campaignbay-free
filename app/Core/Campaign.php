@@ -951,9 +951,21 @@ class Campaign {
 	 */
 	public function get_tiers() {
 		if ( is_string( $this->data->tiers ) ) {
-			return json_decode( $this->data->tiers, true ) ?? array();
+			$tiers = json_decode( $this->data->tiers, true ) ?? array();
+		} else {
+			$tiers = $this->data->tiers ?? array();
 		}
-		return $this->data->tiers ?? array();
+
+		// An open-ended final tier is stored with an empty string max; normalize it to null
+		// so numeric comparisons against it (e.g. `null === $tier['max']`) work as intended.
+		foreach ( $tiers as &$tier ) {
+			if ( isset( $tier['max'] ) && '' === $tier['max'] ) {
+				$tier['max'] = null;
+			}
+		}
+		unset( $tier );
+
+		return $tiers;
 	}
 
 	/**

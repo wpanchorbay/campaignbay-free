@@ -108,8 +108,9 @@ class Scheduler extends Base {
 
 		if ( 'scheduled' === $campaign->get_status() && $campaign->get_schedule_enabled() ) {
 			if ( ! $start_timestamp ) {
-				wpab_campaignbay_log( sprintf( 'Campaign #%d is missing start timestamps. Cannot schedule. %d', $campaign_id, $start_timestamp ), 'ERROR' );
-				return;
+				// No start date means the campaign has no start restriction, so it should be active immediately.
+				wpab_campaignbay_log( sprintf( 'Campaign #%d has no start timestamp; activating immediately.', $campaign_id ), 'INFO' );
+				$this->run_campaign_activation( $campaign_id );
 			} else {
 				wp_schedule_single_event(
 					$start_timestamp,
@@ -177,9 +178,9 @@ class Scheduler extends Base {
 			$start_timestamp = $campaign->get_start_timestamp();
 			$end_timestamp   = $campaign->get_end_timestamp();
 
-			if ( ( 'scheduled' === $campaign->get_status() && $campaign->get_schedule_enabled() ) && $start_timestamp && $start_timestamp <= $current_timestamp ) {
+			if ( ( 'scheduled' === $campaign->get_status() && $campaign->get_schedule_enabled() ) && ( ! $start_timestamp || $start_timestamp <= $current_timestamp ) ) {
 				//phpcs:ignore
-				wpab_campaignbay_log(sprintf('Failsafe: Activating campaign #%d (%s) as its start time (%s) has passed. Current time: %s.', $campaign->get_id(), $campaign->get_title(), date('Y-m-d H:i:s', $start_timestamp), date('Y-m-d H:i:s', $current_timestamp)), 'INFO');
+				wpab_campaignbay_log(sprintf('Failsafe: Activating campaign #%d (%s) as its start time (%s) has passed or is unset. Current time: %s.', $campaign->get_id(), $campaign->get_title(), $start_timestamp ? date('Y-m-d H:i:s', $start_timestamp) : 'none', date('Y-m-d H:i:s', $current_timestamp)), 'INFO');
 				$this->run_campaign_activation( $campaign->get_id() );
 				$cache_needs_clearing = true;
 			}

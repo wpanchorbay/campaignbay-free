@@ -598,6 +598,11 @@ class CampaignsController extends ApiController {
 
 		$deleted_count = 0;
 		foreach ( $ids as $id ) {
+			// Skip IDs that no longer exist instead of letting the constructor's
+			// exception bubble up as an uncaught 500 (e.g. a stale ID in the batch).
+			if ( is_wp_error( $this->get_campaign_or_error( $id ) ) ) {
+				continue;
+			}
 			// Using the Campaign::delete method ensures our custom hooks are fired.
 			if ( Campaign::delete( $id, true ) ) {
 				++$deleted_count;

@@ -79,7 +79,17 @@ class Validator {
 			$rules_for_field = explode( '|', $rule_string );
 			$value           = $this->data[ $field ] ?? null;
 
+			// A field marked nullable skips its other rules when left empty, matching the "required" definition of empty.
+			$is_nullable = in_array( 'nullable', $rules_for_field, true );
+			$is_empty    = null === $value || ( is_string( $value ) && '' === trim( $value ) );
+
 			foreach ( $rules_for_field as $rule ) {
+				if ( 'nullable' === $rule ) {
+					continue;
+				}
+				if ( $is_nullable && $is_empty && 'required' !== $rule ) {
+					continue;
+				}
 				if ( 'datetime' === $rule && ! is_null( $value ) ) {
 					$value                = self::validate_datetime( $value );
 					$this->data[ $field ] = $value;
