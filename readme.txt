@@ -180,6 +180,12 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 
 == Changelog ==
 
+= 1.1.12 =
+*   Fix: Scheduled campaigns saved without a start date now activate immediately instead of getting stuck in "Scheduled" status forever.
+*   Fix: Campaign fields intentionally left blank (e.g. optional tier limits) are no longer rejected by validation.
+*   Fix: Open-ended (no upper limit) quantity discount tiers now apply correctly at checkout, not just in the admin preview.
+*   Fix: Bulk-deleting campaigns no longer errors out when the batch includes an ID that was already deleted.
+
 = 1.1.11 =
 *   Fix: Resolved a fatal error on the storefront for category-targeted Scheduled and Early Bird campaigns involving variable products.
 *   Fix: Resolved a fatal error when BOGO campaigns were saved without a complete tier configuration.
@@ -279,6 +285,9 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 *   Initial release of CampaignBay.
 
 == Upgrade Notice ==
+
+= 1.1.12 =
+Additional stability fixes for campaign scheduling, validation, and bulk actions. Recommended for all users.
 
 = 1.1.11 =
 Important stability and security fixes, including storefront crash fixes for category-targeted and BOGO campaigns, and license key masking. Recommended for all users.
