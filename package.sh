@@ -1,8 +1,15 @@
 #!/bin/bash
+set -e
 
 # Define the zip filename
 ZIP_NAME="campaignbay.zip"
 PLUGIN_SLUG="campaignbay"
+
+# Build the admin SPA (production + legacy) before packaging, so the zip
+# never ships a stale build/ directory.
+VERSION=$(grep -m1 '^ \* Version:' campaignbay.php | sed -E 's/.*Version:[[:space:]]*//')
+echo "Building version $VERSION..."
+./build.sh "$VERSION"
 
 # Cleanup previous build if exists
 rm -rf dist
