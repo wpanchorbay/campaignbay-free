@@ -9,36 +9,36 @@ rm -rf dist
 rm -f $ZIP_NAME
 
 # Create a temporary directory for staging
-mkdir -p dist/$PLUGIN_SLUG
+mkdir -p dist
 
 # Copy folders
 echo "Copying folders..."
-cp -r app dist/$PLUGIN_SLUG/
-cp -r languages dist/$PLUGIN_SLUG/
-cp -r assets dist/$PLUGIN_SLUG/
-cp -r build dist/$PLUGIN_SLUG/
+cp -r app dist/
+cp -r languages dist/
+cp -r assets dist/
+cp -r build dist/
 
 # vendor/ was never copied, so the released zip contained no
 # deactivation-feedback package at all and class_exists() was always false.
-cp -r vendor dist/$PLUGIN_SLUG/
+cp -r vendor dist/
 
 # Strip dev-only metadata from vendored packages (avoids "hidden files" flags).
-find dist/$PLUGIN_SLUG/vendor \( -name '.gitignore' -o -name '.gitattributes' -o -name '.editorconfig' \
+find dist/vendor \( -name '.gitignore' -o -name '.gitattributes' -o -name '.editorconfig' \
     -o -name 'phpcs.xml' -o -name 'phpunit.xml*' -o -name '.php-cs-fixer*' \) -delete 2>/dev/null || true
-find dist/$PLUGIN_SLUG/vendor -type d \( -name 'tests' -o -name 'test' -o -name 'docs' -o -name '.github' \
+find dist/vendor -type d \( -name 'tests' -o -name 'test' -o -name 'docs' -o -name '.github' \
     -o -name 'examples' \) -exec rm -rf {} + 2>/dev/null || true
 
 # Copy files
 echo "Copying files..."
-cp index.php dist/$PLUGIN_SLUG/
-cp readme.txt dist/$PLUGIN_SLUG/
-cp uninstall.php dist/$PLUGIN_SLUG/
-cp campaignbay.php dist/$PLUGIN_SLUG/
+cp index.php dist/
+cp readme.txt dist/
+cp uninstall.php dist/
+cp campaignbay.php dist/
 
 # Create the zip file
 echo "Creating zip file..."
 cd dist
-zip -r ../$ZIP_NAME $PLUGIN_SLUG
+zip -r ../$ZIP_NAME .
 
 # Clean up
 cd ..
