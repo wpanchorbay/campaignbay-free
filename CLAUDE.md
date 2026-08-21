@@ -108,7 +108,7 @@ event happened, and the displayed time advances every time the page is reloaded.
   `getDate(typeof dateTimeString === "number" ? dateTimeString * 1000 : dateTimeString)`.
 - But when the event is more than 10 days old, line 88 hands the **raw** value to
   `formatDateTime(dateTimeString)`.
-- `formatDateTime()` (line 17) is not careful: line 32 is
+- `formatDateTime()` (line 17) is not careful: line 33 is
   `const dateTime: Date = getDate(dateTimeString * 1000);` — unconditional, no type check.
 
 The activity feed supplies `l.timestamp` from `{prefix}campaignbay_logs`, which is a MySQL
@@ -125,7 +125,7 @@ number — so it never hits this path. The bug is specific to string inputs, i.e
 table.
 
 **Recommended fix:** give `formatDateTime()` (and `formatDate()`, which has the identical
-line 56) the same type check `timeDiff()` already uses, rather than fixing it at the call
+line 57) the same type check `timeDiff()` already uses, rather than fixing it at the call
 site — both are exported and either can be called with a string by future code. Simplest
 correct form:
 
@@ -138,6 +138,7 @@ const dateTime: Date = getDate(
 Alternatively have `timeDiff()` pass its already-parsed `dateTime` object down, but that
 leaves the underlying trap in place for other callers.
 
+Verified present in campaignbay 1.1.12 / campaignbaypro 1.0.3 (the current dev source).
 Reproduced on WP 7.0 / WooCommerce 11.0 by seeding activity rows with backdated
 `timestamp` values and reloading the dashboard three times ~30s apart: the three
 older-than-10-days rows read 7:40 pm, then 7:41 pm, then 7:43 pm, while the DB values
