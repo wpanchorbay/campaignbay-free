@@ -15,41 +15,51 @@ echo "Building version $VERSION..."
 rm -rf dist
 rm -f $ZIP_NAME
 
+# Helper function to copy plugin files to a target path
+copy_plugin_files() {
+    local DEST=$1
+    echo "Copying files to $DEST..."
+
+    # Copy folders
+    cp -r app "$DEST/"
+    cp -r languages "$DEST/"
+    cp -r assets "$DEST/"
+    cp -r build "$DEST/"
+
+    # vendor/ was never copied, so the released zip contained no
+    # deactivation-feedback package at all and class_exists() was always false.
+    cp -r vendor "$DEST/"
+
+    # Strip dev-only metadata from vendored packages (avoids "hidden files" flags).
+    find "$DEST/vendor" \( -name '.gitignore' -o -name '.gitattributes' -o -name '.editorconfig' \
+        -o -name 'phpcs.xml' -o -name 'phpunit.xml*' -o -name '.php-cs-fixer*' \) -delete 2>/dev/null || true
+    find "$DEST/vendor" -type d \( -name 'tests' -o -name 'test' -o -name 'docs' -o -name '.github' \
+        -o -name 'examples' \) -exec rm -rf {} + 2>/dev/null || true
+
+    # Copy files
+    cp index.php "$DEST/"
+    cp readme.txt "$DEST/"
+    cp uninstall.php "$DEST/"
+    cp campaignbay.php "$DEST/"
+}
+
 # Create a temporary directory for staging
-mkdir -p dist
-
-# Copy folders
-echo "Copying folders..."
-cp -r app dist/
-cp -r languages dist/
-cp -r assets dist/
-cp -r build dist/
-
-# vendor/ was never copied, so the released zip contained no
-# deactivation-feedback package at all and class_exists() was always false.
-cp -r vendor dist/
-
-# Strip dev-only metadata from vendored packages (avoids "hidden files" flags).
-find dist/vendor \( -name '.gitignore' -o -name '.gitattributes' -o -name '.editorconfig' \
-    -o -name 'phpcs.xml' -o -name 'phpunit.xml*' -o -name '.php-cs-fixer*' \) -delete 2>/dev/null || true
-find dist/vendor -type d \( -name 'tests' -o -name 'test' -o -name 'docs' -o -name '.github' \
-    -o -name 'examples' \) -exec rm -rf {} + 2>/dev/null || true
-
-# Copy files
-echo "Copying files..."
-cp index.php dist/
-cp readme.txt dist/
-cp uninstall.php dist/
-cp campaignbay.php dist/
+mkdir -p dist/zip-staging
+copy_plugin_files dist/zip-staging
 
 # Create the zip file
 echo "Creating zip file..."
-cd dist
-zip -r ../$ZIP_NAME .
+cd dist/zip-staging
+zip -r ../../$ZIP_NAME .
+cd ../..
+rm -rf dist/zip-staging
 
-# Clean up
-cd ..
-rm -rf dist
+# dist/svn/trunk mirrors the real WordPress.org SVN layout (trunk/ IS the
+# plugin root, no plugin-slug wrapper) -- rsync straight into an svn working
+# copy's trunk/ for `svn commit`. Left as a plain folder on purpose (not
+# zipped, not removed after) since that's how svn expects it.
+mkdir -p dist/svn/trunk
+copy_plugin_files dist/svn/trunk
 
 echo "Done! Created $ZIP_NAME containing:"
 echo "- app/"
@@ -60,3 +70,5 @@ echo "- index.php"
 echo "- readme.txt"
 echo "- uninstall.php"
 echo "- campaignbay.php"
+echo ""
+echo "Also created dist/svn/trunk/ (uncompressed, ready for \`svn commit\` into a checkout's trunk/)"
