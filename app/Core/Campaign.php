@@ -1060,6 +1060,24 @@ class Campaign {
 
 
 	/**
+	 * Gets the timestamp used by the "most recently started wins" priority method.
+	 *
+	 * Uses the campaign's start date, falling back to its creation date when no start
+	 * date is set. Both values are stored in site-local time, so they are comparable.
+	 *
+	 * @since 1.1.18
+	 * @return int Unix-like timestamp (0 when no usable date exists).
+	 */
+	public function get_priority_timestamp() {
+		$date = $this->get_start_datetime();
+		if ( empty( $date ) ) {
+			$date = $this->data->date_created ?? '';
+		}
+		$timestamp = empty( $date ) ? false : strtotime( $date );
+		return false === $timestamp ? 0 : (int) $timestamp;
+	}
+
+	/**
 	 * Gets the start datetime string.
 	 *
 	 * @since 1.0.0

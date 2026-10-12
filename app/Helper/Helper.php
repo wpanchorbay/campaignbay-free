@@ -307,7 +307,13 @@ class Helper {
 			if ( isset( $unique_tiers[ $key ] ) ) {
 				$unique_tier_price = (float) $unique_tiers[ $key ]['price'];
 
-				$is_better = self::is_better_price( $unique_tier_price, $current_tier_price );
+				$campaigns = CampaignManager::get_instance()->get_active_campaigns();
+				$is_better = self::is_better_price(
+					$unique_tier_price,
+					$current_tier_price,
+					$campaigns[ $unique_tiers[ $key ]['campaign'] ] ?? null,
+					$campaigns[ $tier['campaign'] ] ?? null
+				);
 				if ( $is_better ) {
 					$unique_tiers[ $key ]          = $tier;
 					$unique_tiers[ $key ]['price'] = (float) $current_tier_price;
@@ -587,7 +593,7 @@ class Helper {
 	/**
 	 * Compares two prices to determine which is better based on settings.
 	 *
-	 * Uses the 'product_priorityMethod' setting (lowest, highest, or first) to
+	 * Uses the 'product_priorityMethod' setting (lowest, highest, first, or recent) to
 	 * decide if $new_price is preferable to $current_best_price.
 	 *
 	 * @since 1.0.0
@@ -596,10 +602,12 @@ class Helper {
 	 *
 	 * @param float|null $current_best_price The existing best price found so far.
 	 * @param float|null $new_price          The new price candidate to compare.
+	 * @param object|null $current_campaign  Optional. Campaign behind $current_best_price (used by 'apply_recent').
+	 * @param object|null $new_campaign      Optional. Campaign behind $new_price (used by 'apply_recent').
 	 *
 	 * @return bool True if $new_price is considered better than $current_best_price.
 	 */
-	public static function is_better_price( $current_best_price, $new_price ) {
+	public static function is_better_price( $current_best_price, $new_price, $current_campaign = null, $new_campaign = null ) {
 		if ( null === $new_price ) {
 			return false;
 		}
@@ -613,8 +621,31 @@ class Helper {
 			return $new_price > $current_best_price;
 		} elseif ( 'apply_first' === $setting ) {
 			return null === $current_best_price;
+		} elseif ( 'apply_recent' === $setting ) {
+			return self::is_more_recent_campaign( $current_campaign, $new_campaign );
 		}
 		return false;
+	}
+
+	/**
+	 * Whether the new campaign started more recently than the current one.
+	 *
+	 * Used by the 'apply_recent' priority method. Ties keep the current campaign.
+	 *
+	 * @since 1.1.18
+	 * @access public
+	 * @static
+	 *
+	 * @param object|null $current_campaign The campaign currently holding the best price.
+	 * @param object|null $new_campaign     The challenger campaign.
+	 *
+	 * @return bool True when the challenger has a strictly newer start (or creation) date.
+	 */
+	public static function is_more_recent_campaign( $current_campaign, $new_campaign ) {
+		if ( ! is_object( $current_campaign ) || ! is_object( $new_campaign ) ) {
+			return false;
+		}
+		return $new_campaign->get_priority_timestamp() > $current_campaign->get_priority_timestamp();
 	}
 
 	/**

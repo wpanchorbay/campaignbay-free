@@ -420,6 +420,10 @@ const ProductContent: React.FC<ProductContentProps> = ({
               { label: "Apply Highest Discount", value: "apply_highest" },
               { label: "Apply Lowest Discount", value: "apply_lowest" },
               { label: "Apply First Match", value: "apply_first" },
+              {
+                label: "Most Recently Started Wins",
+                value: "apply_recent",
+              },
             ]}
           />
           <p className="campaignbay-text-xs campaignbay-text-gray-500 campaignbay-mt-2">
