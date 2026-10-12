@@ -671,6 +671,9 @@ class Campaign {
 				'options'     => 'required|array',
 				'is_included' => 'required|boolean',
 			),
+			'user_status' => array(
+				'status' => 'required|string|in:guest,logged_in',
+			),
 			'cart_total' => array(
 				'value'    => 'required|numeric|min:0',
 				'operator' => 'required|string|in:>=,<=,==,>,<',

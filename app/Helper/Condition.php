@@ -151,6 +151,9 @@ class Condition {
 			case 'user_role':
 				$result = self::check_user_role( $condition );
 				break;
+			case 'user_status':
+				$result = self::check_user_status( $condition );
+				break;
 			case 'cart_total':
 				wpab_campaignbay_log( 'Cart total condition deferred for post-calculation check.', 'INFO' );
 				$result = true; // cannot run it now now just pass it , check it after cart total calculation
@@ -211,6 +214,28 @@ class Condition {
 			$result = ! in_array( $role, $user_roles, true );
 		}
 		return $result;
+	}
+
+	/**
+	 * Verifies if the current visitor is a guest or a logged-in user, as the rule requires.
+	 *
+	 * @since 1.1.18
+	 * @access public
+	 * @static
+	 *
+	 * @param array $condition Array definition containing 'status' ('guest' or 'logged_in').
+	 *
+	 * @return bool True if condition is satisfied.
+	 */
+	public static function check_user_status( $condition ) {
+		$status = $condition['status'] ?? '';
+		if ( 'guest' === $status ) {
+			return ! is_user_logged_in();
+		}
+		if ( 'logged_in' === $status ) {
+			return is_user_logged_in();
+		}
+		return false;
 	}
 
 	/**
