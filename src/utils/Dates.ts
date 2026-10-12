@@ -30,7 +30,7 @@ export default function formatDateTime(dateTimeString: string | number | null | 
 
   const format: string = `${wpSettings.dateFormat} ${wpSettings.timeFormat}`;
   // @ts-ignore
-  const dateTime: Date = getDate(dateTimeString * 1000);
+  const dateTime: Date = getDate(typeof dateTimeString === "number" ? dateTimeString * 1000 : dateTimeString);
   return date(format, dateTime, timezone?.offset);
 }
 /**
@@ -54,7 +54,7 @@ export function formatDate(dateTimeString: string | number | null | undefined): 
 
   const format: string = `${wpSettings.dateFormat}`;
   // @ts-ignore
-  const dateTime: Date = getDate(dateTimeString * 1000);
+  const dateTime: Date = getDate(typeof dateTimeString === "number" ? dateTimeString * 1000 : dateTimeString);
   return date(format, dateTime, timezone?.offset);
 }
 
