@@ -29,6 +29,7 @@ import Header from "../components/common/Header";
 import { formatDate, timeDiff } from "../utils/Dates";
 import Page from "../components/common/Page";
 import Select from "../components/common/Select";
+import { Input } from "../components/common/Input";
 import { Toggler } from "../components/common/Toggler";
 import ActivityLogModal from "../components/dashboard/ActivityLogModal";
 import { useCbStore, useCbStoreActions } from "../store/cbStore";
@@ -92,7 +93,7 @@ interface DashboardData {
   campaignsCalendar: Campaign[];
 }
 
-type ChartPeriod = "7days" | "30days" | "1year";
+type ChartPeriod = "7days" | "30days" | "90days" | "year" | "custom";
 type ChartDisplayType = "bar" | "line";
 
 ChartJS.register(
@@ -113,6 +114,8 @@ const Dashboard: FC = () => {
   );
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedPeriod, setSelectedPeriod] = useState<ChartPeriod>("7days");
+  const [customStart, setCustomStart] = useState<string>("");
+  const [customEnd, setCustomEnd] = useState<string>("");
   const [chartType, setChartType] = useState<ChartDisplayType>("bar");
   const [isActivityModalOpen, setIsActivityModalOpen] =
     useState<boolean>(false);
@@ -126,24 +129,30 @@ const Dashboard: FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (selectedPeriod === "custom" && (!customStart || !customEnd)) {
+        return;
+      }
       try {
         setLoading(true);
-        const params = {
+        const params: Record<string, string | number> = {
           period: selectedPeriod,
           _timestamp: Date.now(),
         };
+        if (selectedPeriod === "custom") {
+          params.start_date = customStart;
+          params.end_date = customEnd;
+        }
         const response: DashboardData = await apiFetch({
           path: addQueryArgs("/campaignbay/v1/dashboard", params),
         });
         setDashboardData(response);
-
-        setLoading(false);
       } catch (error) {
       } finally {
+        setLoading(false);
       }
     };
     fetchData();
-  }, [selectedPeriod]);
+  }, [selectedPeriod, customStart, customEnd]);
 
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat("en-US", {
@@ -601,6 +610,29 @@ const Dashboard: FC = () => {
         <Page>
           <HeaderContainer className="campaignbay-py-[12px]">
             <Header>Dashboard</Header>
+            <div className="campaignbay-flex campaignbay-items-center campaignbay-gap-[8px]">
+            {selectedPeriod === "custom" && (
+              <>
+                <Input
+                  value={customStart}
+                  max={customEnd || undefined}
+                  onChange={(e) => setCustomStart(e.target.value)}
+                  type="date"
+                  size="small"
+                  classNames={{ root: "campaignbay-w-[140px]" }}
+                  aria-label={__("Start date", "campaignbay")}
+                />
+                <Input
+                  value={customEnd}
+                  min={customStart || undefined}
+                  onChange={(e) => setCustomEnd(e.target.value)}
+                  type="date"
+                  size="small"
+                  classNames={{ root: "campaignbay-w-[140px]" }}
+                  aria-label={__("End date", "campaignbay")}
+                />
+              </>
+            )}
             <Select
               value={selectedPeriod}
               isCompact
@@ -611,12 +643,15 @@ const Dashboard: FC = () => {
               options={[
                 { value: "7days", label: "Last 7 Days" },
                 { value: "30days", label: "30 Days" },
-                { value: "1year", label: "1 Year" },
+                { value: "90days", label: "90 Days" },
+                { value: "year", label: "1 Year" },
+                { value: "custom", label: "Custom Range" },
               ]}
               onChange={(value) => {
                 setSelectedPeriod(value as ChartPeriod);
               }}
             />
+            </div>
           </HeaderContainer>
           {/* body content */}
           <div className="campaignbay-flex campaignbay-justify-start campaignbay-flex-col xl:campaignbay-flex-row campaignbay-gap-default-big">

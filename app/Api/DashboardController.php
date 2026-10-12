@@ -474,7 +474,7 @@ class DashboardController extends ApiController {
 	 *
 	 * @since 1.0.0
 	 * @access private
-	 * @param string $period Preset period ('7days', '30days', 'year').
+	 * @param string $period Preset period ('7days', '30days', '90days', 'year', 'custom').
 	 * @param string $start_date Custom start date.
 	 * @param string $end_date Custom end date.
 	 * @return array [current_start, current_end, previous_start, previous_end]
@@ -491,10 +491,18 @@ class DashboardController extends ApiController {
 			$start->setTime( 0, 0, 0 );
 			$end = new DateTime( $end_date, $timezone );
 			$end->setTime( 23, 59, 59 );
+			if ( $start > $end ) {
+				list( $start, $end ) = array( $end, $start );
+				$start->setTime( 0, 0, 0 );
+				$end->setTime( 23, 59, 59 );
+			}
 		} else {
 			switch ( $period ) {
 				case '7days':
 					$start->sub( new DateInterval( 'P6D' ) );
+					break;
+				case '90days':
+					$start->sub( new DateInterval( 'P89D' ) );
 					break;
 				case 'year':
 					$start->sub( new DateInterval( 'P1Y' ) );
@@ -598,7 +606,7 @@ class DashboardController extends ApiController {
 			'description' => __( 'Time period for the dashboard data.', 'campaignbay' ),
 			'type'        => 'string',
 			'default'     => '30days',
-			'enum'        => array( '7days', '30days', 'year', 'custom' ),
+			'enum'        => array( '7days', '30days', '90days', 'year', 'custom' ),
 		);
 
 		$params['start_date'] = array(
