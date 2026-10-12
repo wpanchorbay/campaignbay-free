@@ -13,3 +13,5 @@ campaignbay.zip
 package-lock.json
 Woocommerce.php
 dist/
+.playwright-mcp/
+graphify-out/
