@@ -405,6 +405,76 @@ const ProductContent: React.FC<ProductContentProps> = ({
       </SettingsCard>
 
       <SettingsCard>
+        <SectionHeader title="Quantity Limit Messages" />
+        <div className="campaignbay-space-y-6">
+          <div className="campaignbay-flex campaignbay-items-center campaignbay-justify-start campaignbay-gap-[8px]">
+            <label className="!campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+              Show Limits on Product Page
+            </label>
+            <Switch
+              size="small"
+              checked={settings.quantity_limit_show_product_message}
+              onChange={(v) => updateSetting("quantity_limit_show_product_message", v)}
+            />
+          </div>
+          <div className="campaignbay-grid campaignbay-grid-cols-1 lg:campaignbay-grid-cols-2 campaignbay-gap-8">
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Product Page Quantity Limits Message Format
+              </label>
+              <Input
+                value={settings.quantity_limit_product_message_format}
+                onChange={(e) => updateSetting("quantity_limit_product_message_format", e.target.value)}
+              />
+              <Placeholders
+                options={["limits", "min_quantity", "max_quantity", "step"]}
+                classNames={{ root: "campaignbay-mt-2" }}
+              />
+            </div>
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Cart / Add to Cart: Minimum Quantity Message
+              </label>
+              <Input
+                value={settings.quantity_limit_message_min}
+                onChange={(e) => updateSetting("quantity_limit_message_min", e.target.value)}
+              />
+              <Placeholders
+                options={["product_name", "min_quantity"]}
+                classNames={{ root: "campaignbay-mt-2" }}
+              />
+            </div>
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Cart / Add to Cart: Maximum Quantity Message
+              </label>
+              <Input
+                value={settings.quantity_limit_message_max}
+                onChange={(e) => updateSetting("quantity_limit_message_max", e.target.value)}
+              />
+              <Placeholders
+                options={["product_name", "max_quantity"]}
+                classNames={{ root: "campaignbay-mt-2" }}
+              />
+            </div>
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Cart / Add to Cart: Step Message
+              </label>
+              <Input
+                value={settings.quantity_limit_message_step}
+                onChange={(e) => updateSetting("quantity_limit_message_step", e.target.value)}
+              />
+              <Placeholders
+                options={["product_name", "step"]}
+                classNames={{ root: "campaignbay-mt-2" }}
+              />
+            </div>
+          </div>
+        </div>
+      </SettingsCard>
+
+      <SettingsCard>
         <SectionHeader title="Product Exclusion & Prioritization" />
 
         <div className="campaignbay-max-w-md">
@@ -596,6 +666,14 @@ const Settings = () => {
       "Buy {buy_quantity} and get {get_quantity} free!",
     show_discount_table: true,
     product_priorityMethod: "apply_highest",
+    quantity_limit_show_product_message: true,
+    quantity_limit_product_message_format: "Purchase limits: {limits}",
+    quantity_limit_message_min:
+      'The minimum quantity for "{product_name}" is {min_quantity}.',
+    quantity_limit_message_max:
+      'The maximum quantity for "{product_name}" is {max_quantity}.',
+    quantity_limit_message_step:
+      '"{product_name}" must be purchased in multiples of {step}.',
     product_enableQuantityTable: true,
     discount_table_options: {
       show_header: true,

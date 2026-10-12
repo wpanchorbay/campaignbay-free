@@ -9,6 +9,7 @@ namespace WpabCampaignBay\Engine;
 
 use WC_Product;
 use WpabCampaignBay\Core\Base;
+use WpabCampaignBay\Core\Common;
 
 /**
  * The file that defines the QuantityLimits class.
@@ -68,6 +69,7 @@ class QuantityLimits extends Base {
 			array( 'filter', 'woocommerce_add_to_cart_validation', 'validate_add_to_cart', 20, 4 ),
 			array( 'filter', 'woocommerce_update_cart_validation', 'validate_cart_update', 20, 4 ),
 			array( 'action', 'woocommerce_check_cart_items', 'validate_cart_items', 20, 0 ),
+			array( 'action', 'woocommerce_before_add_to_cart_button', 'display_product_message', 10, 0 ),
 			array( 'filter', 'woocommerce_store_api_product_quantity_minimum', 'filter_store_api_minimum', 20, 3 ),
 			array( 'filter', 'woocommerce_store_api_product_quantity_maximum', 'filter_store_api_maximum', 20, 3 ),
 			array( 'filter', 'woocommerce_store_api_product_quantity_multiple_of', 'filter_store_api_multiple_of', 20, 3 ),
@@ -162,20 +164,84 @@ class QuantityLimits extends Base {
 	 * @return string The error message, empty when valid.
 	 */
 	private function get_violation( $limits, $quantity, $product ) {
-		$name = $product->get_name();
+		$key = '';
 		if ( $quantity < $limits['min'] ) {
-			/* translators: 1: product name, 2: minimum quantity */
-			return sprintf( __( 'The minimum quantity for "%1$s" is %2$d.', 'campaignbay' ), $name, $limits['min'] );
+			$key = 'quantity_limit_message_min';
+		} elseif ( null !== $limits['max'] && $quantity > $limits['max'] ) {
+			$key = 'quantity_limit_message_max';
+		} elseif ( $limits['step'] > 1 && 0 !== $quantity % $limits['step'] ) {
+			$key = 'quantity_limit_message_step';
 		}
-		if ( null !== $limits['max'] && $quantity > $limits['max'] ) {
-			/* translators: 1: product name, 2: maximum quantity */
-			return sprintf( __( 'The maximum quantity for "%1$s" is %2$d.', 'campaignbay' ), $name, $limits['max'] );
+		if ( '' === $key ) {
+			return '';
 		}
-		if ( $limits['step'] > 1 && 0 !== $quantity % $limits['step'] ) {
-			/* translators: 1: product name, 2: quantity step */
-			return sprintf( __( '"%1$s" must be purchased in multiples of %2$d.', 'campaignbay' ), $name, $limits['step'] );
+		$format = Common::get_instance()->get_settings( $key );
+		if ( ! is_string( $format ) || '' === trim( $format ) ) {
+			$defaults = Common::get_instance()->get_default_settings();
+			$format   = isset( $defaults[ $key ] ) ? $defaults[ $key ] : '';
 		}
-		return '';
+		return $this->format_message( $format, $limits, $product );
+	}
+
+	/**
+	 * Replaces the placeholders of an admin-editable message format.
+	 *
+	 * Supported: {product_name}, {min_quantity}, {max_quantity}, {step}, {limits}.
+	 *
+	 * @since 1.1.18
+	 * @access private
+	 *
+	 * @param string     $format  The message format.
+	 * @param array      $limits  The limits from get_limits().
+	 * @param WC_Product $product The product.
+	 * @return string The message.
+	 */
+	private function format_message( $format, $limits, $product ) {
+		$parts = array();
+		if ( $limits['min'] > 1 ) {
+			/* translators: %d: minimum quantity */
+			$parts[] = sprintf( __( 'minimum %d', 'campaignbay' ), $limits['min'] );
+		}
+		if ( null !== $limits['max'] ) {
+			/* translators: %d: maximum quantity */
+			$parts[] = sprintf( __( 'maximum %d', 'campaignbay' ), $limits['max'] );
+		}
+		if ( $limits['step'] > 1 ) {
+			/* translators: %d: quantity step */
+			$parts[] = sprintf( __( 'multiples of %d', 'campaignbay' ), $limits['step'] );
+		}
+		return strtr(
+			(string) $format,
+			array(
+				'{product_name}' => $product->get_name(),
+				'{min_quantity}' => (string) $limits['min'],
+				'{max_quantity}' => null === $limits['max'] ? '' : (string) $limits['max'],
+				'{step}'         => (string) $limits['step'],
+				'{limits}'       => implode( ', ', $parts ),
+			)
+		);
+	}
+
+	/**
+	 * Prints the quantity limits note on the product page, above the add to cart button.
+	 *
+	 * @since 1.1.18
+	 * @return void
+	 */
+	public function display_product_message() {
+		global $product;
+		if ( ! $product instanceof WC_Product || ! Common::get_instance()->get_settings( 'quantity_limit_show_product_message' ) ) {
+			return;
+		}
+		$limits = $this->get_limits( $product );
+		if ( null === $limits || ( $limits['min'] <= 1 && null === $limits['max'] && $limits['step'] <= 1 ) ) {
+			return;
+		}
+		$message = $this->format_message( Common::get_instance()->get_settings( 'quantity_limit_product_message_format' ), $limits, $product );
+		if ( '' === trim( $message ) ) {
+			return;
+		}
+		echo '<p class="campaignbay-quantity-limits">' . esc_html( $message ) . '</p>';
 	}
 
 	/**
@@ -213,8 +279,8 @@ class QuantityLimits extends Base {
 	 * Sets min / max quantity on the data WooCommerce sends for a variation.
 	 *
 	 * @since 1.1.18
-	 * @param array                $data      The variation data.
-	 * @param WC_Product           $product   The variable product.
+	 * @param array                 $data      The variation data.
+	 * @param WC_Product            $product   The variable product.
 	 * @param \WC_Product_Variation $variation The variation.
 	 * @return array The filtered data.
 	 */

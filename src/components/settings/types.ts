@@ -27,6 +27,11 @@ export interface CampaignBaySettingsType {
   product_message_format_fixed: string;
   bogo_banner_message_format: string;
   show_discount_table: boolean;
+  quantity_limit_show_product_message: boolean;
+  quantity_limit_product_message_format: string;
+  quantity_limit_message_min: string;
+  quantity_limit_message_max: string;
+  quantity_limit_message_step: string;
   product_priorityMethod: "apply_highest" | "apply_lowest" | "apply_first" | "apply_recent";
   product_enableQuantityTable: boolean;
   discount_table_options: DiscountTableOptionsType;
