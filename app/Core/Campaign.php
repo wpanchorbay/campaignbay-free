@@ -729,26 +729,26 @@ class Campaign {
 		$validated_data       = $validator->get_validated_data();
 		$validated_rules_data = array();
 		$default_rules        = array(
-			'user_role'  => array(
+			'user_role'   => array(
 				'option'      => 'required|string',
 				'is_included' => 'required|boolean',
 			),
-			'user_roles' => array(
+			'user_roles'  => array(
 				'options'     => 'required|array',
 				'is_included' => 'required|boolean',
 			),
-			'users'      => array(
+			'users'       => array(
 				'options'     => 'required|array',
 				'is_included' => 'required|boolean',
 			),
 			'user_status' => array(
 				'status' => 'required|string|in:guest,logged_in',
 			),
-			'cart_items' => array(
+			'cart_items'  => array(
 				'value'    => 'required|integer|min:0',
 				'operator' => 'required|string|in:>=,<=,==,>,<',
 			),
-			'cart_total' => array(
+			'cart_total'  => array(
 				'value'    => 'required|numeric|min:0',
 				'operator' => 'required|string|in:>=,<=,==,>,<',
 			),

@@ -600,8 +600,8 @@ class Helper {
 	 * @access public
 	 * @static
 	 *
-	 * @param float|null $current_best_price The existing best price found so far.
-	 * @param float|null $new_price          The new price candidate to compare.
+	 * @param float|null  $current_best_price The existing best price found so far.
+	 * @param float|null  $new_price          The new price candidate to compare.
 	 * @param object|null $current_campaign  Optional. Campaign behind $current_best_price (used by 'apply_recent').
 	 * @param object|null $new_campaign      Optional. Campaign behind $new_price (used by 'apply_recent').
 	 *

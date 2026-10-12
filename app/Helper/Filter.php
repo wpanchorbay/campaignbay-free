@@ -211,7 +211,7 @@ class Filter {
 	protected function compareWithTags( $product, $target_ids, $is_exclude ) {
 		$tags               = array_map( 'intval', Woocommerce::get_product_tags( $product ) );
 		$target_ids         = array_map( 'intval', (array) $target_ids );
-		$is_product_has_tag =  count( array_intersect( $tags, $target_ids ) ) > 0;
+		$is_product_has_tag = count( array_intersect( $tags, $target_ids ) ) > 0;
 		return $is_exclude ? ! $is_product_has_tag : $is_product_has_tag;
 	}
 

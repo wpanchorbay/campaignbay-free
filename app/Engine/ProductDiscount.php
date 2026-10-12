@@ -409,8 +409,8 @@ class ProductDiscount {
 	 * Determines if a new price is better than the current best price based on the priority method.
 	 *
 	 * @since 1.0.0
-	 * @param float $new_price The new price to compare.
-	 * @param float $current_best_price The current best price.
+	 * @param float       $new_price The new price to compare.
+	 * @param float       $current_best_price The current best price.
 	 * @param object|null $new_campaign Optional. Campaign behind $new_price (used by 'apply_recent').
 	 * @param object|null $current_campaign Optional. Campaign behind $current_best_price (used by 'apply_recent').
 	 * @return bool True if the new price is better, false otherwise.
