@@ -10,6 +10,7 @@ namespace WpabCampaignBay\Engine;
 use WC_Product;
 use WpabCampaignBay\Core\Base;
 use WpabCampaignBay\Core\Common;
+use WpabCampaignBay\Helper\Condition;
 
 /**
  * The file that defines the QuantityLimits class.
@@ -44,6 +45,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @author     WP Anchor Bay <wpanchorbay@gmail.com>
  */
 class QuantityLimits extends Base {
+
+	/**
+	 * Per-request memo of the calculated limits, keyed by product ID.
+	 *
+	 * @since 1.1.18
+	 * @var array
+	 */
+	private $limits_cache = array();
 
 	/**
 	 * Constructor to define and build the hooks array.
@@ -90,6 +99,28 @@ class QuantityLimits extends Base {
 	 */
 	public function get_limits( $product ) {
 		$product_id = $product instanceof WC_Product ? $product->get_id() : (int) $product;
+		if ( array_key_exists( $product_id, $this->limits_cache ) ) {
+			return $this->limits_cache[ $product_id ];
+		}
+		$this->limits_cache[ $product_id ] = $this->calculate_limits( $product_id );
+		return $this->limits_cache[ $product_id ];
+	}
+
+	/**
+	 * Calculates the effective quantity limits for a product ID (uncached).
+	 *
+	 * Campaigns that use cart-level conditions (cart total, cart item quantity) are
+	 * deliberately ignored for limits: those conditions can only be evaluated once the
+	 * cart is calculated, and evaluating them here would also register the campaign for
+	 * an extra cart recalculation.
+	 *
+	 * @since 1.1.18
+	 * @access private
+	 *
+	 * @param int $product_id The product (or variation) ID.
+	 * @return array|null Limits array or null when no limit applies.
+	 */
+	private function calculate_limits( $product_id ) {
 		// Always evaluate the targeting against the untouched product (not the discounted copy).
 		$product = $product_id ? wc_get_product( $product_id ) : null;
 		if ( ! $product instanceof WC_Product ) {
@@ -104,6 +135,9 @@ class QuantityLimits extends Base {
 			$settings = $campaign->get_settings();
 			$limits   = $settings['quantity_limits'] ?? null;
 			if ( ! is_array( $limits ) || empty( $limits['enabled'] ) ) {
+				continue;
+			}
+			if ( $this->has_cart_level_conditions( $campaign ) ) {
 				continue;
 			}
 			if ( ! $campaign->is_applicable_to_product( $product ) ) {
@@ -150,6 +184,25 @@ class QuantityLimits extends Base {
 		 * @param WC_Product $product The product being checked.
 		 */
 		return apply_filters( 'campaignbay_product_quantity_limits', $limits, $product );
+	}
+
+	/**
+	 * Whether a campaign has any cart-level condition rule.
+	 *
+	 * @since 1.1.18
+	 * @access private
+	 *
+	 * @param object $campaign The campaign.
+	 * @return bool
+	 */
+	private function has_cart_level_conditions( $campaign ) {
+		$conditions = $campaign->get_conditions();
+		foreach ( (array) ( $conditions['rules'] ?? array() ) as $rule ) {
+			if ( is_array( $rule ) && isset( $rule['type'] ) && Condition::is_cart_level_condition( $rule ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -260,18 +313,13 @@ class QuantityLimits extends Base {
 		if ( $limits['min'] > 1 ) {
 			$args['min_value'] = $limits['min'];
 		}
-		$args['step'] = $limits['step'];
+		if ( $limits['step'] > 1 ) {
+			$args['step'] = $limits['step'];
+		}
 		if ( null !== $limits['max'] ) {
 			$args['max_value'] = $limits['max'];
 		}
-		if ( isset( $args['input_value'] ) ) {
-			$value = (int) $args['input_value'];
-			$value = max( $value, $limits['min'] );
-			if ( null !== $limits['max'] ) {
-				$value = min( $value, $limits['max'] );
-			}
-			$args['input_value'] = $value;
-		}
+		// The displayed quantity is left untouched; invalid cart quantities are caught by validate_cart_items().
 		return $args;
 	}
 

@@ -402,7 +402,7 @@ const CampaignSettings: FC<CampaignSettingsProps> = ({
               {__("Limit purchase quantity", "campaignbay")}{" "}
               <Helper
                 content={__(
-                  "Set a minimum, maximum and step quantity for the products this campaign targets while it is active.",
+                  "Set a minimum, maximum and step quantity for the products this campaign targets while it is active. Not enforced for campaigns that use cart total or cart item quantity conditions.",
                   "campaignbay",
                 )}
               />
@@ -411,13 +411,15 @@ const CampaignSettings: FC<CampaignSettingsProps> = ({
           onChange={(checked) =>
             setSettings((prev: CampaignSettingsType) => ({
               ...prev,
-              quantity_limits: {
-                min: null,
-                max: null,
-                step: null,
-                ...prev?.quantity_limits,
-                enabled: checked,
-              },
+              quantity_limits: checked
+                ? {
+                    min: null,
+                    max: null,
+                    step: null,
+                    ...prev?.quantity_limits,
+                    enabled: true,
+                  }
+                : { enabled: false, min: null, max: null, step: null },
             }))
           }
         />
