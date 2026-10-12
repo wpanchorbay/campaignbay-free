@@ -591,6 +591,29 @@ class Woocommerce
     }
 
     /**
+     * Get the tag IDs of the product (variations use their parent's tags)
+     *
+     * @since 1.1.18
+     *
+     * @param WC_Product $product the product object
+     * @return array the product_tag term IDs
+     */
+    static function get_product_tags($product)
+    {
+        $tags = array();
+        if (!empty($product) && is_object($product) && method_exists($product, 'get_tag_ids')) {
+            if (self::product_type_is($product, 'variation')) {
+                // Raw WC lookup on purpose, see get_product_categories() (avoids filter recursion).
+                $product = wc_get_product(self::get_product_parent_id($product));
+            }
+            if ($product) {
+                $tags = $product->get_tag_ids();
+            }
+        }
+        return $tags;
+    }
+
+    /**
      * Get the children of a product
      * 
      * @since 1.0.7

@@ -1117,6 +1117,9 @@ const getTargetType = (target_type: TargetType) => {
   if (target_type === "category") {
     return "Selected Categories";
   }
+  if (target_type === "tag") {
+    return "Selected Tags";
+  }
   if (target_type === "entire_store") {
     return "All Products";
   }

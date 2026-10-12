@@ -294,6 +294,10 @@ const Campaign: FC<CampaignProps> = ({
                         label: __("By Product", "campaignbay"),
                         value: "product",
                       },
+                      {
+                        label: __("By Product Tag", "campaignbay"),
+                        value: "tag",
+                      },
                     ]}
                     value={campaign.target_type}
                     onChange={(value) =>
@@ -330,6 +334,13 @@ const Campaign: FC<CampaignProps> = ({
                                   *
                                 </span>
                               </>
+                            ) : campaign.target_type === "tag" ? (
+                              <>
+                                {__("Select Tags", "campaignbay")}
+                                <span className="!campaignbay-text-red-500 campaignbay-ml-[5px]">
+                                  *
+                                </span>
+                              </>
                             ) : (
                               ""
                             )
@@ -341,7 +352,13 @@ const Campaign: FC<CampaignProps> = ({
                           //     ? categories
                           //     : []
                           // }
-                          endpoint={campaign.target_type === "product" ? "/campaignbay/v1/resources/products" : "/campaignbay/v1/resources/categories"}
+                          endpoint={
+                            campaign.target_type === "product"
+                              ? "/campaignbay/v1/resources/products"
+                              : campaign.target_type === "tag"
+                              ? "/campaignbay/v1/resources/tags"
+                              : "/campaignbay/v1/resources/categories"
+                          }
                           value={campaign.target_ids}
                           onChange={(value: (string | number)[]) =>
                             setCampaign((prev) => ({
