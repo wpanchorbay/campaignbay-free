@@ -26,7 +26,7 @@ PHP autoloading is a hand-rolled `spl_autoload_register` in `campaignbay.php` (n
 - `DiscountManager` hooks `campaignbay_get_product` and delegates to `Engine\ProductDiscount::create($product)->apply_discounts()`, which loops active campaigns (`CampaignManager::get_active_campaigns()`), applies `scheduled`/`earlybird` pricing natively, and for any other campaign `type` fires `campaignbay_product_campaign_discount_calculation` so Pro/third-party code can compute its own price and compete for "best price" (governed by the `product_priorityMethod` setting: `apply_highest`/`apply_lowest`/`apply_first`). Variable products are handled by rolling up each variation's already-computed `campaignbay` product meta. The final discount metadata is stored as product meta (`campaignbay`) and is filterable via `campaignbay_product_discount_meta`.
 - `Engine\CartDiscount::calculate_discounts()` (called from `woocommerce_before_calculate_totals`) is the cart-level worker: it reads each cart item's `campaignbay` meta (via `get_cart_discount()`, itself filterable at `campaignbay_get_cart_discount`), applies quantity-tier pricing (as line-total price change, a virtual coupon, or a negative fee depending on the campaign's `apply_as` setting), and adds BOGO free items as **separate, clearly-flagged cart line items** (`is_campaignbay_free_product`) rather than mutating quantities — a deliberate architecture change (see `README.md`/changelog) so multiple stacked BOGO campaigns each show their own line and their own custom message. Discounts that aren't a direct price change go through `Helper\Helper::add_data()`/`CartDiscount::add_fee()` and are ultimately applied via fake/virtual coupon codes or `$cart->add_fee()`.
 - `Engine\PricingEngine` and `Engine\OrderManager` wire this into the actual WooCommerce hooks (price display, cart totals, order line items) and campaign usage counting on order status changes.
-- `Helper\Filter::match()` is the targeting engine: sale-item exclusion, then `Helper\Condition::check_product_level_conditions()` (free version supports `user_role`, `user_roles`, `users` condition types), then `entire_store`/`product`/`category` target-type matching with `is_exclude` inversion — filterable via `campaignbay_filter_match` / `campaignbay_pass_product_level_condition`.
+- `Helper\Filter::match()` is the targeting engine: sale-item exclusion, then `Helper\Condition::check_product_level_conditions()` (free version handles `user_role` and `cart_total`; Pro adds `user_roles` and `users` via its own `Condition` class), then `entire_store`/`product`/`category` target-type matching with `is_exclude` inversion — filterable via `campaignbay_filter_match` / `campaignbay_pass_product_level_condition`.
 
 **Free/Pro coupling**: the discount pipeline is deliberately riddled with `do_action`/`apply_filters` calls documented with `@hook` tags specifically so Pro can extend without forking — e.g. `campaignbay_product_campaign_discount_calculation`, `campaignbay_product_discount_before_appling`/`_after_appling`, `campaignbay_before_cart_discount_calculation(_loop)`, `campaignbay_before/after_cart_single_discount_calculation`, `campaignbay_get_cart_discount`, `campaignbay_discount_breakdown`, `campaignbay_filter_match`, `campaignbay_pass_product_level_condition`, and `campaignbay_options_properties` (the settings schema itself is filterable so Pro can add its own settings fields into the same options object). `Core\Common` is the shared settings accessor (`get_settings()`/`update_settings()`, single option `campaignbay` merged over `default_settings`) that both the free plugin and Pro read from.
 
@@ -40,42 +40,9 @@ PHP autoloading is a hand-rolled `spl_autoload_register` in `campaignbay.php` (n
 
 ## What Pro adds (per readme.txt)
 
-BOGO Advanced (cross-category buy/get), Product-in-Cart discounts, and advanced targeting conditions (cart total, order history, specific products in cart) beyond the free version's user-role/user conditions — sold as `campaignbaypro`, gated by a license key checked against `global_enableAddon` in settings.
+BOGO Advanced (cross-category buy/get), Product-in-Cart discounts, and the `user_roles` / `users` targeting conditions (the free version already includes the `user_role` and `cart_total` conditions) — sold as `campaignbaypro`, gated by a license key checked against `global_enableAddon` in settings.
 
 The release checklist (version bump, changelog, build & zip) lives in the `release` skill — invoke it for "make a zip", "update the version", "is it ready to release", etc.
-
-## Known bugs
-
-### Dashboard "1 Year" range returns 400 and hangs the screen
-
-The dashboard's date-range dropdown sends a `period` value the REST endpoint rejects, so
-selecting **1 Year** leaves the whole dashboard stuck on its loading skeleton — not an
-error state, just a permanent spinner.
-
-- `src/pages/Dashboard.tsx:95` declares `type ChartPeriod = "7days" | "30days" | "1year"`.
-- `src/pages/Dashboard.tsx:614` renders the option as `{ value: "1year", label: "1 Year" }`.
-- `app/Api/DashboardController.php:601` declares `'enum' => array( '7days', '30days', 'year', 'custom' )`.
-- `app/Api/DashboardController.php:499` handles `case 'year':` in the range switch. There is
-  no `1year` case anywhere in PHP.
-
-So `GET /wp-json/campaignbay/v1/dashboard?period=1year` returns:
-
-```
-400 {"code":"rest_invalid_param","message":"Invalid parameter(s): period",
-     "data":{"params":{"period":"period is not one of 7days, 30days, year, and custom."}}}
-```
-
-Reproduced in the browser on WP 7.0 / WooCommerce 11.0. The 7-day and 30-day presets both
-work; only the third option is broken.
-
-**Recommended fix:** change the two `"1year"` occurrences in `Dashboard.tsx` to `"year"`.
-`year` is already the canonical server-side value — it is what the switch handles and what
-the enum advertises — so correcting the client keeps one spelling instead of teaching the
-API a second one. Rebuild both JS bundles afterwards (`admin.js` and `admin-legacy.js`) or
-the legacy path keeps sending the old value.
-
-Related, not a bug: there is no 90-day preset at all — the choices are 7 days, 30 days and
-1 Year. Anything in between requires the custom range picker.
 
 ## Behaviour worth knowing before you touch it
 
@@ -96,50 +63,3 @@ it as active:
 Anything that seeds, imports or migrates campaigns must keep `usage_count` below both the
 summed tier `quantity` and `usage_limit`. `CampaignsController.php:712` deliberately allows
 importing a previous usage count, so this is reachable through the public import path too.
-
-### Dashboard activity timestamps render "now" and creep forward on every reload
-
-Any Recent Activity entry older than 10 days shows the **current** time instead of when the
-event happened, and the displayed time advances every time the page is reloaded.
-
-`src/utils/Dates.ts`:
-
-- `timeDiff()` (line 70) is careful about its input — line 80 reads
-  `getDate(typeof dateTimeString === "number" ? dateTimeString * 1000 : dateTimeString)`.
-- But when the event is more than 10 days old, line 88 hands the **raw** value to
-  `formatDateTime(dateTimeString)`.
-- `formatDateTime()` (line 17) is not careful: line 33 is
-  `const dateTime: Date = getDate(dateTimeString * 1000);` — unconditional, no type check.
-
-The activity feed supplies `l.timestamp` from `{prefix}campaignbay_logs`, which is a MySQL
-DATETIME **string**. `"2026-08-08 06:00:23" * 1000` is `NaN`, `getDate(NaN)` falls back to
-the current time, so the row renders as right now — and re-renders as a new "right now" on
-every load.
-
-Entries newer than 10 days are unaffected because they take the `humanTimeDiff()` branch,
-which uses the correctly-parsed `dateTime` from line 80. That is why a feed can show
-`3 days ago` / `7 days ago` correctly next to three rows all claiming the current minute.
-
-`Campaigns.tsx:992` also calls `timeDiff()`, but passes `campaign.date_modified_unix` — a
-number — so it never hits this path. The bug is specific to string inputs, i.e. the log
-table.
-
-**Recommended fix:** give `formatDateTime()` (and `formatDate()`, which has the identical
-line 57) the same type check `timeDiff()` already uses, rather than fixing it at the call
-site — both are exported and either can be called with a string by future code. Simplest
-correct form:
-
-```ts
-const dateTime: Date = getDate(
-  typeof dateTimeString === "number" ? dateTimeString * 1000 : dateTimeString
-);
-```
-
-Alternatively have `timeDiff()` pass its already-parsed `dateTime` object down, but that
-leaves the underlying trap in place for other callers.
-
-Verified present in campaignbay 1.1.12 / campaignbaypro 1.0.3 (the current dev source).
-Reproduced on WP 7.0 / WooCommerce 11.0 by seeding activity rows with backdated
-`timestamp` values and reloading the dashboard three times ~30s apart: the three
-older-than-10-days rows read 7:40 pm, then 7:41 pm, then 7:43 pm, while the DB values
-never changed.
