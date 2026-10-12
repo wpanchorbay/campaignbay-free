@@ -674,6 +674,10 @@ class Campaign {
 			'user_status' => array(
 				'status' => 'required|string|in:guest,logged_in',
 			),
+			'cart_items' => array(
+				'value'    => 'required|integer|min:0',
+				'operator' => 'required|string|in:>=,<=,==,>,<',
+			),
 			'cart_total' => array(
 				'value'    => 'required|numeric|min:0',
 				'operator' => 'required|string|in:>=,<=,==,>,<',

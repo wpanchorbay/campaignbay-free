@@ -655,9 +655,18 @@ class PricingEngine extends Base {
 			return;
 		}
 		remove_action( 'woocommerce_after_calculate_totals', array( $this, 'after_calculate_totals' ), 20, 1 );
+		// Total units in the cart, ignoring free items added by CampaignBay BOGO campaigns.
+		$item_count = 0;
+		foreach ( $cart->get_cart() as $cart_item ) {
+			if ( ! empty( $cart_item['is_campaignbay_free_product'] ) ) {
+				continue;
+			}
+			$item_count += (int) $cart_item['quantity'];
+		}
 		$this->calculated_cart = array(
-			'subtotal' => $cart->get_subtotal(),
-			'total'    => $cart->get_total( 'edit' ),
+			'subtotal'   => $cart->get_subtotal(),
+			'total'      => $cart->get_total( 'edit' ),
+			'item_count' => $item_count,
 		);
 		wpab_campaignbay_log( 'Cart level condition campaigns found for evaluation: ' . print_r( $this->cart_level_condition_campaigns, true ), 'INFO' );
 		wpab_campaignbay_log( 'Calculating cart total for cart level conditions', 'INFO' );

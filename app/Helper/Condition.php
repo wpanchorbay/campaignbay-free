@@ -154,8 +154,9 @@ class Condition {
 			case 'user_status':
 				$result = self::check_user_status( $condition );
 				break;
+			case 'cart_items':
 			case 'cart_total':
-				wpab_campaignbay_log( 'Cart total condition deferred for post-calculation check.', 'INFO' );
+				wpab_campaignbay_log( 'Cart level condition deferred for post-calculation check.', 'INFO' );
 				$result = true; // cannot run it now now just pass it , check it after cart total calculation
 				break;
 			default:
@@ -251,7 +252,7 @@ class Condition {
 	 */
 	public static function is_cart_level_condition( $rule ) {
 		$type = $rule['type'];
-		if ( in_array( $type, array( 'cart_total' ), true ) ) {
+		if ( in_array( $type, array( 'cart_total', 'cart_items' ), true ) ) {
 			return true;
 		}
 		return false;
@@ -277,6 +278,9 @@ class Condition {
 		switch ( $type ) {
 			case 'cart_total':
 				$result = self::check_cart_total( $condition, $product );
+				break;
+			case 'cart_items':
+				$result = self::check_cart_items( $condition, $product );
 				break;
 			default:
 				$result = false;
@@ -333,5 +337,43 @@ class Condition {
 				break;
 		}
 		return $result;
+	}
+
+	/**
+	 * Verifies if the cart item count condition is satisfied.
+	 *
+	 * Compares the total quantity of units in the cart (free BOGO items excluded)
+	 * against the configured value.
+	 *
+	 * @since 1.1.18
+	 * @access public
+	 * @static
+	 *
+	 * @param array       $condition The condition configuration array.
+	 * @param \WC_Product $product   The product to check.
+	 *
+	 * @return bool True if the condition is satisfied, false otherwise.
+	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	public static function check_cart_items( $condition, $product = null ) {
+		$operator   = $condition['operator'];
+		$value      = (int) $condition['value'];
+		$cart       = PricingEngine::get_instance()->get_calculated_cart();
+		$item_count = (int) ( $cart['item_count'] ?? 0 );
+		wpab_campaignbay_log( sprintf( 'Checking cart items condition: Cart Items (%s) %s Target Value (%s)', $item_count, $operator, $value ), 'INFO' );
+		switch ( $operator ) {
+			case '>=':
+				return $item_count >= $value;
+			case '<=':
+				return $item_count <= $value;
+			case '>':
+				return $item_count > $value;
+			case '<':
+				return $item_count < $value;
+			case '==':
+				return $item_count === $value;
+			default:
+				return false;
+		}
 	}
 }

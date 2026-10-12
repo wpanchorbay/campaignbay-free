@@ -9,7 +9,8 @@ import { closeSmall, Icon } from "@wordpress/icons";
 import Button from "../common/Button";
 import CartTotalRule from "./CartTotalRule";
 import UserStatusRule from "./UserStatusRule";
-import { UserStatusCondition } from "./type";
+import CartItemsRule from "./CartItemsRule";
+import { UserStatusCondition, CartItemsRuleCondition } from "./type";
 
 interface RuleProps {
   rule: ConditionInterface;
@@ -46,6 +47,14 @@ const Rule: FC<RuleProps> = ({ rule, onChange, onDelete, errors }) => {
               <UserStatusRule
                 errors={errors}
                 condition={rule.condition as UserStatusCondition}
+                onChange={(condition) => onChange({ ...rule, condition })}
+              />
+            );
+          case "cart_items":
+            return (
+              <CartItemsRule
+                errors={errors}
+                condition={rule.condition as CartItemsRuleCondition}
                 onChange={(condition) => onChange({ ...rule, condition })}
               />
             );

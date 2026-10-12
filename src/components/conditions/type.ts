@@ -1,12 +1,16 @@
 import { ValidationError } from "../../utils/types";
 
-export type ConditionRuleType = "user_role" | "user_roles" | "users" | "cart_total" | "user_status";
+export type ConditionRuleType = "user_role" | "user_roles" | "users" | "cart_total" | "user_status" | "cart_items";
 export type UserRuleCondition = {
   option: string;
   is_included: boolean;
 };
 export type CartTotalRuleConditionOperator = "<=" | ">=" | "<" | ">" | "==";
 export type CartTotalRuleCondition = {
+  operator: CartTotalRuleConditionOperator;
+  value: number;
+};
+export type CartItemsRuleCondition = {
   operator: CartTotalRuleConditionOperator;
   value: number;
 };
@@ -27,7 +31,8 @@ export type AllConditionsType =
   | UserRolesCondition
   | UsersCondition
   | CartTotalRuleCondition
-  | UserStatusCondition;
+  | UserStatusCondition
+  | CartItemsRuleCondition;
 
 export type ConditionInterface = {
   type: ConditionRuleType;
