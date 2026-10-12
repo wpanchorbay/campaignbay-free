@@ -604,9 +604,14 @@ class Woocommerce
         if (!empty($product) && is_object($product) && method_exists($product, 'get_tag_ids')) {
             if (self::product_type_is($product, 'variation')) {
                 // Raw WC lookup on purpose, see get_product_categories() (avoids filter recursion).
-                $product = wc_get_product(self::get_product_parent_id($product));
+                $parent_id = (int) self::get_product_parent_id($product);
+                if (!$parent_id && method_exists($product, 'get_parent_id')) {
+                    $parent_id = (int) $product->get_parent_id();
+                }
+                // A failed parent lookup yields no tags, so a tag target (and its exclude mode) never grants the discount.
+                $product = $parent_id ? wc_get_product($parent_id) : null;
             }
-            if ($product) {
+            if ($product && method_exists($product, 'get_tag_ids')) {
                 $tags = $product->get_tag_ids();
             }
         }

@@ -358,8 +358,16 @@ class Condition {
 	public static function check_cart_items( $condition, $product = null ) {
 		$operator   = $condition['operator'];
 		$value      = (int) $condition['value'];
-		$cart       = PricingEngine::get_instance()->get_calculated_cart();
-		$item_count = (int) ( $cart['item_count'] ?? 0 );
+		$item_count = 0;
+		if ( function_exists( 'WC' ) && isset( WC()->cart ) && null !== WC()->cart ) {
+			// Count straight from the live cart, leaving out BOGO free lines.
+			foreach ( WC()->cart->get_cart() as $cart_item ) {
+				if ( ! empty( $cart_item['is_campaignbay_free_product'] ) ) {
+					continue;
+				}
+				$item_count += (int) $cart_item['quantity'];
+			}
+		}
 		wpab_campaignbay_log( sprintf( 'Checking cart items condition: Cart Items (%s) %s Target Value (%s)', $item_count, $operator, $value ), 'INFO' );
 		switch ( $operator ) {
 			case '>=':

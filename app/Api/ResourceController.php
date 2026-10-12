@@ -321,14 +321,15 @@ class ResourceController extends ApiController {
 	 * Get product tags.
 	 *
 	 * @since    1.1.18
-
-	 * @return WP_REST_Response
+	 * @access public
 	 * @param mixed $request The REST request (supports an optional `search` param).
+	 * @return WP_REST_Response
 	 */
 	public function get_tags( $request ) {
 		$args = array(
 			'taxonomy'   => 'product_tag',
 			'hide_empty' => false,
+			'number'     => 50,
 			'orderby'    => 'name',
 			'order'      => 'ASC',
 		);

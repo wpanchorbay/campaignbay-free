@@ -630,7 +630,8 @@ class Helper {
 	/**
 	 * Whether the new campaign started more recently than the current one.
 	 *
-	 * Used by the 'apply_recent' priority method. Ties keep the current campaign.
+	 * Used by the 'apply_recent' priority method. Ties keep the current campaign, and so does a
+	 * call that does not pass both campaign objects (e.g. a caller that only knows the prices).
 	 *
 	 * @since 1.1.18
 	 * @access public
