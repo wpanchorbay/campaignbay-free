@@ -23,6 +23,7 @@ use WpabCampaignBay\Engine\CampaignManager;
 use WpabCampaignBay\Engine\DiscountManager;
 use WpabCampaignBay\Engine\OrderManager;
 use WpabCampaignBay\Engine\PricingEngine;
+use WpabCampaignBay\Engine\QuantityLimits;
 use WpabCampaignBay\Helper\Loader;
 
 /**
@@ -121,6 +122,7 @@ class Plugin {
 		$order_manager         = OrderManager::get_instance();
 		$scheduler             = Scheduler::get_instance();
 		$calender_manager      = CalenderManager::get_instance();
+		$quantity_limits       = QuantityLimits::get_instance();
 		$components_with_hooks = array(
 			$discount_manager,
 			$campaign_manager,
@@ -128,6 +130,7 @@ class Plugin {
 			$order_manager,
 			$scheduler,
 			$calender_manager,
+			$quantity_limits,
 		);
 
 		foreach ( $components_with_hooks as $component ) {

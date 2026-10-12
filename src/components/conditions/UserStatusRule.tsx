@@ -42,7 +42,7 @@ const UserStatusRule: FC<UserStatusRuleProps> = ({
             },
           ]}
         />
-        {renderErrorMessage(errors?.status?.message || "")}
+        {renderErrorMessage((errors?.status as { message?: string } | undefined)?.message || "")}
       </div>
     </div>
   );

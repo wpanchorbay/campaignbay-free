@@ -605,6 +605,9 @@ class Campaign {
 				'bogo_cart_message_location' => 'required|string|in:line_item_name,notice,dont_show',
 			);
 		}
+		// Optional min / max / step quantity limits, available on every campaign type.
+		$rules['quantity_limits'] = 'nullable|array';
+
 		/**
 		 * Filters the settings validation rules for a campaign.
 		 *
@@ -630,7 +633,74 @@ class Campaign {
 			);
 		}
 
-		return $validator->get_validated_data();
+		$validated_settings = $validator->get_validated_data();
+
+		if ( isset( $validated_settings['quantity_limits'] ) ) {
+			$quantity_limits = self::get_validated_quantity_limits( $validated_settings['quantity_limits'] );
+			if ( is_wp_error( $quantity_limits ) ) {
+				return $quantity_limits;
+			}
+			$validated_settings['quantity_limits'] = $quantity_limits;
+		} else {
+			// Keep the stored settings unchanged for campaigns that do not use the feature.
+			unset( $validated_settings['quantity_limits'] );
+		}
+
+		return $validated_settings;
+	}
+
+	/**
+	 * Validates and normalizes the optional quantity limits of a campaign.
+	 *
+	 * @since 1.1.18
+	 * @access private
+	 *
+	 * @param array $limits The raw limits: enabled (bool), min, max, step (positive integers or empty).
+	 * @return array|WP_Error The normalized limits or a validation error.
+	 */
+	private static function get_validated_quantity_limits( $limits ) {
+		$validator = new Validator( $limits );
+		$rules     = array(
+			'enabled' => 'required|boolean',
+			'min'     => 'nullable|integer|min:1',
+			'max'     => 'nullable|integer|min:1',
+			'step'    => 'nullable|integer|min:1',
+		);
+		$error     = null;
+		$field     = '';
+		if ( ! $validator->validate( $rules ) ) {
+			$error = $validator->get_first_error();
+			$field = (string) key( $validator->get_errors() );
+		}
+		$data = $validator->get_validated_data();
+		$min  = empty( $data['min'] ) ? null : (int) $data['min'];
+		$max  = empty( $data['max'] ) ? null : (int) $data['max'];
+		$step = empty( $data['step'] ) ? null : (int) $data['step'];
+		if ( null === $error && ! empty( $data['enabled'] ) ) {
+			if ( null !== $min && null !== $max && $max < $min ) {
+				$error = __( 'The maximum quantity must be greater than or equal to the minimum quantity.', 'campaignbay' );
+				$field = 'max';
+			} elseif ( null !== $max && null !== $step && (int) floor( $max / $step ) * $step < max( 1, (int) ( null === $min ? 1 : $min ) ) ) {
+				$error = __( 'No quantity between the minimum and maximum matches the step.', 'campaignbay' );
+				$field = 'step';
+			}
+		}
+		if ( null !== $error ) {
+			return new WP_Error(
+				'rest_validation_error',
+				$error,
+				array(
+					'status'  => 400,
+					'details' => array( 'settings' => array( 'quantity_limits' => array( 'message' => $error ) ) ),
+				)
+			);
+		}
+		return array(
+			'enabled' => (bool) $data['enabled'],
+			'min'     => $min,
+			'max'     => $max,
+			'step'    => $step,
+		);
 	}
 
 

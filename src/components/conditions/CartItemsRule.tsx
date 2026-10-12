@@ -53,7 +53,7 @@ const CartItemsRule: FC<CartItemsRuleProps> = ({
             { label: __("Equal to == ", "campaignbay"), value: "==" },
           ]}
         />
-        {renderErrorMessage(errors?.operator?.message || "")}
+        {renderErrorMessage((errors?.operator as { message?: string } | undefined)?.message || "")}
       </div>
       <div>
         <NumberInput
@@ -63,7 +63,7 @@ const CartItemsRule: FC<CartItemsRuleProps> = ({
           placeholder={__("Enter quantity", "campaignbay")}
           isError={!!errors?.value}
         />
-        {renderErrorMessage(errors?.value?.message || "")}
+        {renderErrorMessage((errors?.value as { message?: string } | undefined)?.message || "")}
       </div>
     </div>
   );

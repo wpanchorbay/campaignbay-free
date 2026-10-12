@@ -151,7 +151,17 @@ export interface Campaign {
     settings: CampaignSettingsType;
 }
 
+export interface QuantityLimitsType {
+  enabled: boolean;
+  min: number | null;
+  max: number | null;
+  step: number | null;
+}
+
 export interface CampaignSettingsType {
+  // all campaign types
+  quantity_limits?: QuantityLimitsType;
+
   // scheduled & earlybird
   display_as_regular_price?: boolean;
   message_format?: string;

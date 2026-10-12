@@ -11,6 +11,7 @@ import { Helper, renderError } from "./Campaign";
 import Select from "../common/Select";
 import CopyToClipboard from "../common/CopyToClipboard";
 import { Input } from "../common/Input";
+import { NumberInput } from "../common/NumberInput";
 
 interface CampaignSettingsProps {
   settings: CampaignSettingsType;
@@ -391,6 +392,81 @@ const CampaignSettings: FC<CampaignSettingsProps> = ({
           ) : null}
         </>
       ) : null}
+
+      {/* optional quantity limits (all campaign types) */}
+      <div className="campaignbay-flex campaignbay-flex-col campaignbay-items-start campaignbay-gap-[8px]">
+        <Checkbox
+          checked={!!settings?.quantity_limits?.enabled}
+          label={
+            <>
+              {__("Limit purchase quantity", "campaignbay")}{" "}
+              <Helper
+                content={__(
+                  "Set a minimum, maximum and step quantity for the products this campaign targets while it is active.",
+                  "campaignbay",
+                )}
+              />
+            </>
+          }
+          onChange={(checked) =>
+            setSettings((prev: CampaignSettingsType) => ({
+              ...prev,
+              quantity_limits: {
+                min: null,
+                max: null,
+                step: null,
+                ...prev?.quantity_limits,
+                enabled: checked,
+              },
+            }))
+          }
+        />
+        {settings?.quantity_limits?.enabled ? (
+          <div className="campaignbay-flex campaignbay-flex-wrap campaignbay-gap-[12px]">
+            {(["min", "max", "step"] as const).map((field) => (
+              <div
+                key={field}
+                className="campaignbay-flex campaignbay-flex-col campaignbay-items-start campaignbay-gap-[4px]"
+              >
+                <Label>
+                  {field === "min"
+                    ? __("Minimum quantity", "campaignbay")
+                    : field === "max"
+                      ? __("Maximum quantity", "campaignbay")
+                      : __("Quantity step", "campaignbay")}
+                </Label>
+                <NumberInput
+                  min={1}
+                  value={settings?.quantity_limits?.[field] ?? null}
+                  placeholder={__("No limit", "campaignbay")}
+                  onChange={(value) =>
+                    setSettings((prev: CampaignSettingsType) => ({
+                      ...prev,
+                      quantity_limits: {
+                        enabled: true,
+                        min: null,
+                        max: null,
+                        step: null,
+                        ...prev?.quantity_limits,
+                        [field]: value === null ? null : Math.max(1, Math.floor(value)),
+                      },
+                    }))
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {renderError(errors?.quantity_limits)}
+        {settings?.quantity_limits?.enabled ? (
+          <HelpText>
+            {__(
+              "Leave a field empty for no limit. Quantities must be a multiple of the step.",
+              "campaignbay",
+            )}
+          </HelpText>
+        ) : null}
+      </div>
     </>
   );
 };
