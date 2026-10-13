@@ -256,10 +256,13 @@ class SaleBadge extends Base {
 				$best_pct = max( $best_pct, ( $pair[0] - $pair[1] ) / $pair[0] * 100 );
 				$best_amt = max( $best_amt, $pair[2] ?? ( $pair[0] - $pair[1] ) );
 			}
-			$result = array(
-				'percentage' => $best_pct,
-				'amount'     => $best_amt,
-			);
+			// Tiers may exist without any real discount for this product: keep the default flash then.
+			if ( $best_pct > 0 || $best_amt > 0 ) {
+				$result = array(
+					'percentage' => $best_pct,
+					'amount'     => $best_amt,
+				);
+			}
 		}
 		$this->figures_cache[ $pid ] = $result;
 		return $result;

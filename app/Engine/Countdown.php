@@ -65,6 +65,7 @@ class Countdown extends Base {
 			array( 'action', 'woocommerce_after_shop_loop_item', 'render_loop', 11, 0 ),
 			array( 'filter', 'woocommerce_cart_item_name', 'cart_item_name', 20, 3 ),
 			array( 'action', 'wp_enqueue_scripts', 'maybe_enqueue_for_cart', 20, 0 ),
+			array( 'action', 'woocommerce_blocks_loaded', 'register_store_api_data', 10, 0 ),
 		);
 		foreach ( $hooks as $hook ) {
 			$this->add_hook( ...$hook );
@@ -135,11 +136,9 @@ class Countdown extends Base {
 	}
 
 	/**
-	 * Appends the timer to the cart item name (classic cart, checkout, mini cart and the
-	 * block cart, which receives this HTML through the Store API).
-	 *
-	 * Store API output is passed through wp_kses_post, so only a span with class and
-	 * data-* attributes is used.
+	 * Appends the timer to the cart item name (classic cart, checkout and the classic mini
+	 * cart). The block cart/checkout builds item names from the product title and does not
+	 * run this filter, so it is served by register_store_api_data() + countdown.js instead.
 	 *
 	 * @since 1.1.19
 	 * @param string $name          Item name.
@@ -164,6 +163,95 @@ class Countdown extends Base {
 		}
 		$html = self::render( $campaign, $this->get_format( 'cart' ), 'cart' );
 		return '' === $html ? $name : $name . '<br/>' . $html;
+	}
+
+	/**
+	 * Extends the Store API cart item schema (namespace "campaignbay") with countdown data
+	 * so the block cart/checkout can show the timer. countdown.js reads it from the
+	 * wc/store/cart data store.
+	 *
+	 * @since 1.1.19
+	 * @return void
+	 */
+	public function register_store_api_data() {
+		if ( ! function_exists( 'woocommerce_store_api_register_endpoint_data' ) ) {
+			return;
+		}
+		woocommerce_store_api_register_endpoint_data(
+			array(
+				'endpoint'        => 'cart-item',
+				'namespace'       => 'campaignbay',
+				'data_callback'   => array( $this, 'store_api_item_data' ),
+				'schema_callback' => array( $this, 'store_api_item_schema' ),
+				'schema_type'     => ARRAY_A,
+			)
+		);
+	}
+
+	/**
+	 * Store API data callback: countdown data for a cart item.
+	 *
+	 * @since 1.1.19
+	 * @param array $cart_item Cart item.
+	 * @return array Empty keys when no timer applies.
+	 */
+	public function store_api_item_data( $cart_item ) {
+		$empty = array(
+			'end'      => 0,
+			'now'      => 0,
+			'campaign' => 0,
+			'text'     => '',
+			'expired'  => '',
+		);
+		if ( ! $this->is_surface_enabled( 'cart' ) || ! is_array( $cart_item ) || empty( $cart_item['data'] ) || ! empty( $cart_item['is_campaignbay_free_product'] ) ) {
+			return $empty;
+		}
+		$campaign = $this->get_campaign_for_product( $cart_item['data'] );
+		if ( ! $campaign ) {
+			return $empty;
+		}
+		$format = $this->get_format( 'cart' );
+		if ( '' === trim( $format ) ) {
+			return $empty;
+		}
+		self::enqueue_assets();
+		$end_date = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $campaign->get_end_timestamp() );
+		return array(
+			'end'      => (int) $campaign->get_end_timestamp(),
+			'now'      => time(),
+			'campaign' => (int) $campaign->get_id(),
+			// Plain text; the client builds the DOM with textContent. {countdown} is kept as a token.
+			'text'     => str_replace(
+				array( '{end_date}', '{campaign_title}' ),
+				array( (string) $end_date, $campaign->get_title() ),
+				$format
+			),
+			'expired'  => (string) Common::get_instance()->get_settings( 'countdown_expired_message' ),
+		);
+	}
+
+	/**
+	 * Store API schema callback.
+	 *
+	 * @since 1.1.19
+	 * @return array
+	 */
+	public function store_api_item_schema() {
+		$prop = function ( $type, $desc ) {
+			return array(
+				'description' => $desc,
+				'type'        => $type,
+				'context'     => array( 'view', 'edit' ),
+				'readonly'    => true,
+			);
+		};
+		return array(
+			'end'      => $prop( 'integer', 'Countdown end (Unix timestamp).' ),
+			'now'      => $prop( 'integer', 'Server time (Unix timestamp).' ),
+			'campaign' => $prop( 'integer', 'Campaign ID.' ),
+			'text'     => $prop( 'string', 'Countdown format text with a {countdown} token.' ),
+			'expired'  => $prop( 'string', 'Message shown when the countdown ends.' ),
+		);
 	}
 
 	/**

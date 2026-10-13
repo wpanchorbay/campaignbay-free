@@ -1067,7 +1067,7 @@ class Helper {
 				'campaign_title' => $data['campaign_title'],
 				'type'           => $data['type'],
 				'discount'       => $data['discount'],
-				'product_ids'    => $data['product_id'],
+				'product_ids'    => is_array( $data['product_id'] ) ? $data['product_id'] : array( $data['product_id'] ),
 			);
 		}
 	}

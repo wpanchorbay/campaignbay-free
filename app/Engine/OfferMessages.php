@@ -235,6 +235,12 @@ class OfferMessages extends Base {
 		if ( '' === $discount ) {
 			return '';
 		}
+		if ( '' === trim( (string) $category_name ) ) {
+			$category_name = get_bloginfo( 'name' );
+			if ( '' === trim( (string) $category_name ) ) {
+				$category_name = __( 'our store', 'campaignbay' );
+			}
+		}
 		return $this->fill(
 			$this->setting( 'category_offer_format' ),
 			array(

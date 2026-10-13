@@ -77,8 +77,81 @@
 		}
 	}
 
+	/**
+	 * Block cart / checkout: React renders item names from the product title, so the timer
+	 * is injected from the Store API extension data (extensions.campaignbay) found in the
+	 * wc/store/cart data store.
+	 */
+	function blockItems() {
+		try {
+			if ( ! window.wp || ! window.wp.data ) {
+				return null;
+			}
+			var store = window.wp.data.select( 'wc/store/cart' );
+			if ( ! store || ! store.getCartData ) {
+				return null;
+			}
+			var data = store.getCartData();
+			return data && data.items ? data.items : null;
+		} catch ( e ) {
+			return null;
+		}
+	}
+
+	function syncBlocks() {
+		var items = blockItems();
+		var rows = document.querySelectorAll( '.wc-block-cart-items__row, .wc-block-components-order-summary-item' );
+		if ( ! items || ! rows.length ) {
+			return;
+		}
+		var byKey = {};
+		items.forEach( function ( item ) {
+			var cd = item.extensions && item.extensions.campaignbay;
+			if ( cd && cd.end && cd.text ) {
+				byKey[ item.key ] = cd;
+			}
+		} );
+		Array.prototype.forEach.call( rows, function ( row, idx ) {
+			var item = items[ idx ];
+			var cd = item && byKey[ item.key ];
+			var holder = row.querySelector( '.wc-block-components-product-name' );
+			var existing = row.querySelector( '.campaignbay-countdown--block' );
+			if ( ! cd || ! holder ) {
+				if ( existing ) {
+					existing.remove();
+				}
+				return;
+			}
+			if ( existing && existing.getAttribute( 'data-campaign' ) === String( cd.campaign ) && existing.getAttribute( 'data-end' ) === String( cd.end ) ) {
+				return;
+			}
+			if ( existing ) {
+				existing.remove();
+			}
+			var el = document.createElement( 'div' );
+			el.className = 'campaignbay-countdown campaignbay-countdown--cart campaignbay-countdown--block';
+			el.setAttribute( 'data-end', cd.end );
+			el.setAttribute( 'data-now', cd.now );
+			el.setAttribute( 'data-campaign', cd.campaign );
+			el.setAttribute( 'data-expired', cd.expired || '' );
+			var parts = String( cd.text ).split( '{countdown}' );
+			parts.forEach( function ( part, i ) {
+				if ( i > 0 ) {
+					var t = document.createElement( 'span' );
+					t.className = 'campaignbay-countdown__time';
+					el.appendChild( t );
+				}
+				el.appendChild( document.createTextNode( part ) );
+			} );
+			holder.parentNode.insertBefore( el, holder.nextSibling );
+			register( el );
+		} );
+		tick();
+	}
+
 	function init() {
 		scan();
+		syncBlocks();
 		if ( 'MutationObserver' in window ) {
 			var pending = false;
 			new MutationObserver( function () {
@@ -89,6 +162,7 @@
 				window.setTimeout( function () {
 					pending = false;
 					scan();
+					syncBlocks();
 				}, 100 );
 			} ).observe( document.body, { childList: true, subtree: true } );
 		}
