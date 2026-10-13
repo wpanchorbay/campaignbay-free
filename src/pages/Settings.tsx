@@ -479,7 +479,7 @@ const ProductContent: React.FC<ProductContentProps> = ({
 
         <div className="campaignbay-max-w-md">
           <CustomSelect
-            label="Product Page Discount Message Format"
+            label="Discount priority method"
             classNames={{
               label:
                 "!campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase",
@@ -497,7 +497,7 @@ const ProductContent: React.FC<ProductContentProps> = ({
             ]}
           />
           <p className="campaignbay-text-xs campaignbay-text-gray-500 campaignbay-mt-2">
-            Defines how multiple product-level discounts are applied.
+            When several campaigns discount the same product, this decides which one is used: the biggest discount, the smallest discount, the first campaign that matches, or the campaign that started most recently.
           </p>
         </div>
       </SettingsCard>
