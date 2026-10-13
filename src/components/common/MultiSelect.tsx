@@ -129,6 +129,41 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     }
   }, [fetchedOptions]);
 
+  // Resolve labels of already-selected values that were not part of the fetched page
+  // (e.g. reopening a saved campaign). Endpoints that support `include` return exactly those items.
+  const unresolvedKey = endpoint
+    ? value
+        .filter((val) => !allSeenOptions.some((opt) => opt.value === val))
+        .join(",")
+    : "";
+  const requestedKeys = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!endpoint || !unresolvedKey || requestedKeys.current.has(unresolvedKey)) {
+      return;
+    }
+    requestedKeys.current.add(unresolvedKey);
+    const wanted = unresolvedKey.split(",");
+    const separator = endpoint.includes("?") ? "&" : "?";
+    apiFetch({
+      path: `${endpoint}${separator}include=${encodeURIComponent(unresolvedKey)}`,
+      method: "GET",
+    })
+      .then((response: any) => {
+        if (!Array.isArray(response)) return;
+        const resolved = response
+          .filter((item: any) => wanted.includes(String(item.id)))
+          .map((item: any) => ({ label: item.name, value: item.id }));
+        if (resolved.length > 0) {
+          setAllSeenOptions((prev) => {
+            const unique = new Map(prev.map((o) => [o.value, o]));
+            resolved.forEach((o: MultiSelectOption) => unique.set(o.value, o));
+            return Array.from(unique.values());
+          });
+        }
+      })
+      .catch(() => {});
+  }, [endpoint, unresolvedKey]);
+
   // Fetch from endpoint with debounce
   useEffect(() => {
     if (!endpoint) return;

@@ -339,6 +339,13 @@ class ResourceController extends ApiController {
 			$args['search'] = sanitize_text_field( $search );
 		}
 
+		// Optional comma separated term IDs, used by the editor to resolve already-selected tags.
+		$include = $request->get_param( 'include' );
+		if ( ! empty( $include ) ) {
+			$args['include'] = array_filter( array_map( 'absint', explode( ',', (string) $include ) ) );
+			$args['number']  = 0;
+		}
+
 		$tag_terms = get_terms( $args );
 
 		$tags = array();
