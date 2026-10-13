@@ -176,7 +176,7 @@ class ProductDiscount {
 				$new_price = $this->calculate_scheduled_price( $campaign, $base_price );
 			}
 
-			if ( $this->is_better_price( $new_price, $best_price ) ) {
+			if ( $this->is_better_price( $new_price, $best_price, $campaign, $applied_campaign ) ) {
 				$best_price       = $new_price;
 				$applied_campaign = $campaign;
 				$applied_tier     = $tier ?? null;
@@ -409,11 +409,13 @@ class ProductDiscount {
 	 * Determines if a new price is better than the current best price based on the priority method.
 	 *
 	 * @since 1.0.0
-	 * @param float $new_price The new price to compare.
-	 * @param float $current_best_price The current best price.
+	 * @param float       $new_price The new price to compare.
+	 * @param float       $current_best_price The current best price.
+	 * @param object|null $new_campaign Optional. Campaign behind $new_price (used by 'apply_recent').
+	 * @param object|null $current_campaign Optional. Campaign behind $current_best_price (used by 'apply_recent').
 	 * @return bool True if the new price is better, false otherwise.
 	 */
-	public function is_better_price( $new_price, $current_best_price ) {
+	public function is_better_price( $new_price, $current_best_price, $new_campaign = null, $current_campaign = null ) {
 		if ( null === $new_price ) {
 			return false;
 		}
@@ -428,6 +430,8 @@ class ProductDiscount {
 			return $new_price > $current_best_price;
 		} elseif ( 'apply_first' === $setting ) {
 			return null === $current_best_price;
+		} elseif ( 'apply_recent' === $setting ) {
+			return Helper::is_more_recent_campaign( $current_campaign, $new_campaign );
 		}
 		return false;
 	}

@@ -174,6 +174,8 @@ class Campaign {
 		$data['updated_by']    = get_current_user_id();
 		// is_exclude/schedule_enabled are NOT NULL columns; a null here (allowed by the nullable
 		// validation rule) would make $wpdb->insert fail under strict SQL mode.
+		$data['start_datetime']   = self::normalize_datetime( $data['start_datetime'] ?? null );
+		$data['end_datetime']     = self::normalize_datetime( $data['end_datetime'] ?? null );
 		$data['is_exclude']       = $data['is_exclude'] ?? false;
 		$data['schedule_enabled'] = $data['schedule_enabled'] ?? false;
 		try {
@@ -320,6 +322,8 @@ class Campaign {
 		// validation rule) would make $wpdb->update fail under strict SQL mode. Fall back to the
 		// existing stored value (not false) when the request simply didn't send the field, so a
 		// partial update (e.g. a status-only toggle) doesn't silently reset it.
+		$data['start_datetime']   = self::normalize_datetime( $data['start_datetime'] ?? null );
+		$data['end_datetime']     = self::normalize_datetime( $data['end_datetime'] ?? null );
 		$data['is_exclude']       = array_key_exists( 'is_exclude', $args ) ? ( $data['is_exclude'] ?? false ) : ( $this->data->is_exclude ?? false );
 		$data['schedule_enabled'] = array_key_exists( 'schedule_enabled', $args ) ? ( $data['schedule_enabled'] ?? false ) : ( $this->data->schedule_enabled ?? false );
 		// adding other default data
@@ -605,6 +609,9 @@ class Campaign {
 				'bogo_cart_message_location' => 'required|string|in:line_item_name,notice,dont_show',
 			);
 		}
+		// Optional min / max / step quantity limits, available on every campaign type.
+		$rules['quantity_limits'] = 'nullable|array';
+
 		/**
 		 * Filters the settings validation rules for a campaign.
 		 *
@@ -630,7 +637,91 @@ class Campaign {
 			);
 		}
 
-		return $validator->get_validated_data();
+		$validated_settings = $validator->get_validated_data();
+
+		if ( isset( $validated_settings['quantity_limits'] ) ) {
+			$quantity_limits = self::get_validated_quantity_limits( $validated_settings['quantity_limits'] );
+			if ( is_wp_error( $quantity_limits ) ) {
+				return $quantity_limits;
+			}
+			$validated_settings['quantity_limits'] = $quantity_limits;
+		} else {
+			// Keep the stored settings unchanged for campaigns that do not use the feature.
+			unset( $validated_settings['quantity_limits'] );
+		}
+
+		return $validated_settings;
+	}
+
+	/**
+	 * Validates and normalizes the optional quantity limits of a campaign.
+	 *
+	 * @since 1.1.18
+	 * @access private
+	 *
+	 * @param array $limits The raw limits: enabled (bool), min, max, step (positive integers or empty).
+	 * @return array|WP_Error The normalized limits or a validation error.
+	 */
+	private static function get_validated_quantity_limits( $limits ) {
+		$fail = function ( $message, $field ) {
+			return new WP_Error(
+				'rest_validation_error',
+				$message,
+				array(
+					'status'  => 400,
+					'details' => array( 'settings' => array( 'quantity_limits' => array( 'message' => $message ) ) ),
+				)
+			);
+		};
+
+		// Strictly accept real booleans and their common string / number spellings.
+		$enabled_raw = $limits['enabled'] ?? false;
+		if ( ! in_array( $enabled_raw, array( true, false, 1, 0, '1', '0', 'true', 'false' ), true ) ) {
+			return $fail( __( 'The quantity limit option must be true or false.', 'campaignbay' ), 'enabled' );
+		}
+		$enabled = filter_var( $enabled_raw, FILTER_VALIDATE_BOOLEAN );
+		if ( ! $enabled ) {
+			// Disabled: store no stale values.
+			return array(
+				'enabled' => false,
+				'min'     => null,
+				'max'     => null,
+				'step'    => null,
+			);
+		}
+
+		$validator = new Validator( $limits );
+		$rules     = array(
+			'min'  => 'nullable|integer|min:1',
+			'max'  => 'nullable|integer|min:1',
+			'step' => 'nullable|integer|min:1',
+		);
+		$error     = null;
+		if ( ! $validator->validate( $rules ) ) {
+			$error = $validator->get_first_error();
+		}
+		$data = $validator->get_validated_data();
+		$min  = empty( $data['min'] ) ? null : (int) $data['min'];
+		$max  = empty( $data['max'] ) ? null : (int) $data['max'];
+		$step = empty( $data['step'] ) ? null : (int) $data['step'];
+		if ( null === $error ) {
+			if ( null === $min && null === $max && null === $step ) {
+				$error = __( 'Set at least one of minimum, maximum or step, or turn the quantity limit off.', 'campaignbay' );
+			} elseif ( null !== $min && null !== $max && $max < $min ) {
+				$error = __( 'The maximum quantity must be greater than or equal to the minimum quantity.', 'campaignbay' );
+			} elseif ( null !== $max && null !== $step && (int) floor( $max / $step ) * $step < max( 1, (int) ( null === $min ? 1 : $min ) ) ) {
+				$error = __( 'No quantity between the minimum and maximum matches the step.', 'campaignbay' );
+			}
+		}
+		if ( null !== $error ) {
+			return $fail( $error, '' );
+		}
+		return array(
+			'enabled' => true,
+			'min'     => $min,
+			'max'     => $max,
+			'step'    => $step,
+		);
 	}
 
 
@@ -659,19 +750,26 @@ class Campaign {
 		$validated_data       = $validator->get_validated_data();
 		$validated_rules_data = array();
 		$default_rules        = array(
-			'user_role'  => array(
+			'user_role'   => array(
 				'option'      => 'required|string',
 				'is_included' => 'required|boolean',
 			),
-			'user_roles' => array(
+			'user_roles'  => array(
 				'options'     => 'required|array',
 				'is_included' => 'required|boolean',
 			),
-			'users'      => array(
+			'users'       => array(
 				'options'     => 'required|array',
 				'is_included' => 'required|boolean',
 			),
-			'cart_total' => array(
+			'user_status' => array(
+				'status' => 'required|string|in:guest,logged_in',
+			),
+			'cart_items'  => array(
+				'value'    => 'required|integer|min:0',
+				'operator' => 'required|string|in:>=,<=,==,>,<',
+			),
+			'cart_total'  => array(
 				'value'    => 'required|numeric|min:0',
 				'operator' => 'required|string|in:>=,<=,==,>,<',
 			),
@@ -1060,16 +1158,52 @@ class Campaign {
 
 
 	/**
+	 * Gets the timestamp used by the "most recently started wins" priority method.
+	 *
+	 * Uses the campaign's start date, falling back to its creation date when no start
+	 * date is set. Both values are stored in site-local time, so they are comparable.
+	 *
+	 * @since 1.1.18
+	 * @return int Unix-like timestamp (0 when no usable date exists).
+	 */
+	public function get_priority_timestamp() {
+		$date = $this->get_start_datetime();
+		if ( empty( $date ) ) {
+			$date = $this->data->date_created ?? '';
+		}
+		$timestamp = empty( $date ) ? false : strtotime( $date );
+		return false === $timestamp ? 0 : (int) $timestamp;
+	}
+
+	/**
+	 * Normalizes a datetime value: empty strings and MySQL zero dates become null.
+	 *
+	 * @since 1.1.18
+	 * @access public
+	 * @static
+	 *
+	 * @param mixed $value The raw datetime value.
+	 * @return string|null The datetime string, or null when it is empty or a zero date.
+	 */
+	public static function normalize_datetime( $value ) {
+		if ( ! is_string( $value ) ) {
+			return null;
+		}
+		$value = trim( $value );
+		if ( '' === $value || 0 === strpos( $value, '0000-00-00' ) ) {
+			return null;
+		}
+		return $value;
+	}
+
+	/**
 	 * Gets the start datetime string.
 	 *
 	 * @since 1.0.0
 	 * @return string|null The start datetime in 'Y-m-d H:i:s' format, or null if not set.
 	 */
 	public function get_start_datetime() {
-		if ( empty( $this->data->start_datetime ) ) {
-			return null;
-		}
-		return $this->data->start_datetime;
+		return self::normalize_datetime( $this->data->start_datetime ?? null );
 	}
 
 	/**
@@ -1079,10 +1213,7 @@ class Campaign {
 	 * @return string|null The end datetime in 'Y-m-d H:i:s' format, or null if not set.
 	 */
 	public function get_end_datetime() {
-		if ( empty( $this->data->end_datetime ) ) {
-			return null;
-		}
-		return $this->data->end_datetime;
+		return self::normalize_datetime( $this->data->end_datetime ?? null );
 	}
 
 	/**
@@ -1118,7 +1249,7 @@ class Campaign {
 	 * @return string|null The start datetime in 'Y-m-d H:i:s' format (UTC), or null if not set.
 	 */
 	public function get_start_datetime_utc() {
-		$start_datetime_site = $this->data->start_datetime;
+		$start_datetime_site = self::normalize_datetime( $this->data->start_datetime ?? null );
 
 		if ( empty( $start_datetime_site ) ) {
 			return null;
@@ -1141,7 +1272,7 @@ class Campaign {
 	 * @return string|null The end datetime in 'Y-m-d H:i:s' format (UTC), or null if not set.
 	 */
 	public function get_end_datetime_utc() {
-		$end_datetime_site = $this->data->end_datetime;
+		$end_datetime_site = self::normalize_datetime( $this->data->end_datetime ?? null );
 
 		if ( empty( $end_datetime_site ) ) {
 			return null;

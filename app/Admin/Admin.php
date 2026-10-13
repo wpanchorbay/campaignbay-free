@@ -543,6 +543,30 @@ class Admin {
 					'sanitize_callback' => 'sanitize_key',
 					'default'           => 'apply_highest',
 				),
+				'quantity_limit_show_product_message'     => array(
+					'type'    => 'boolean',
+					'default' => true,
+				),
+				'quantity_limit_product_message_format'   => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => 'Purchase limits: {limits}',
+				),
+				'quantity_limit_message_min'              => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => 'The minimum quantity for "{product_name}" is {min_quantity}.',
+				),
+				'quantity_limit_message_max'              => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => 'The maximum quantity for "{product_name}" is {max_quantity}.',
+				),
+				'quantity_limit_message_step'             => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => '"{product_name}" must be purchased in multiples of {step}.',
+				),
 				'show_discount_table'                     => array(
 					'type'    => 'boolean',
 					'default' => true,

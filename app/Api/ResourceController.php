@@ -109,6 +109,18 @@ class ResourceController extends ApiController {
 				),
 			)
 		);
+
+		register_rest_route(
+			$namespace,
+			'/' . $this->rest_base . '/tags',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_tags' ),
+					'permission_callback' => array( $this, 'get_item_permissions_check' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -303,6 +315,51 @@ class ResourceController extends ApiController {
 		}
 
 		return rest_ensure_response( $categories );
+	}
+
+	/**
+	 * Get product tags.
+	 *
+	 * @since    1.1.18
+	 * @access public
+	 * @param mixed $request The REST request (supports an optional `search` param).
+	 * @return WP_REST_Response
+	 */
+	public function get_tags( $request ) {
+		$args = array(
+			'taxonomy'   => 'product_tag',
+			'hide_empty' => false,
+			'number'     => 50,
+			'orderby'    => 'name',
+			'order'      => 'ASC',
+		);
+
+		$search = $request->get_param( 'search' );
+		if ( ! empty( $search ) ) {
+			$args['search'] = sanitize_text_field( $search );
+		}
+
+		// Optional comma separated term IDs, used by the editor to resolve already-selected tags.
+		$include = $request->get_param( 'include' );
+		if ( ! empty( $include ) ) {
+			$args['include'] = array_filter( array_map( 'absint', explode( ',', (string) $include ) ) );
+			$args['number']  = 0;
+		}
+
+		$tag_terms = get_terms( $args );
+
+		$tags = array();
+		// get_terms can return a WP_Error, so we must check for it.
+		if ( ! is_wp_error( $tag_terms ) ) {
+			foreach ( $tag_terms as $term ) {
+				$tags[] = array(
+					'id'   => $term->term_id,
+					'name' => $term->name,
+				);
+			}
+		}
+
+		return rest_ensure_response( $tags );
 	}
 
 	/**

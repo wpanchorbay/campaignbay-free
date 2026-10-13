@@ -201,12 +201,25 @@ class CartDiscount {
 							$data_to_add
 						);
 					} else {
+						$fee_discount = $meta['quantity']['discount'] * $cart_quantity;
+						// WooCommerce treats a negative fee as tax-exclusive and credits tax on top of it. When
+						// prices are entered tax-inclusive, strip the tax so the customer gets exactly the
+						// discount shown (as the coupon and line-total modes already do).
+						if ( wc_tax_enabled() && wc_prices_include_tax() && $cart_item['data']->is_taxable() ) {
+							$fee_discount = (float) wc_get_price_excluding_tax(
+								$cart_item['data'],
+								array(
+									'qty'   => 1,
+									'price' => $fee_discount,
+								)
+							);
+						}
 						self::add_fee(
 							$cart,
 							array(
 								'campaign'       => $meta['quantity']['campaign'],
 								'campaign_title' => $meta['quantity']['campaign_title'],
-								'discount'       => $meta['quantity']['discount'] * $cart_quantity,
+								'discount'       => $fee_discount,
 							)
 						);
 					}

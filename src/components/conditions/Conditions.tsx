@@ -65,8 +65,16 @@ const Conditions: FC<ConditionsProps> = ({
         disabled: disabledUserRole,
       },
       {
+        label: __("Guest / Logged-in", "campaignbay"),
+        value: "user_status",
+      },
+      {
         label: __("Cart Total", "campaignbay"),
         value: "cart_total",
+      },
+      {
+        label: __("Cart Item Quantity", "campaignbay"),
+        value: "cart_items",
       },
       {
         label: __("User Roles", "campaignbay"),
@@ -195,6 +203,13 @@ const defaultConditions: Record<string, AllConditionsType> = {
   users: {
     options: [],
     is_included: true,
+  },
+  user_status: {
+    status: "guest",
+  },
+  cart_items: {
+    operator: ">=",
+    value: 1,
   },
   cart_total: {
     operator: "==",

@@ -591,6 +591,34 @@ class Woocommerce
     }
 
     /**
+     * Get the tag IDs of the product (variations use their parent's tags)
+     *
+     * @since 1.1.18
+     *
+     * @param WC_Product $product the product object
+     * @return array the product_tag term IDs
+     */
+    static function get_product_tags($product)
+    {
+        $tags = array();
+        if (!empty($product) && is_object($product) && method_exists($product, 'get_tag_ids')) {
+            if (self::product_type_is($product, 'variation')) {
+                // Raw WC lookup on purpose, see get_product_categories() (avoids filter recursion).
+                $parent_id = (int) self::get_product_parent_id($product);
+                if (!$parent_id && method_exists($product, 'get_parent_id')) {
+                    $parent_id = (int) $product->get_parent_id();
+                }
+                // A failed parent lookup yields no tags, so a tag target (and its exclude mode) never grants the discount.
+                $product = $parent_id ? wc_get_product($parent_id) : null;
+            }
+            if ($product && method_exists($product, 'get_tag_ids')) {
+                $tags = $product->get_tag_ids();
+            }
+        }
+        return $tags;
+    }
+
+    /**
      * Get the children of a product
      * 
      * @since 1.0.7

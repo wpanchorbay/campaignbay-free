@@ -350,7 +350,8 @@ class Validator {
 	 * @return string|null The validated datetime string, or null if validation fails.
 	 */
 	private static function validate_datetime( $datetime ) {
-		if ( empty( $datetime ) ) {
+		// An empty value or a MySQL zero date means "no date".
+		if ( empty( $datetime ) || ( is_string( $datetime ) && 0 === strpos( trim( $datetime ), '0000-00-00' ) ) ) {
 			return null;
 		}
 		try {

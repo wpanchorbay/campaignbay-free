@@ -1,6 +1,15 @@
 import { CampaignSettingsType, CampaignType } from "./types";
 
 export const getSettings = (type: CampaignType, settings: CampaignSettingsType) => {
+    const result: CampaignSettingsType = getTypeSettings(type, settings);
+    // Optional quantity limits are shared by every campaign type; keep them when present.
+    if (settings?.quantity_limits) {
+        result.quantity_limits = settings.quantity_limits;
+    }
+    return result;
+}
+
+const getTypeSettings = (type: CampaignType, settings: CampaignSettingsType) => {
     let defaultSettings: CampaignSettingsType = {}
     switch (type) {
         case "earlybird":

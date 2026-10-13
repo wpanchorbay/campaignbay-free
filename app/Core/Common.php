@@ -82,6 +82,11 @@ class Common {
 		'product_message_format_fixed'            => 'You save {amount_off} per item',
 		'bogo_banner_message_format'              => 'Buy {buy_quantity} and get {get_quantity} free!',
 		'product_priorityMethod'                  => 'apply_highest',
+		'quantity_limit_show_product_message'     => true,
+		'quantity_limit_product_message_format'   => 'Purchase limits: {limits}',
+		'quantity_limit_message_min'              => 'The minimum quantity for "{product_name}" is {min_quantity}.',
+		'quantity_limit_message_max'              => 'The maximum quantity for "{product_name}" is {max_quantity}.',
+		'quantity_limit_message_step'             => '"{product_name}" must be purchased in multiples of {step}.',
 		'show_discount_table'                     => 'true',
 		'discount_table_options'                  => array(
 			'show_header' => true,

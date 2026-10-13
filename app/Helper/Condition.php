@@ -151,8 +151,12 @@ class Condition {
 			case 'user_role':
 				$result = self::check_user_role( $condition );
 				break;
+			case 'user_status':
+				$result = self::check_user_status( $condition );
+				break;
+			case 'cart_items':
 			case 'cart_total':
-				wpab_campaignbay_log( 'Cart total condition deferred for post-calculation check.', 'INFO' );
+				wpab_campaignbay_log( 'Cart level condition deferred for post-calculation check.', 'INFO' );
 				$result = true; // cannot run it now now just pass it , check it after cart total calculation
 				break;
 			default:
@@ -214,6 +218,28 @@ class Condition {
 	}
 
 	/**
+	 * Verifies if the current visitor is a guest or a logged-in user, as the rule requires.
+	 *
+	 * @since 1.1.18
+	 * @access public
+	 * @static
+	 *
+	 * @param array $condition Array definition containing 'status' ('guest' or 'logged_in').
+	 *
+	 * @return bool True if condition is satisfied.
+	 */
+	public static function check_user_status( $condition ) {
+		$status = $condition['status'] ?? '';
+		if ( 'guest' === $status ) {
+			return ! is_user_logged_in();
+		}
+		if ( 'logged_in' === $status ) {
+			return is_user_logged_in();
+		}
+		return false;
+	}
+
+	/**
 	 * Check if the rule is a cart level condition.
 	 *
 	 * @since 1.1.17
@@ -226,7 +252,7 @@ class Condition {
 	 */
 	public static function is_cart_level_condition( $rule ) {
 		$type = $rule['type'];
-		if ( in_array( $type, array( 'cart_total' ), true ) ) {
+		if ( in_array( $type, array( 'cart_total', 'cart_items' ), true ) ) {
 			return true;
 		}
 		return false;
@@ -252,6 +278,9 @@ class Condition {
 		switch ( $type ) {
 			case 'cart_total':
 				$result = self::check_cart_total( $condition, $product );
+				break;
+			case 'cart_items':
+				$result = self::check_cart_items( $condition, $product );
 				break;
 			default:
 				$result = false;
@@ -308,5 +337,51 @@ class Condition {
 				break;
 		}
 		return $result;
+	}
+
+	/**
+	 * Verifies if the cart item count condition is satisfied.
+	 *
+	 * Compares the total quantity of units in the cart (free BOGO items excluded)
+	 * against the configured value.
+	 *
+	 * @since 1.1.18
+	 * @access public
+	 * @static
+	 *
+	 * @param array       $condition The condition configuration array.
+	 * @param \WC_Product $product   The product to check.
+	 *
+	 * @return bool True if the condition is satisfied, false otherwise.
+	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	public static function check_cart_items( $condition, $product = null ) {
+		$operator   = $condition['operator'];
+		$value      = (int) $condition['value'];
+		$item_count = 0;
+		if ( function_exists( 'WC' ) && isset( WC()->cart ) && null !== WC()->cart ) {
+			// Count straight from the live cart, leaving out BOGO free lines.
+			foreach ( WC()->cart->get_cart() as $cart_item ) {
+				if ( ! empty( $cart_item['is_campaignbay_free_product'] ) ) {
+					continue;
+				}
+				$item_count += (int) $cart_item['quantity'];
+			}
+		}
+		wpab_campaignbay_log( sprintf( 'Checking cart items condition: Cart Items (%s) %s Target Value (%s)', $item_count, $operator, $value ), 'INFO' );
+		switch ( $operator ) {
+			case '>=':
+				return $item_count >= $value;
+			case '<=':
+				return $item_count <= $value;
+			case '>':
+				return $item_count > $value;
+			case '<':
+				return $item_count < $value;
+			case '==':
+				return $item_count === $value;
+			default:
+				return false;
+		}
 	}
 }

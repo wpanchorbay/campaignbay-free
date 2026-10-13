@@ -85,7 +85,7 @@ class Filter {
 	 *
 	 * This is the main entry point for product-campaign matching logic.
 	 * It evaluates sale item exclusions, product-level conditions, and
-	 * targeting rules (entire store, specific products, or categories).
+	 * targeting rules (entire store, specific products, categories, or tags).
 	 *
 	 * @since  1.0.0
 	 * @access public
@@ -140,6 +140,8 @@ class Filter {
 				$result = $this->compareWithProducts( $campaign->get_target_ids(), $is_exclude, $product_id, $product );
 			} elseif ( 'category' === $type ) {
 				$result = $this->compareWithCategories( $product, $campaign->get_target_ids(), $is_exclude );
+			} elseif ( 'tag' === $type ) {
+				$result = $this->compareWithTags( $product, $campaign->get_target_ids(), $is_exclude );
 			}
 			// $product = Woocommerce::getParentProduct($product);
 			// return $this->compareWithTags($product, $values, $method);
@@ -192,25 +194,26 @@ class Filter {
 
 
 	/**
-	 * Compare product's tags against tag filters
+	 * Compares a product's tags against campaign tag filters.
 	 *
-	 * @since 1.0.0
+	 * Checks if any of the product's tags (a variation uses its parent's tags) match the
+	 * campaign's target tag IDs, respecting the inclusion/exclusion mode.
 	 *
-	 * @param $product
-	 * @param $target_ids
-	 * @param $is_exclude
-	 * @return bool
+	 * @since  1.1.18
+	 * @access protected
+	 *
+	 * @param \WC_Product $product    The product to check.
+	 * @param array       $target_ids Array of tag IDs to match against.
+	 * @param bool        $is_exclude If true, product must NOT have any of the tags.
+	 *
+	 * @return bool True if product matches the tag criteria.
 	 */
-	// {
-	// $tag_ids = Woocommerce::getProductTags($product);
-	// $is_product_has_tag = count(array_intersect($tag_ids, $target_ids)) > 0;
-	// if (false === $is_exclude) {
-	// return $is_product_has_tag;
-	// } elseif (true === $is_exclude) {
-	// return !$is_product_has_tag;
-	// }
-	// return false;
-	// }
+	protected function compareWithTags( $product, $target_ids, $is_exclude ) {
+		$tags               = array_map( 'intval', Woocommerce::get_product_tags( $product ) );
+		$target_ids         = array_map( 'intval', (array) $target_ids );
+		$is_product_has_tag = count( array_intersect( $tags, $target_ids ) ) > 0;
+		return $is_exclude ? ! $is_product_has_tag : $is_product_has_tag;
+	}
 
 	/**
 	 * Compares a product's categories against campaign category filters.
