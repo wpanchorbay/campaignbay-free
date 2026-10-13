@@ -174,6 +174,8 @@ class Campaign {
 		$data['updated_by']    = get_current_user_id();
 		// is_exclude/schedule_enabled are NOT NULL columns; a null here (allowed by the nullable
 		// validation rule) would make $wpdb->insert fail under strict SQL mode.
+		$data['start_datetime']   = self::normalize_datetime( $data['start_datetime'] ?? null );
+		$data['end_datetime']     = self::normalize_datetime( $data['end_datetime'] ?? null );
 		$data['is_exclude']       = $data['is_exclude'] ?? false;
 		$data['schedule_enabled'] = $data['schedule_enabled'] ?? false;
 		try {
@@ -320,6 +322,8 @@ class Campaign {
 		// validation rule) would make $wpdb->update fail under strict SQL mode. Fall back to the
 		// existing stored value (not false) when the request simply didn't send the field, so a
 		// partial update (e.g. a status-only toggle) doesn't silently reset it.
+		$data['start_datetime']   = self::normalize_datetime( $data['start_datetime'] ?? null );
+		$data['end_datetime']     = self::normalize_datetime( $data['end_datetime'] ?? null );
 		$data['is_exclude']       = array_key_exists( 'is_exclude', $args ) ? ( $data['is_exclude'] ?? false ) : ( $this->data->is_exclude ?? false );
 		$data['schedule_enabled'] = array_key_exists( 'schedule_enabled', $args ) ? ( $data['schedule_enabled'] ?? false ) : ( $this->data->schedule_enabled ?? false );
 		// adding other default data
@@ -1172,16 +1176,34 @@ class Campaign {
 	}
 
 	/**
+	 * Normalizes a datetime value: empty strings and MySQL zero dates become null.
+	 *
+	 * @since 1.1.18
+	 * @access public
+	 * @static
+	 *
+	 * @param mixed $value The raw datetime value.
+	 * @return string|null The datetime string, or null when it is empty or a zero date.
+	 */
+	public static function normalize_datetime( $value ) {
+		if ( ! is_string( $value ) ) {
+			return null;
+		}
+		$value = trim( $value );
+		if ( '' === $value || 0 === strpos( $value, '0000-00-00' ) ) {
+			return null;
+		}
+		return $value;
+	}
+
+	/**
 	 * Gets the start datetime string.
 	 *
 	 * @since 1.0.0
 	 * @return string|null The start datetime in 'Y-m-d H:i:s' format, or null if not set.
 	 */
 	public function get_start_datetime() {
-		if ( empty( $this->data->start_datetime ) ) {
-			return null;
-		}
-		return $this->data->start_datetime;
+		return self::normalize_datetime( $this->data->start_datetime ?? null );
 	}
 
 	/**
@@ -1191,10 +1213,7 @@ class Campaign {
 	 * @return string|null The end datetime in 'Y-m-d H:i:s' format, or null if not set.
 	 */
 	public function get_end_datetime() {
-		if ( empty( $this->data->end_datetime ) ) {
-			return null;
-		}
-		return $this->data->end_datetime;
+		return self::normalize_datetime( $this->data->end_datetime ?? null );
 	}
 
 	/**
@@ -1230,7 +1249,7 @@ class Campaign {
 	 * @return string|null The start datetime in 'Y-m-d H:i:s' format (UTC), or null if not set.
 	 */
 	public function get_start_datetime_utc() {
-		$start_datetime_site = $this->data->start_datetime;
+		$start_datetime_site = self::normalize_datetime( $this->data->start_datetime ?? null );
 
 		if ( empty( $start_datetime_site ) ) {
 			return null;
@@ -1253,7 +1272,7 @@ class Campaign {
 	 * @return string|null The end datetime in 'Y-m-d H:i:s' format (UTC), or null if not set.
 	 */
 	public function get_end_datetime_utc() {
-		$end_datetime_site = $this->data->end_datetime;
+		$end_datetime_site = self::normalize_datetime( $this->data->end_datetime ?? null );
 
 		if ( empty( $end_datetime_site ) ) {
 			return null;
