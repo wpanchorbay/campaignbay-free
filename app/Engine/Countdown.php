@@ -8,6 +8,8 @@
 namespace WpabCampaignBay\Engine;
 
 use WpabCampaignBay\Core\Base;
+use WpabCampaignBay\Core\Campaign;
+use WpabCampaignBay\Core\Common;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,9 +19,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * The Countdown class (storefront display feature).
  *
+ * Renders a live urgency timer for active campaigns that have an end date, on the
+ * single product page, shop/category loop, cart (block + classic) and through the
+ * [campaignbay_countdown] shortcode.
+ *
  * @since 1.1.19
  */
 class Countdown extends Base {
+
+	/**
+	 * Per-request cache of the chosen campaign per product.
+	 *
+	 * @var array<int, Campaign|null>
+	 */
+	private $product_cache = array();
+
+	/**
+	 * Whether the assets have been enqueued.
+	 *
+	 * @var bool
+	 */
+	private $assets_enqueued = false;
 
 	/**
 	 * Constructor to define and build the hooks array.
@@ -39,9 +59,324 @@ class Countdown extends Base {
 	 * @return void
 	 */
 	private function define_hooks() {
-		$hooks = array();
+		$hooks = array(
+			array( 'action', 'init', 'register_shortcode', 10, 0 ),
+			array( 'action', 'woocommerce_single_product_summary', 'render_product', 25, 0 ),
+			array( 'action', 'woocommerce_after_shop_loop_item', 'render_loop', 11, 0 ),
+			array( 'filter', 'woocommerce_cart_item_name', 'cart_item_name', 20, 3 ),
+			array( 'action', 'wp_enqueue_scripts', 'maybe_enqueue_for_cart', 20, 0 ),
+		);
 		foreach ( $hooks as $hook ) {
 			$this->add_hook( ...$hook );
 		}
+	}
+
+	/**
+	 * Registers the [campaignbay_countdown] shortcode.
+	 *
+	 * @since 1.1.19
+	 * @return void
+	 */
+	public function register_shortcode() {
+		add_shortcode( 'campaignbay_countdown', array( $this, 'shortcode' ) );
+	}
+
+	/**
+	 * Shortcode handler. Usage: [campaignbay_countdown id="12" format="Hurry! {countdown}"].
+	 *
+	 * @since 1.1.19
+	 * @param array|string $atts Shortcode attributes.
+	 * @return string Markup, or an empty string when there is nothing to show.
+	 */
+	public function shortcode( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'id'     => 0,
+				'format' => '',
+			),
+			$atts,
+			'campaignbay_countdown'
+		);
+
+		$campaign = $this->get_active_campaign( absint( $atts['id'] ) );
+		if ( ! $campaign || ! self::campaign_has_countdown( $campaign ) ) {
+			return '';
+		}
+		$format = '' !== trim( (string) $atts['format'] ) ? (string) $atts['format'] : $this->get_format( 'shortcode' );
+		return self::render( $campaign, $format, 'shortcode' );
+	}
+
+	/**
+	 * Echoes the timer on the single product page.
+	 *
+	 * @since 1.1.19
+	 * @return void
+	 */
+	public function render_product() {
+		if ( ! $this->is_surface_enabled( 'product' ) ) {
+			return;
+		}
+		global $product;
+		$this->echo_for_product( $product, 'product' );
+	}
+
+	/**
+	 * Echoes the timer inside a shop/category loop card.
+	 *
+	 * @since 1.1.19
+	 * @return void
+	 */
+	public function render_loop() {
+		if ( ! $this->is_surface_enabled( 'loop' ) ) {
+			return;
+		}
+		global $product;
+		$this->echo_for_product( $product, 'loop' );
+	}
+
+	/**
+	 * Appends the timer to the cart item name (classic cart, checkout, mini cart and the
+	 * block cart, which receives this HTML through the Store API).
+	 *
+	 * Store API output is passed through wp_kses_post, so only a span with class and
+	 * data-* attributes is used.
+	 *
+	 * @since 1.1.19
+	 * @param string $name          Item name.
+	 * @param array  $cart_item     Cart item.
+	 * @param string $cart_item_key Cart item key.
+	 * @return string
+	 */
+	public function cart_item_name( $name, $cart_item, $cart_item_key ) {
+		unset( $cart_item_key );
+		if ( is_admin() && ! wp_doing_ajax() && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			return $name;
+		}
+		if ( ! $this->is_surface_enabled( 'cart' ) || ! is_array( $cart_item ) || empty( $cart_item['data'] ) ) {
+			return $name;
+		}
+		if ( ! empty( $cart_item['is_campaignbay_free_product'] ) ) {
+			return $name;
+		}
+		$campaign = $this->get_campaign_for_product( $cart_item['data'] );
+		if ( ! $campaign ) {
+			return $name;
+		}
+		$html = self::render( $campaign, $this->get_format( 'cart' ), 'cart' );
+		return '' === $html ? $name : $name . '<br/>' . $html;
+	}
+
+	/**
+	 * Enqueues the assets up front when the cart holds items with a countdown, so timers
+	 * injected later by the block cart / mini cart are initialised.
+	 *
+	 * @since 1.1.19
+	 * @return void
+	 */
+	public function maybe_enqueue_for_cart() {
+		if ( is_admin() || ! $this->is_surface_enabled( 'cart' ) || ! function_exists( 'WC' ) || ! WC()->cart || WC()->cart->is_empty() ) {
+			return;
+		}
+		foreach ( WC()->cart->get_cart() as $item ) {
+			if ( ! empty( $item['data'] ) && $this->get_campaign_for_product( $item['data'] ) ) {
+				self::enqueue_assets();
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Returns the campaign whose timer should be shown for a product (soonest ending).
+	 *
+	 * @since 1.1.19
+	 * @param \WC_Product|mixed $product Product.
+	 * @return Campaign|null
+	 */
+	public function get_campaign_for_product( $product ) {
+		if ( ! $product instanceof \WC_Product ) {
+			return null;
+		}
+		$key = $product->get_id();
+		if ( array_key_exists( $key, $this->product_cache ) ) {
+			return $this->product_cache[ $key ];
+		}
+		$best      = null;
+		$best_time = null;
+		foreach ( CampaignManager::get_instance()->get_active_campaigns() as $campaign ) {
+			if ( ! self::campaign_has_countdown( $campaign ) ) {
+				continue;
+			}
+			$end = (int) $campaign->get_end_timestamp();
+			if ( null !== $best_time && $end >= $best_time ) {
+				continue;
+			}
+			if ( $campaign->is_applicable_to_product( $product ) ) {
+				$best      = $campaign;
+				$best_time = $end;
+			}
+		}
+		/**
+		 * Filters the campaign chosen for a product's countdown.
+		 *
+		 * @since 1.1.19
+		 * @param Campaign|null $best    Chosen campaign or null.
+		 * @param \WC_Product   $product Product.
+		 */
+		$best                        = apply_filters( 'campaignbay_countdown_product_campaign', $best, $product );
+		$this->product_cache[ $key ] = $best;
+		return $best;
+	}
+
+	/**
+	 * Whether a campaign can show a timer right now.
+	 *
+	 * @since 1.1.19
+	 * @param Campaign $campaign Campaign.
+	 * @return bool
+	 */
+	public static function campaign_has_countdown( $campaign ) {
+		if ( ! $campaign instanceof Campaign || 'active' !== $campaign->get_status() ) {
+			return false;
+		}
+		$settings = $campaign->get_settings();
+		if ( is_array( $settings ) && isset( $settings['show_countdown'] ) && false === filter_var( $settings['show_countdown'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) ) {
+			return false;
+		}
+		$end = $campaign->get_end_timestamp();
+		return ! empty( $end ) && $end > time();
+	}
+
+	/**
+	 * Builds the timer markup for a campaign.
+	 *
+	 * @since 1.1.19
+	 * @param Campaign $campaign Campaign.
+	 * @param string   $format   Format string with {countdown} {end_date} {campaign_title}.
+	 * @param string   $surface  product|loop|cart|shortcode.
+	 * @return string Escaped HTML, or empty string.
+	 */
+	public static function render( $campaign, $format, $surface = 'shortcode' ) {
+		if ( ! self::campaign_has_countdown( $campaign ) || '' === trim( (string) $format ) ) {
+			return '';
+		}
+		$end       = (int) $campaign->get_end_timestamp();
+		$now       = time();
+		$remaining = $end - $now;
+		$expired   = (string) Common::get_instance()->get_settings( 'countdown_expired_message' );
+
+		$time_html = '<span class="campaignbay-countdown__time">' . esc_html( self::format_remaining( $remaining ) ) . '</span>';
+		$end_date  = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $end );
+		$text      = esc_html( (string) $format );
+		$text      = str_replace(
+			array( '{countdown}', '{end_date}', '{campaign_title}' ),
+			array( '%%CBCD_TIME%%', esc_html( (string) $end_date ), esc_html( $campaign->get_title() ) ),
+			$text
+		);
+		$text      = str_replace( '%%CBCD_TIME%%', $time_html, $text );
+
+		$html = sprintf(
+			'<span class="campaignbay-countdown campaignbay-countdown--%1$s" data-end="%2$d" data-now="%3$d" data-campaign="%4$d" data-expired="%5$s">%6$s</span>',
+			esc_attr( $surface ),
+			$end,
+			$now,
+			(int) $campaign->get_id(),
+			esc_attr( $expired ),
+			$text
+		);
+
+		self::enqueue_assets();
+
+		/**
+		 * Filters the countdown markup.
+		 *
+		 * @since 1.1.19
+		 * @param string   $html     Markup.
+		 * @param Campaign $campaign Campaign.
+		 * @param string   $surface  Surface.
+		 */
+		return apply_filters( 'campaignbay_countdown_html', $html, $campaign, $surface );
+	}
+
+	/**
+	 * Formats a number of seconds like "2d 03:14:09" (days omitted when zero).
+	 *
+	 * @since 1.1.19
+	 * @param int $seconds Seconds remaining.
+	 * @return string
+	 */
+	public static function format_remaining( $seconds ) {
+		$seconds = max( 0, (int) $seconds );
+		$days    = intdiv( $seconds, DAY_IN_SECONDS );
+		$hours   = intdiv( $seconds % DAY_IN_SECONDS, HOUR_IN_SECONDS );
+		$minutes = intdiv( $seconds % HOUR_IN_SECONDS, MINUTE_IN_SECONDS );
+		$secs    = $seconds % MINUTE_IN_SECONDS;
+		$clock   = sprintf( '%02d:%02d:%02d', $hours, $minutes, $secs );
+		return $days > 0 ? $days . 'd ' . $clock : $clock;
+	}
+
+	/**
+	 * Enqueues countdown.js and countdown.css (once).
+	 *
+	 * @since 1.1.19
+	 * @return void
+	 */
+	public static function enqueue_assets() {
+		$self = self::get_instance();
+		if ( $self->assets_enqueued ) {
+			return;
+		}
+		$self->assets_enqueued = true;
+		wp_enqueue_style( 'campaignbay-countdown', CAMPAIGNBAY_URL . 'assets/css/countdown.css', array(), CAMPAIGNBAY_VERSION );
+		wp_enqueue_script( 'campaignbay-countdown', CAMPAIGNBAY_URL . 'assets/js/countdown.js', array(), CAMPAIGNBAY_VERSION, true );
+	}
+
+	/**
+	 * Echoes the timer for a product.
+	 *
+	 * @param mixed  $product Product.
+	 * @param string $surface Surface.
+	 * @return void
+	 */
+	private function echo_for_product( $product, $surface ) {
+		$campaign = $this->get_campaign_for_product( $product );
+		if ( ! $campaign ) {
+			return;
+		}
+		$html = self::render( $campaign, $this->get_format( $surface ), $surface );
+		if ( '' !== $html ) {
+			// Already escaped in render().
+			echo '<div class="campaignbay-countdown-wrap">' . $html . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		}
+	}
+
+	/**
+	 * Gets an active campaign by ID.
+	 *
+	 * @param int $id Campaign ID.
+	 * @return Campaign|null
+	 */
+	private function get_active_campaign( $id ) {
+		$campaigns = CampaignManager::get_instance()->get_active_campaigns();
+		return $id && isset( $campaigns[ $id ] ) ? $campaigns[ $id ] : null;
+	}
+
+	/**
+	 * Whether a surface is enabled in settings.
+	 *
+	 * @param string $surface product|loop|cart.
+	 * @return bool
+	 */
+	private function is_surface_enabled( $surface ) {
+		return (bool) Common::get_instance()->get_settings( 'countdown_show_' . $surface );
+	}
+
+	/**
+	 * Gets the configured format string for a surface.
+	 *
+	 * @param string $surface Surface.
+	 * @return string
+	 */
+	private function get_format( $surface ) {
+		return (string) Common::get_instance()->get_settings( 'countdown_format_' . $surface );
 	}
 }

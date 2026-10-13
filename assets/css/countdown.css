@@ -1,0 +1,28 @@
+.campaignbay-countdown {
+	display: inline-block;
+	font-weight: 600;
+	color: #b32d2e;
+	line-height: 1.4;
+}
+
+.campaignbay-countdown__time {
+	font-variant-numeric: tabular-nums;
+}
+
+.campaignbay-countdown-wrap {
+	margin: 0 0 1em;
+}
+
+.campaignbay-countdown--loop {
+	font-size: 0.8em;
+	margin-bottom: 0.5em;
+}
+
+.campaignbay-countdown--cart {
+	font-size: 0.85em;
+}
+
+.campaignbay-countdown.is-expired {
+	color: inherit;
+	font-weight: 400;
+}
