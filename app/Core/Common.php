@@ -104,6 +104,47 @@ class Common {
 				'content' => 'price',
 			),
 		),
+		'discount_table_layout'                   => 'table',
+		'discount_table_show_tier_label'          => true,
+		'discount_card_title_format'              => '{min} - {max} items',
+		'discount_card_price_format'              => '{price} each',
+		'discount_card_discount_format'           => 'Save {discount}',
+
+		/*
+			==================================================
+		* Countdown Timer
+		==================================================
+	*/
+		'countdown_show_product'                  => true,
+		'countdown_show_loop'                     => true,
+		'countdown_show_cart'                     => true,
+		'countdown_format_product'                => 'Sale ends in {countdown}',
+		'countdown_format_loop'                   => 'Ends in {countdown}',
+		'countdown_format_cart'                   => 'Offer ends in {countdown}',
+		'countdown_format_shortcode'              => 'Offer ends in {countdown}',
+		'countdown_expired_message'               => 'This offer has ended.',
+
+		/*
+			==================================================
+		* Sale Badge
+		==================================================
+	*/
+		'badge_enabled'                           => false,
+		'badge_text'                              => 'Sale!',
+		'badge_bg_color'                          => '#e2401c',
+		'badge_text_color'                        => '#ffffff',
+
+		/*
+			==================================================
+		* Category / Shop Offer Message & Promotions
+		==================================================
+	*/
+		'category_offer_show'                     => true,
+		'category_offer_show_shop'                => true,
+		'category_offer_format'                   => 'Sale on {category_name}: {campaign_title} - {discount} off!',
+		'promote_show_product'                    => true,
+		'promote_show_category'                   => true,
+		'promote_format'                          => '{promo_text}',
 
 
 		/*
