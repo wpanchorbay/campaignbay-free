@@ -502,6 +502,7 @@ class Campaign {
 				'max'   => 'nullable|integer|min:1|gte:min',
 				'value' => 'required|numeric|min:0|max_if:type,percentage,100',
 				'type'  => 'required|in:percentage,currency',
+				'label' => 'nullable|string',
 			);
 		} elseif ( 'earlybird' === $type ) {
 			$rules = array(
@@ -540,7 +541,7 @@ class Campaign {
 	 */
 	private static function sanitize_tier( $tier, $type ) {
 		if ( 'quantity' === $type ) {
-			$label         = isset( $tier['label'] ) && is_scalar( $tier['label'] ) ? sanitize_text_field( (string) $tier['label'] ) : '';
+			$label         = isset( $tier['label'] ) && is_scalar( $tier['label'] ) ? mb_substr( sanitize_text_field( (string) $tier['label'] ), 0, 40 ) : '';
 			$tier['label'] = '' === $label ? null : $label;
 		}
 		return $tier;
