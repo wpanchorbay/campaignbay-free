@@ -278,6 +278,7 @@ class Helper {
 					'max'            => $tier['max'],
 					'value'          => $tier['value'],
 					'type'           => $tier['type'],
+					'basis'          => 'per_line' === ( $campaign->get_settings()['fixed_discount_basis'] ?? 'per_unit' ) ? 'per_line' : 'per_unit',
 					'label'          => isset( $tier['label'] ) && is_scalar( $tier['label'] ) ? (string) $tier['label'] : '',
 				);
 			}
@@ -651,6 +652,21 @@ class Helper {
 	}
 
 	/**
+	 * Whether a tier is a fixed discount taken once from the whole line (rather than from each unit).
+	 *
+	 * @since 1.1.18
+	 * @param array $tier Tier data (reads `type` and `basis`, or `settings.fixed_discount_basis`).
+	 * @return bool
+	 */
+	public static function is_per_line_tier( $tier ) {
+		if ( ! is_array( $tier ) || 'currency' !== ( $tier['type'] ?? '' ) ) {
+			return false;
+		}
+		$basis = $tier['basis'] ?? ( $tier['settings']['fixed_discount_basis'] ?? 'per_unit' );
+		return 'per_line' === $basis;
+	}
+
+	/**
 	 * Calculates the discounted price for a specific quantity tier.
 	 *
 	 * Based on the tier's discount type (percentage or fixed), calculates
@@ -662,12 +678,19 @@ class Helper {
 	 *
 	 * @param float      $base_price The product's original price.
 	 * @param array|null $tier       The tier definition containing 'type' and 'value'.
+	 * @param int|null   $quantity   Cart quantity, used by per-line fixed tiers (defaults to the tier's minimum quantity).
 	 *
-	 * @return float|null The calculated price, or null if inputs are invalid.
+	 * @return float|null The calculated per-unit price, or null if inputs are invalid.
 	 */
-	public static function get_quantity_price( $base_price, $tier ) {
+	public static function get_quantity_price( $base_price, $tier, $quantity = null ) {
 		if ( null === $base_price || null === $tier || empty( $tier ) ) {
 			return null;
+		}
+		if ( self::is_per_line_tier( $tier ) ) {
+			// The fixed value comes off the whole line once, so the per-unit price depends on the quantity.
+			$qty = null !== $quantity ? (int) $quantity : (int) ( $tier['min'] ?? 1 );
+			$qty = max( 1, $qty );
+			return max( 0, ( $base_price * $qty - (float) $tier['value'] ) / $qty );
 		}
 		$price = 'percentage' === $tier['type'] ? self::calculate_percentage_price( $base_price, $tier['value'] ) : self::calculate_fixed_price( $base_price, $tier['value'] );
 		return max( 0, $price );
@@ -772,7 +795,7 @@ class Helper {
 				$table .= '<td>' . Woocommerce::format_price( $tier['price'] ) . '</td>';
 			} else {
 				$table .= '<td>' . ( 'currency' === $tier['type'] ? Woocommerce::format_price( $tier['value'] ) : $tier['value'] );
-				$table .= 'percentage' === $tier['type'] ? '%' : ' /PCS';
+				$table .= 'percentage' === $tier['type'] ? '%' : ( self::is_per_line_tier( $tier ) ? ' ' . esc_html__( 'off the total', 'campaignbay' ) : ' /PCS' );
 				$table .= '</td>';
 			}
 
@@ -825,7 +848,12 @@ class Helper {
 			$open  = empty( $tier['max'] );
 			$range = self::get_tier_range_text( $tier );
 			$price = Woocommerce::format_price( $tier['price'] );
-			$pct   = null;
+			if ( self::is_per_line_tier( $tier ) ) {
+				// Per-line fixed discounts: the per-unit price shown is the one at the tier's minimum quantity.
+				/* translators: %s: formatted price. */
+				$price = sprintf( __( 'from %s', 'campaignbay' ), $price );
+			}
+			$pct = null;
 			if ( 'percentage' === $tier['type'] ) {
 				$pct = (float) $tier['value'];
 			} elseif ( null !== $base_price && (float) $base_price > 0 ) {
@@ -833,6 +861,8 @@ class Helper {
 			}
 			if ( 'percentage' === $tier['type'] ) {
 				$discount = (string) ( 0 + $tier['value'] ) . '%';
+			} elseif ( self::is_per_line_tier( $tier ) ) {
+				$discount = Woocommerce::format_price( $tier['value'] );
 			} elseif ( null !== $base_price ) {
 				$discount = Woocommerce::format_price( max( 0, (float) $base_price - (float) $tier['price'] ) );
 			} else {

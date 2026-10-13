@@ -193,7 +193,8 @@ class CartDiscount {
 						);
 						$data_to_add['discount'] = $meta['quantity']['value'];
 						if ( 'percentage' !== $meta['quantity']['type'] ) {
-							$data_to_add['discount'] = $meta['quantity']['discount'] * $cart_quantity;
+							// A fixed_product coupon amount is per unit; WooCommerce multiplies it by the quantity itself.
+							$data_to_add['discount'] = $meta['quantity']['discount'];
 						}
 
 						Helper::add_data(
@@ -395,6 +396,10 @@ class CartDiscount {
 		$current_tier = null;
 		$next_tier    = null;
 		foreach ( $tiers as $key => $tier ) {
+			// Per-line fixed tiers price depends on the actual cart quantity.
+			if ( Helper::is_per_line_tier( $tier ) ) {
+				$tier['price'] = (float) Helper::get_quantity_price( $base_price, $tier, max( $quantity, $tier['min'] ) );
+			}
 			if ( ( null === $current_tier || $current_tier['price'] > $tier['price'] ) && $tier['min'] <= $quantity && ( null === $tier['max'] || $tier['max'] >= $quantity ) ) {
 				$current_tier = $tier;
 				$next_tier    = null;
@@ -411,7 +416,7 @@ class CartDiscount {
 				'campaign_title' => $current_tier['campaign_title'],
 				'settings'       => $current_tier['settings'],
 				'price'          => $current_tier['price'],
-				'discount'       => (float) $base_price - $current_tier['price'],
+				'discount'       => round( (float) $base_price - $current_tier['price'], 8 ),
 				'base_price'     => $base_price,
 				'type'           => $current_tier['type'],
 				'value'          => $current_tier['value'],

@@ -239,7 +239,8 @@ class SaleBadge extends Base {
 				foreach ( $tiers as $tier ) {
 					$price = Helper::get_quantity_price( (float) $base, $tier );
 					if ( null !== $price ) {
-						$pairs[] = array( (float) $base, (float) $price );
+						// Per-line fixed tiers take the value off once, so it is shown as is.
+						$pairs[] = array( (float) $base, (float) $price, Helper::is_per_line_tier( $tier ) ? min( (float) $tier['value'], (float) $base * (int) $tier['min'] ) : null );
 					}
 				}
 			}
@@ -253,7 +254,7 @@ class SaleBadge extends Base {
 					continue;
 				}
 				$best_pct = max( $best_pct, ( $pair[0] - $pair[1] ) / $pair[0] * 100 );
-				$best_amt = max( $best_amt, $pair[0] - $pair[1] );
+				$best_amt = max( $best_amt, $pair[2] ?? ( $pair[0] - $pair[1] ) );
 			}
 			$result = array(
 				'percentage' => $best_pct,

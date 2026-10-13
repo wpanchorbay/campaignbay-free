@@ -604,11 +604,13 @@ class Campaign {
 		} elseif ( 'quantity' === $type ) {
 			$default = array(
 				'apply_as'                       => 'line_total',
+				'fixed_discount_basis'           => 'per_unit',
 				'cart_quantity_message_format'   => '',
 				'cart_quantity_message_location' => 'line_item_name',
 			);
 			$rules   = array(
 				'apply_as'                       => 'required|string|in:line_total,fee,coupon',
+				'fixed_discount_basis'           => 'required|string|in:per_unit,per_line',
 				'cart_quantity_message_format'   => 'nullable|string',
 				'cart_quantity_message_location' => 'required|string|in:line_item_name,notice,dont_show',
 			);
