@@ -600,7 +600,7 @@ class PricingEngine extends Base {
 		}
 
 		// escaping just before echo
-		Helper::generate_quantity_table( $tiers );
+		Helper::generate_quantity_table( $tiers, $price );
 	}
 
 	/**

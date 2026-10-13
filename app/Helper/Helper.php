@@ -278,6 +278,7 @@ class Helper {
 					'max'            => $tier['max'],
 					'value'          => $tier['value'],
 					'type'           => $tier['type'],
+					'label'          => isset( $tier['label'] ) && is_scalar( $tier['label'] ) ? (string) $tier['label'] : '',
 				);
 			}
 		}
@@ -719,13 +720,20 @@ class Helper {
 	 * @access public
 	 * @static
 	 *
-	 * @param array $tiers Array of discount tier data to display.
+	 * @param array      $tiers      Array of discount tier data to display.
+	 * @param float|null $base_price Product price before tier discount (used by the cards layout).
 	 *
 	 * @return void Outputs the HTML directly if $echo is true (internal logic uses get_clean_html with echo=true).
 	 */
-	public static function generate_quantity_table( $tiers ) {
-		$settings = Common::get_instance()->get_settings( 'discount_table_options' );
-		$table    = '<table class="campaignbay-discount-table"> ';
+	public static function generate_quantity_table( $tiers, $base_price = null ) {
+		$common = Common::get_instance();
+		if ( 'cards' === $common->get_settings( 'discount_table_layout' ) ) {
+			self::generate_quantity_cards( $tiers, $base_price );
+			return;
+		}
+		$show_label = (bool) $common->get_settings( 'discount_table_show_tier_label' );
+		$settings   = $common->get_settings( 'discount_table_options' );
+		$table      = '<table class="campaignbay-discount-table"> ';
 		// show table header
 		if (
 			true === $settings['show_header'] && (
@@ -751,10 +759,14 @@ class Helper {
 		foreach ( $tiers as $tier ) {
 			$table .= '<tr>';
 			if ( true === $settings['title']['show'] ) {
-				$table .= '<td>' . $tier['campaign_title'] . '</td>';
+				$table .= '<td>' . $tier['campaign_title'];
+				if ( $show_label && ! empty( $tier['label'] ) ) {
+					$table .= ' <span class="campaignbay-tier-label">' . esc_html( $tier['label'] ) . '</span>';
+				}
+				$table .= '</td>';
 			}
 			if ( true === $settings['range']['show'] ) {
-				$table .= '<td>' . $tier['min'] . ' - ' . $tier['max'] . '</td>';
+				$table .= '<td>' . self::get_tier_range_text( $tier ) . '</td>';
 			}
 			if ( true === $settings['discount']['show'] && 'price' === $settings['discount']['content'] ) {
 				$table .= '<td>' . Woocommerce::format_price( $tier['price'] ) . '</td>';
@@ -768,6 +780,137 @@ class Helper {
 		}
 		$table .= '</tbody></table>';
 		self::get_clean_html( $table, true );
+	}
+
+	/**
+	 * Returns the quantity range text of a tier ("min - max", "min+" when open-ended).
+	 *
+	 * @since 1.1.13
+	 * @param array $tier Tier data.
+	 * @return string Plain text range.
+	 */
+	public static function get_tier_range_text( $tier ) {
+		$min = $tier['min'];
+		$max = $tier['max'] ?? null;
+		if ( empty( $max ) ) {
+			return $min . '+';
+		}
+		return $min . ' - ' . $max;
+	}
+
+	/**
+	 * Renders the quantity tiers as clickable cards.
+	 *
+	 * @since 1.1.13
+	 * @access public
+	 * @static
+	 *
+	 * @param array      $tiers      Unique tiers (with computed `price`).
+	 * @param float|null $base_price Product price before the tier discount.
+	 * @return void Echoes escaped markup.
+	 */
+	public static function generate_quantity_cards( $tiers, $base_price = null ) {
+		$common     = Common::get_instance();
+		$settings   = $common->get_settings( 'discount_table_options' );
+		$show_label = (bool) $common->get_settings( 'discount_table_show_tier_label' );
+		$title_fmt  = (string) $common->get_settings( 'discount_card_title_format' );
+		$price_fmt  = (string) $common->get_settings( 'discount_card_price_format' );
+		$disc_fmt   = (string) $common->get_settings( 'discount_card_discount_format' );
+		$show_title = ! isset( $settings['title']['show'] ) || true === $settings['title']['show'];
+		$show_range = ! isset( $settings['range']['show'] ) || true === $settings['range']['show'];
+		$show_disc  = ! isset( $settings['discount']['show'] ) || true === $settings['discount']['show'];
+
+		$html = '<div class="campaignbay-discount-cards" role="group" aria-label="' . esc_attr__( 'Quantity discounts', 'campaignbay' ) . '">';
+		foreach ( $tiers as $tier ) {
+			$open  = empty( $tier['max'] );
+			$range = self::get_tier_range_text( $tier );
+			$price = Woocommerce::format_price( $tier['price'] );
+			$pct   = null;
+			if ( 'percentage' === $tier['type'] ) {
+				$pct = (float) $tier['value'];
+			} elseif ( null !== $base_price && (float) $base_price > 0 ) {
+				$pct = round( ( ( (float) $base_price - (float) $tier['price'] ) / (float) $base_price ) * 100, 2 );
+			}
+			if ( 'percentage' === $tier['type'] ) {
+				$discount = (string) ( 0 + $tier['value'] ) . '%';
+			} elseif ( null !== $base_price ) {
+				$discount = Woocommerce::format_price( max( 0, (float) $base_price - (float) $tier['price'] ) );
+			} else {
+				$discount = Woocommerce::format_price( $tier['value'] );
+			}
+
+			// Open-ended tiers read "{min}+" rather than "{min} - ".
+			$title_tpl = $open ? preg_replace( '/\{min\}\s*[-\x{2013}]\s*\{max\}/u', '{min}+', $title_fmt ) : $title_fmt;
+			$title     = strtr(
+				esc_html( $title_tpl ),
+				array(
+					'{min}'   => esc_html( $tier['min'] ),
+					'{max}'   => $open ? '' : esc_html( $tier['max'] ),
+					'{range}' => esc_html( $range ),
+				)
+			);
+			$price_txt = strtr(
+				esc_html( $price_fmt ),
+				array(
+					'{price}'          => $price,
+					'{discount}'       => $discount,
+					'{percentage_off}' => null === $pct ? '' : esc_html( (string) $pct ) . '%',
+				)
+			);
+			$disc_txt  = strtr(
+				esc_html( $disc_fmt ),
+				array(
+					'{discount}'       => $discount,
+					'{price}'          => $price,
+					'{percentage_off}' => null === $pct ? '' : esc_html( (string) $pct ) . '%',
+				)
+			);
+
+			$html .= '<div class="campaignbay-discount-card" role="button" tabindex="0" aria-pressed="false" data-min="' . esc_attr( $tier['min'] ) . '">';
+			if ( $show_label && ! empty( $tier['label'] ) ) {
+				$html .= '<span class="campaignbay-discount-card__ribbon">' . esc_html( $tier['label'] ) . '</span>';
+			}
+			if ( $show_title ) {
+				$html .= '<span class="campaignbay-discount-card__title">' . $title . '</span>';
+			} elseif ( $show_range ) {
+				$html .= '<span class="campaignbay-discount-card__title">' . esc_html( $range ) . '</span>';
+			}
+			$html .= '<span class="campaignbay-discount-card__price">' . $price_txt . '</span>';
+			if ( $show_disc ) {
+				$html .= '<span class="campaignbay-discount-card__discount">' . $disc_txt . '</span>';
+			}
+			$html .= '</div>';
+		}
+		$html .= '</div>';
+
+		/**
+		 * Filters the rendered quantity discount cards HTML.
+		 *
+		 * @since 1.1.13
+		 * @param string $html       Cards markup (escaped, sanitized afterwards with wp_kses).
+		 * @param array  $tiers      Tiers rendered.
+		 * @param mixed  $base_price Base price.
+		 */
+		$html = apply_filters( 'campaignbay_discount_cards_html', $html, $tiers, $base_price );
+
+		$allowed = array(
+			'div'  => array(
+				'class'        => true,
+				'role'         => true,
+				'tabindex'     => true,
+				'aria-pressed' => true,
+				'aria-label'   => true,
+				'data-min'     => true,
+			),
+			'span' => array(
+				'class' => true,
+			),
+			'bdi'  => array(),
+			'del'  => array(),
+			'ins'  => array(),
+		);
+		wp_enqueue_script( 'campaignbay-discount-table', CAMPAIGNBAY_URL . 'assets/js/discount-table.js', array(), CAMPAIGNBAY_VERSION, true );
+		echo wp_kses( $html, $allowed ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
