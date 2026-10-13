@@ -144,7 +144,7 @@ class Campaign {
 					);
 				}
 
-				$tmp_tiers[] = $tier_validator->get_validated_data();
+				$tmp_tiers[] = self::sanitize_tier( $tier_validator->get_validated_data(), $data['type'] );
 			}
 		}
 
@@ -293,7 +293,7 @@ class Campaign {
 						)
 					);
 				}
-				$tmp_tiers[] = $tier_validator->get_validated_data();
+				$tmp_tiers[] = self::sanitize_tier( $tier_validator->get_validated_data(), $data['type'] );
 			}
 		}
 		// validating settings
@@ -531,6 +531,22 @@ class Campaign {
 	}
 
 	/**
+	 * Normalizes a validated tier (trims the optional quantity-tier label).
+	 *
+	 * @since 1.1.18
+	 * @param array  $tier The validated tier.
+	 * @param string $type The campaign type.
+	 * @return array The sanitized tier.
+	 */
+	private static function sanitize_tier( $tier, $type ) {
+		if ( 'quantity' === $type ) {
+			$label         = isset( $tier['label'] ) && is_scalar( $tier['label'] ) ? sanitize_text_field( (string) $tier['label'] ) : '';
+			$tier['label'] = '' === $label ? null : $label;
+		}
+		return $tier;
+	}
+
+	/**
 	 * Checking if campaign type need tiers validation
 	 *
 	 * @since 1.0.0
@@ -612,6 +628,14 @@ class Campaign {
 		// Optional min / max / step quantity limits, available on every campaign type.
 		$rules['quantity_limits'] = 'nullable|array';
 
+		// Storefront display options, available on every campaign type.
+		$default['show_countdown']  = true;
+		$default['promote_enabled'] = false;
+		$default['promote_text']    = null;
+		$rules['show_countdown']    = 'required|boolean';
+		$rules['promote_enabled']   = 'required|boolean';
+		$rules['promote_text']      = 'nullable|string|max:500';
+
 		/**
 		 * Filters the settings validation rules for a campaign.
 		 *
@@ -649,6 +673,12 @@ class Campaign {
 			// Keep the stored settings unchanged for campaigns that do not use the feature.
 			unset( $validated_settings['quantity_limits'] );
 		}
+
+		// Normalize the storefront display options.
+		$validated_settings['show_countdown']  = filter_var( $validated_settings['show_countdown'] ?? true, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) ?? true;
+		$validated_settings['promote_enabled'] = filter_var( $validated_settings['promote_enabled'] ?? false, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) ?? false;
+		$promote_text                          = isset( $validated_settings['promote_text'] ) && is_scalar( $validated_settings['promote_text'] ) ? sanitize_textarea_field( (string) $validated_settings['promote_text'] ) : '';
+		$validated_settings['promote_text']    = '' === trim( $promote_text ) ? null : $promote_text;
 
 		return $validated_settings;
 	}

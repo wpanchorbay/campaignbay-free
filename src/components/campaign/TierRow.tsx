@@ -8,6 +8,13 @@ import { TOUR_STEPS } from "../../utils/tourSteps";
 import { Toggler } from "../common/Toggler";
 import { NumberInput } from "../common/NumberInput";
 import { Label } from "./CampaignTiers";
+import { Input } from "../common/Input";
+
+const LABEL_SUGGESTIONS = [
+  __("Best Value", "campaignbay"),
+  __("Most Popular", "campaignbay"),
+  __("Bulk Deal", "campaignbay"),
+];
 
 interface TierRowProps {
   tierData: QuantityTier;
@@ -129,6 +136,36 @@ const TierRow: FC<TierRowProps> = ({
             {tierData.type === "percentage" ? "Off." : "Off per Piece."}
           </Label>
         </div>
+      </div>
+
+      {/* Optional storefront label */}
+      <div className="campaignbay-flex campaignbay-flex-wrap campaignbay-items-center campaignbay-gap-2">
+        <Label className="campaignbay-text-nowrap">
+          {__("Label (optional)", "campaignbay")}
+        </Label>
+        <Input
+          type="text"
+          size="small"
+          maxLength={40}
+          aria-label={__("Tier label", "campaignbay")}
+          placeholder={__("e.g., Best Value", "campaignbay")}
+          value={tierData.label ?? ""}
+          error={errors?.label?.message}
+          classNames={{ root: "!campaignbay-w-[200px]" }}
+          onChange={(e) =>
+            onUpdate({ ...tierData, label: e.target.value || null })
+          }
+        />
+        {LABEL_SUGGESTIONS.map((suggestion) => (
+          <button
+            key={suggestion}
+            type="button"
+            onClick={() => onUpdate({ ...tierData, label: suggestion })}
+            className="campaignbay-text-[12px] campaignbay-bg-gray-200 hover:campaignbay-bg-gray-300 campaignbay-text-gray-700 campaignbay-rounded-md campaignbay-px-[6px] campaignbay-py-[2px] campaignbay-cursor-pointer campaignbay-border-none"
+          >
+            {suggestion}
+          </button>
+        ))}
       </div>
 
       {/* Actions: Add / Remove tier */}
