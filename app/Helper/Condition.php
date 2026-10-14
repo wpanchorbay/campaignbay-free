@@ -65,65 +65,59 @@ class Condition {
 		} else {
 			wpab_campaignbay_log( 'Not evaluating cart level conditions yet (pre-calculation).', 'INFO' );
 		}
-		if ( 'any' === $match_type && ! $checking_cart_level_conditions ) {
+		if ( $checking_cart_level_conditions ) {
+			// Cart pass: the cart totals are known now, so EVERY rule is evaluated (product-level
+			// rules such as user_role are re-checked too; this pass runs for all active campaigns,
+			// not only the deferred ones). Each rule is routed to its own evaluator.
 			foreach ( $rules as $rule ) {
-				if ( self::is_cart_level_condition( $rule ) ) {
-					$is_cart_level_condition = true;
-					continue;
-				}
-				$result = self::pass_product_level_rule( $rule, $product );
-				if ( $result ) {
+				$result = self::is_cart_level_condition( $rule )
+					? self::pass_cart_level_rule( $rule, $product )
+					: self::pass_product_level_rule( $rule, $product );
+				if ( 'any' === $match_type && $result ) {
 					return true;
 				}
-			}
-			// save cart level conditions in session
-			if ( $is_cart_level_condition ) {
-				PricingEngine::get_instance()->add_cart_level_condition_campaigns( $campaign );
-			}
-			// none of the product level are met
-			return false;
-		} elseif ( 'all' === $match_type && ! $checking_cart_level_conditions ) { // $match type === 'all'
-			foreach ( $rules as $rule ) {
-				if ( self::is_cart_level_condition( $rule ) ) {
-					$is_cart_level_condition = true;
-					continue;
-				}
-				$result = self::pass_product_level_rule( $rule, $product );
-				if ( ! $result ) {
+				if ( 'any' !== $match_type && ! $result ) {
 					return false;
 				}
 			}
-			// save cart level conditions in session
+			// 'any': no rule passed. 'all': no rule failed.
+			return 'any' !== $match_type;
+		}
+
+		// Pre-calculation pass: evaluate product-level rules now; cart-level rules are deferred.
+		if ( 'any' === $match_type ) {
+			foreach ( $rules as $rule ) {
+				if ( self::is_cart_level_condition( $rule ) ) {
+					$is_cart_level_condition = true;
+					continue;
+				}
+				if ( self::pass_product_level_rule( $rule, $product ) ) {
+					return true;
+				}
+			}
+			// Register for the post-totals re-check; cannot pass until then.
 			if ( $is_cart_level_condition ) {
 				PricingEngine::get_instance()->add_cart_level_condition_campaigns( $campaign );
-				// returning false we will will apply it after it matches all cart level conditions
+			}
+			return false;
+		}
+
+		// 'all'.
+		foreach ( $rules as $rule ) {
+			if ( self::is_cart_level_condition( $rule ) ) {
+				$is_cart_level_condition = true;
+				continue;
+			}
+			if ( ! self::pass_product_level_rule( $rule, $product ) ) {
 				return false;
 			}
-			return true;
-		} elseif ( 'any' === $match_type && $checking_cart_level_conditions ) {
-			foreach ( $rules as $rule ) {
-				if ( ! self::is_cart_level_condition( $rule ) ) {
-					continue;
-				}
-				$result = self::pass_cart_level_rule( $rule, $product );
-				if ( $result ) {
-					return true;
-				}
-			}
-			// none of the cart level are met
-			return false;
-		} elseif ( 'all' === $match_type && $checking_cart_level_conditions ) {
-			foreach ( $rules as $rule ) {
-				if ( ! self::is_cart_level_condition( $rule ) ) {
-					continue;
-				}
-				$result = self::pass_cart_level_rule( $rule, $product );
-				if ( ! $result ) {
-					return false;
-				}
-			}
-			return true;
 		}
+		if ( $is_cart_level_condition ) {
+			// Product-level rules passed; apply only after the cart-level rules pass too.
+			PricingEngine::get_instance()->add_cart_level_condition_campaigns( $campaign );
+			return false;
+		}
+		return true;
 	}
 
 
