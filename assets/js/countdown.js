@@ -115,14 +115,25 @@
 				return '';
 			}
 		}
+		// Rows without a link (block checkout order summary renders the name as a plain heading) fall
+		// back to the decoded product name, paired in order within the same-name group.
+		function normName( text ) {
+			var ta = document.createElement( 'textarea' );
+			ta.innerHTML = String( text || '' );
+			return ta.value.replace( /\s+/g, ' ' ).trim().toLowerCase();
+		}
 		var groups = {};
+		var nameGroups = {};
 		items.forEach( function ( item ) {
 			var cd = item.extensions && item.extensions.campaignbay;
 			var key = normUrl( ( cd && cd.permalink ) || item.permalink || '' );
-			if ( ! key ) {
-				return;
+			if ( key ) {
+				( groups[ key ] = groups[ key ] || [] ).push( item );
 			}
-			( groups[ key ] = groups[ key ] || [] ).push( item );
+			var nkey = normName( item.name );
+			if ( nkey ) {
+				( nameGroups[ nkey ] = nameGroups[ nkey ] || [] ).push( item );
+			}
 		} );
 		var seen = {};
 		Array.prototype.forEach.call( rows, function ( row ) {
@@ -130,10 +141,20 @@
 			var key = link ? normUrl( link.getAttribute( 'href' ) || '' ) : '';
 			var scope = row.classList.contains( 'wc-block-cart-items__row' ) ? 'cart' : 'summary';
 			var item = null;
-			if ( key && groups[ key ] ) {
-				var n = seen[ scope + key ] || 0;
-				seen[ scope + key ] = n + 1;
-				item = groups[ key ][ n ] || null;
+			if ( key ) {
+				if ( groups[ key ] ) {
+					var n = seen[ scope + key ] || 0;
+					seen[ scope + key ] = n + 1;
+					item = groups[ key ][ n ] || null;
+				}
+			} else {
+				var nameEl = row.querySelector( '.wc-block-components-product-name' );
+				var nkey = nameEl ? normName( nameEl.textContent ) : '';
+				if ( nkey && nameGroups[ nkey ] ) {
+					var m = seen[ scope + 'n:' + nkey ] || 0;
+					seen[ scope + 'n:' + nkey ] = m + 1;
+					item = nameGroups[ nkey ][ m ] || null;
+				}
 			}
 			var cd = item && item.extensions && item.extensions.campaignbay;
 			if ( cd && ! ( cd.end && cd.text ) ) {
