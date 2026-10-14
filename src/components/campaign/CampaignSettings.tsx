@@ -161,6 +161,33 @@ const CampaignSettings: FC<CampaignSettingsProps> = ({
             {renderError(errors?.apply_as)}
           </div>
 
+          {/* fixed discount basis */}
+          <div className="campaignbay-flex campaignbay-flex-col campaignbay-items-start campaignbay-gap-[4px]">
+            <Label>{__("Fixed discount applies", "campaignbay")}</Label>
+            <Select
+              id="fixed_discount_basis"
+              value={settings?.fixed_discount_basis || "per_unit"}
+              onChange={(value) => {
+                if (value !== "per_unit" && value !== "per_line") return;
+                setSettings((prev: CampaignSettingsType) => ({
+                  ...prev,
+                  fixed_discount_basis: value,
+                }));
+              }}
+              options={[
+                { value: "per_unit", label: __("Per item (default)", "campaignbay") },
+                { value: "per_line", label: __("Once to the whole line", "campaignbay") },
+              ]}
+            />
+            <HelpText>
+              {__(
+                "Only affects tiers with a fixed amount. Per item takes the amount off every unit; once to the whole line takes it off the line total a single time.",
+                "campaignbay",
+              )}
+            </HelpText>
+            {renderError(errors?.fixed_discount_basis)}
+          </div>
+
           {/* cart page message location */}
           <div className="campaignbay-flex campaignbay-flex-col campaignbay-items-start campaignbay-gap-[4px]">
             <Label>
@@ -392,6 +419,65 @@ const CampaignSettings: FC<CampaignSettingsProps> = ({
           ) : null}
         </>
       ) : null}
+
+      {/* storefront display (all campaign types) */}
+      <div className="campaignbay-flex campaignbay-flex-col campaignbay-items-start campaignbay-gap-[8px]">
+        <Label>{__("Storefront display", "campaignbay")}</Label>
+        <Checkbox
+          checked={settings?.show_countdown ?? true}
+          label={__("Show countdown timer", "campaignbay")}
+          onChange={(checked) =>
+            setSettings((prev: CampaignSettingsType) => ({
+              ...prev,
+              show_countdown: checked,
+            }))
+          }
+        />
+        <HelpText>
+          {__(
+            "Shows a countdown to the campaign end date. Only appears when the campaign has an end date.",
+            "campaignbay",
+          )}
+        </HelpText>
+        <Checkbox
+          checked={!!settings?.promote_enabled}
+          label={__("Promote this campaign", "campaignbay")}
+          onChange={(checked) =>
+            setSettings((prev: CampaignSettingsType) => ({
+              ...prev,
+              promote_enabled: checked,
+            }))
+          }
+        />
+        {settings?.promote_enabled ? (
+          <>
+            <textarea
+              id="promote_text"
+              rows={3}
+              className="campaignbay-w-full campaignbay-text-[13px]"
+              placeholder={__("Leave blank for the default promotion text.", "campaignbay")}
+              aria-label={__("Promotion text", "campaignbay")}
+              value={settings?.promote_text ?? ""}
+              onChange={(e) =>
+                setSettings((prev: CampaignSettingsType) => ({
+                  ...prev,
+                  promote_text: e.target.value,
+                }))
+              }
+            />
+            {renderError(errors?.promote_text)}
+            <HelpText>
+              {__(
+                "Shown on the storefront to advertise this campaign.",
+                "campaignbay",
+              )}
+              <Placeholders
+                options={["campaign_title", "end_date", "discount"]}
+              />
+            </HelpText>
+          </>
+        ) : null}
+      </div>
 
       {/* optional quantity limits (all campaign types) */}
       <div className="campaignbay-flex campaignbay-flex-col campaignbay-items-start campaignbay-gap-[8px]">

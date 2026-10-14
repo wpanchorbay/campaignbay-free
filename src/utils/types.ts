@@ -80,12 +80,13 @@ export interface QuantityTier {
     max?: number | "" | null;
     value?: number | "";
     type?: "percentage" | "currency";
+    label?: string | null;
 }
 export type ValidationError = Partial<
     Record<string | number, { message: string }>
 >;
 export type QuantityTierError = Partial<
-    Record<"min" | "max" | "value" | "type", { message: string }>
+    Record<"min" | "max" | "value" | "type" | "label", { message: string }>
 >;
 
 export interface EBTier {
@@ -161,6 +162,9 @@ export interface QuantityLimitsType {
 export interface CampaignSettingsType {
   // all campaign types
   quantity_limits?: QuantityLimitsType;
+  show_countdown?: boolean;
+  promote_enabled?: boolean;
+  promote_text?: string | null;
 
   // scheduled & earlybird
   display_as_regular_price?: boolean;
@@ -170,6 +174,7 @@ export interface CampaignSettingsType {
   // quantity
   enable_quantity_table?: boolean;
   apply_as?: ApplyAsType;
+  fixed_discount_basis?: "per_unit" | "per_line";
   cart_quantity_message_location?: BogoMessageLocationType;
   cart_quantity_message_format?: string;
 

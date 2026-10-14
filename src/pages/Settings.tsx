@@ -364,9 +364,9 @@ const ProductContent: React.FC<ProductContentProps> = ({
             <div className="campaignbay-space-y-2">
               <Checkbox
                 label="Enable Quantity Discounts Table on Product Page"
-                checked={settings.product_enableQuantityTable}
+                checked={settings.show_discount_table}
                 onChange={(v) =>
-                  updateSetting("product_enableQuantityTable", v)
+                  updateSetting("show_discount_table", v)
                 }
                 classNames={{
                   label:
@@ -467,6 +467,324 @@ const ProductContent: React.FC<ProductContentProps> = ({
               />
               <Placeholders
                 options={["product_name", "step"]}
+                classNames={{ root: "campaignbay-mt-2" }}
+              />
+            </div>
+          </div>
+        </div>
+      </SettingsCard>
+
+      <SettingsCard>
+        <SectionHeader title="Quantity Discount Layout" />
+        <div className="campaignbay-space-y-6">
+          <div className="campaignbay-flex campaignbay-items-center campaignbay-justify-start campaignbay-gap-[8px]">
+            <label className="!campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+              Show Tier Label
+            </label>
+            <Switch
+              size="small"
+              checked={settings.discount_table_show_tier_label}
+              onChange={(v) => updateSetting("discount_table_show_tier_label", v)}
+            />
+          </div>
+          <div className="campaignbay-max-w-md">
+            <CustomSelect
+              label="Layout"
+              classNames={{
+                label:
+                  "!campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase",
+              }}
+              value={settings.discount_table_layout}
+              onChange={(v) => updateSetting("discount_table_layout", v)}
+              options={[
+                { label: __("Table", "campaignbay"), value: "table" },
+                { label: __("Cards", "campaignbay"), value: "cards" },
+              ]}
+            />
+          </div>
+          <div className="campaignbay-grid campaignbay-grid-cols-1 lg:campaignbay-grid-cols-2 campaignbay-gap-8">
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Card Title Format (Cards layout)
+              </label>
+              <Input
+                value={settings.discount_card_title_format}
+                onChange={(e) => updateSetting("discount_card_title_format", e.target.value)}
+              />
+              <Placeholders
+                options={["min", "max", "range"]}
+                classNames={{ root: "campaignbay-mt-2" }}
+              />
+            </div>
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Card Price Format (Cards layout)
+              </label>
+              <Input
+                value={settings.discount_card_price_format}
+                onChange={(e) => updateSetting("discount_card_price_format", e.target.value)}
+              />
+              <Placeholders
+                options={["price"]}
+                classNames={{ root: "campaignbay-mt-2" }}
+              />
+            </div>
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Card Discount Format (Cards layout)
+              </label>
+              <Input
+                value={settings.discount_card_discount_format}
+                onChange={(e) => updateSetting("discount_card_discount_format", e.target.value)}
+              />
+              <Placeholders
+                options={["discount"]}
+                classNames={{ root: "campaignbay-mt-2" }}
+              />
+            </div>
+          </div>
+        </div>
+      </SettingsCard>
+
+      <SettingsCard>
+        <SectionHeader title="Countdown Timer" />
+        <div className="campaignbay-space-y-6">
+          <div className="campaignbay-flex campaignbay-items-center campaignbay-justify-start campaignbay-gap-[8px]">
+            <label className="!campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+              Show on Product Page
+            </label>
+            <Switch
+              size="small"
+              checked={settings.countdown_show_product}
+              onChange={(v) => updateSetting("countdown_show_product", v)}
+            />
+          </div>
+          <div className="campaignbay-flex campaignbay-items-center campaignbay-justify-start campaignbay-gap-[8px]">
+            <label className="!campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+              Show in Shop / Category Listings
+            </label>
+            <Switch
+              size="small"
+              checked={settings.countdown_show_loop}
+              onChange={(v) => updateSetting("countdown_show_loop", v)}
+            />
+          </div>
+          <div className="campaignbay-flex campaignbay-items-center campaignbay-justify-start campaignbay-gap-[8px]">
+            <label className="!campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+              Show in Cart
+            </label>
+            <Switch
+              size="small"
+              checked={settings.countdown_show_cart}
+              onChange={(v) => updateSetting("countdown_show_cart", v)}
+            />
+          </div>
+          <div className="campaignbay-grid campaignbay-grid-cols-1 lg:campaignbay-grid-cols-2 campaignbay-gap-8">
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Product Page Countdown Format
+              </label>
+              <Input
+                value={settings.countdown_format_product}
+                onChange={(e) => updateSetting("countdown_format_product", e.target.value)}
+              />
+              <Placeholders
+                options={["countdown", "end_date", "campaign_title"]}
+                classNames={{ root: "campaignbay-mt-2" }}
+              />
+            </div>
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Shop / Category Listing Countdown Format
+              </label>
+              <Input
+                value={settings.countdown_format_loop}
+                onChange={(e) => updateSetting("countdown_format_loop", e.target.value)}
+              />
+              <Placeholders
+                options={["countdown", "end_date", "campaign_title"]}
+                classNames={{ root: "campaignbay-mt-2" }}
+              />
+            </div>
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Cart Countdown Format
+              </label>
+              <Input
+                value={settings.countdown_format_cart}
+                onChange={(e) => updateSetting("countdown_format_cart", e.target.value)}
+              />
+              <Placeholders
+                options={["countdown", "end_date", "campaign_title"]}
+                classNames={{ root: "campaignbay-mt-2" }}
+              />
+            </div>
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Shortcode Countdown Format
+              </label>
+              <Input
+                value={settings.countdown_format_shortcode}
+                onChange={(e) => updateSetting("countdown_format_shortcode", e.target.value)}
+              />
+              <Placeholders
+                options={["countdown", "end_date", "campaign_title"]}
+                classNames={{ root: "campaignbay-mt-2" }}
+              />
+            </div>
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Message When Offer Ends (leave empty to hide)
+              </label>
+              <Input
+                value={settings.countdown_expired_message}
+                onChange={(e) => updateSetting("countdown_expired_message", e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      </SettingsCard>
+
+      <SettingsCard>
+        <SectionHeader title="Sale Badge" />
+        <div className="campaignbay-space-y-6">
+          <div className="campaignbay-flex campaignbay-items-center campaignbay-justify-start campaignbay-gap-[8px]">
+            <label className="!campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+              Show Custom Sale Badge
+            </label>
+            <Switch
+              size="small"
+              checked={settings.badge_enabled}
+              onChange={(v) => updateSetting("badge_enabled", v)}
+            />
+          </div>
+          <div className="campaignbay-grid campaignbay-grid-cols-1 lg:campaignbay-grid-cols-2 campaignbay-gap-8">
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Badge Text
+              </label>
+              <Input
+                value={settings.badge_text}
+                onChange={(e) => updateSetting("badge_text", e.target.value)}
+              />
+              <Placeholders
+                options={["percentage_off", "amount_off"]}
+                classNames={{ root: "campaignbay-mt-2" }}
+              />
+            </div>
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Badge Background Color
+              </label>
+              <div className="campaignbay-flex campaignbay-items-center campaignbay-gap-2">
+                <input
+                  type="color"
+                  value={settings.badge_bg_color}
+                  onChange={(e) => updateSetting("badge_bg_color", e.target.value)}
+                  className="campaignbay-h-9 campaignbay-w-12 campaignbay-p-0 campaignbay-border campaignbay-border-gray-300 campaignbay-rounded"
+                />
+                <Input
+                  value={settings.badge_bg_color}
+                  onChange={(e) => updateSetting("badge_bg_color", e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Badge Text Color
+              </label>
+              <div className="campaignbay-flex campaignbay-items-center campaignbay-gap-2">
+                <input
+                  type="color"
+                  value={settings.badge_text_color}
+                  onChange={(e) => updateSetting("badge_text_color", e.target.value)}
+                  className="campaignbay-h-9 campaignbay-w-12 campaignbay-p-0 campaignbay-border campaignbay-border-gray-300 campaignbay-rounded"
+                />
+                <Input
+                  value={settings.badge_text_color}
+                  onChange={(e) => updateSetting("badge_text_color", e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </SettingsCard>
+
+      <SettingsCard>
+        <SectionHeader title="Category & Shop Offer Message" />
+        <div className="campaignbay-space-y-6">
+          <div className="campaignbay-flex campaignbay-items-center campaignbay-justify-start campaignbay-gap-[8px]">
+            <label className="!campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+              Show on Category Pages
+            </label>
+            <Switch
+              size="small"
+              checked={settings.category_offer_show}
+              onChange={(v) => updateSetting("category_offer_show", v)}
+            />
+          </div>
+          <div className="campaignbay-flex campaignbay-items-center campaignbay-justify-start campaignbay-gap-[8px]">
+            <label className="!campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+              Show on Shop Page
+            </label>
+            <Switch
+              size="small"
+              checked={settings.category_offer_show_shop}
+              onChange={(v) => updateSetting("category_offer_show_shop", v)}
+            />
+          </div>
+          <div className="campaignbay-grid campaignbay-grid-cols-1 lg:campaignbay-grid-cols-2 campaignbay-gap-8">
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Offer Message Format
+              </label>
+              <Input
+                value={settings.category_offer_format}
+                onChange={(e) => updateSetting("category_offer_format", e.target.value)}
+              />
+              <Placeholders
+                options={["campaign_title", "discount", "category_name", "end_date"]}
+                classNames={{ root: "campaignbay-mt-2" }}
+              />
+            </div>
+          </div>
+        </div>
+      </SettingsCard>
+
+      <SettingsCard>
+        <SectionHeader title="Promotion Blurbs" />
+        <div className="campaignbay-space-y-6">
+          <div className="campaignbay-flex campaignbay-items-center campaignbay-justify-start campaignbay-gap-[8px]">
+            <label className="!campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+              Show on Product Page
+            </label>
+            <Switch
+              size="small"
+              checked={settings.promote_show_product}
+              onChange={(v) => updateSetting("promote_show_product", v)}
+            />
+          </div>
+          <div className="campaignbay-flex campaignbay-items-center campaignbay-justify-start campaignbay-gap-[8px]">
+            <label className="!campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+              Show on Category Pages
+            </label>
+            <Switch
+              size="small"
+              checked={settings.promote_show_category}
+              onChange={(v) => updateSetting("promote_show_category", v)}
+            />
+          </div>
+          <div className="campaignbay-grid campaignbay-grid-cols-1 lg:campaignbay-grid-cols-2 campaignbay-gap-8">
+            <div>
+              <label className="campaignbay-block campaignbay-mb-2 !campaignbay-text-[13px] !campaignbay-font-[700] !campaignbay-leading-[20px] !campaignbay-text-[#1e1e1e] !campaignbay-uppercase">
+                Promotion Format
+              </label>
+              <Input
+                value={settings.promote_format}
+                onChange={(e) => updateSetting("promote_format", e.target.value)}
+              />
+              <Placeholders
+                options={["promo_text", "campaign_title", "end_date"]}
                 classNames={{ root: "campaignbay-mt-2" }}
               />
             </div>
@@ -674,13 +992,39 @@ const Settings = () => {
       'The maximum quantity for "{product_name}" is {max_quantity}.',
     quantity_limit_message_step:
       '"{product_name}" must be purchased in multiples of {step}.',
-    product_enableQuantityTable: true,
     discount_table_options: {
       show_header: true,
       title: { show: true, label: "Quantity" },
       range: { show: true, label: "Range" },
       discount: { show: true, label: "Discount", content: "value" },
     },
+    discount_table_layout: "table",
+    discount_table_show_tier_label: true,
+    discount_card_title_format: "{min} - {max} items",
+    discount_card_price_format: "{price} each",
+    discount_card_discount_format: "Save {discount}",
+
+    countdown_show_product: true,
+    countdown_show_loop: true,
+    countdown_show_cart: true,
+    countdown_format_product: "Sale ends in {countdown}",
+    countdown_format_loop: "Ends in {countdown}",
+    countdown_format_cart: "Offer ends in {countdown}",
+    countdown_format_shortcode: "Offer ends in {countdown}",
+    countdown_expired_message: "This offer has ended.",
+
+    badge_enabled: false,
+    badge_text: "Sale!",
+    badge_bg_color: "#e2401c",
+    badge_text_color: "#ffffff",
+
+    category_offer_show: true,
+    category_offer_show_shop: true,
+    category_offer_format:
+      "Sale on {category_name}: {campaign_title} - {discount} off!",
+    promote_show_product: true,
+    promote_show_category: true,
+    promote_format: "{promo_text}",
 
     cart_allowWcCouponStacking: false,
     cart_allowCampaignStacking: false,

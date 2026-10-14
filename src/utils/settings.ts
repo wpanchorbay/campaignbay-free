@@ -6,6 +6,10 @@ export const getSettings = (type: CampaignType, settings: CampaignSettingsType) 
     if (settings?.quantity_limits) {
         result.quantity_limits = settings.quantity_limits;
     }
+    // Storefront display options are shared by every campaign type.
+    result.show_countdown = settings?.show_countdown ?? true;
+    result.promote_enabled = settings?.promote_enabled ?? false;
+    result.promote_text = settings?.promote_text || null;
     return result;
 }
 
@@ -44,10 +48,12 @@ const getTypeSettings = (type: CampaignType, settings: CampaignSettingsType) => 
                 apply_as: "line_total",
                 cart_quantity_message_location: "line_item_name",
                 cart_quantity_message_format: "",
+                fixed_discount_basis: "per_unit",
             };
             if (settings?.enable_quantity_table !== undefined)
                 defaultSettings["enable_quantity_table"] = settings.enable_quantity_table;
             defaultSettings["apply_as"] = settings?.apply_as || "line_total";
+            defaultSettings["fixed_discount_basis"] = settings?.fixed_discount_basis === "per_line" ? "per_line" : "per_unit";
             defaultSettings["cart_quantity_message_location"] = settings?.cart_quantity_message_location || "line_item_name";
             defaultSettings["cart_quantity_message_format"] = settings?.cart_quantity_message_format || "";
             return defaultSettings;

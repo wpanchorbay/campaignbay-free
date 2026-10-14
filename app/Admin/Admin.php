@@ -628,6 +628,113 @@ class Admin {
 					),
 				),
 
+				'discount_table_layout'                   => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_key',
+					'default'           => 'table',
+				),
+				'discount_table_show_tier_label'          => array(
+					'type'    => 'boolean',
+					'default' => true,
+				),
+				'discount_card_title_format'              => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => '{min} - {max} items',
+				),
+				'discount_card_price_format'              => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => '{price} each',
+				),
+				'discount_card_discount_format'           => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => 'Save {discount}',
+				),
+				'countdown_show_product'                  => array(
+					'type'    => 'boolean',
+					'default' => true,
+				),
+				'countdown_show_loop'                     => array(
+					'type'    => 'boolean',
+					'default' => true,
+				),
+				'countdown_show_cart'                     => array(
+					'type'    => 'boolean',
+					'default' => true,
+				),
+				'countdown_format_product'                => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => 'Sale ends in {countdown}',
+				),
+				'countdown_format_loop'                   => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => 'Ends in {countdown}',
+				),
+				'countdown_format_cart'                   => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => 'Offer ends in {countdown}',
+				),
+				'countdown_format_shortcode'              => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => 'Offer ends in {countdown}',
+				),
+				'countdown_expired_message'               => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => 'This offer has ended.',
+				),
+				'badge_enabled'                           => array(
+					'type'    => 'boolean',
+					'default' => false,
+				),
+				'badge_text'                              => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => 'Sale!',
+				),
+				'badge_bg_color'                          => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_hex_color',
+					'default'           => '#e2401c',
+				),
+				'badge_text_color'                        => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_hex_color',
+					'default'           => '#ffffff',
+				),
+				'category_offer_show'                     => array(
+					'type'    => 'boolean',
+					'default' => true,
+				),
+				'category_offer_show_shop'                => array(
+					'type'    => 'boolean',
+					'default' => true,
+				),
+				'category_offer_format'                   => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => 'Sale on {category_name}: {campaign_title} - {discount} off!',
+				),
+				'promote_show_product'                    => array(
+					'type'    => 'boolean',
+					'default' => true,
+				),
+				'promote_show_category'                   => array(
+					'type'    => 'boolean',
+					'default' => true,
+				),
+				'promote_format'                          => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'           => '{promo_text}',
+				),
+
 				/*
 				==================================================
 				* Cart Settings Tab
@@ -740,7 +847,18 @@ class Admin {
 					break;
 
 				case 'string':
-					$sanitized_output[ $key ] = sanitize_text_field( $value );
+					$callback = $details['sanitize_callback'] ?? 'sanitize_text_field';
+					if ( 'sanitize_hex_color' === $callback ) {
+						$color                    = sanitize_hex_color( (string) $value );
+						$sanitized_output[ $key ] = $color ? $color : ( $default_options[ $key ] ?? '' );
+					} elseif ( 'discount_table_layout' === $key ) {
+						$layout                   = sanitize_key( $value );
+						$sanitized_output[ $key ] = in_array( $layout, array( 'table', 'cards' ), true ) ? $layout : 'table';
+					} elseif ( 'sanitize_key' === $callback ) {
+						$sanitized_output[ $key ] = sanitize_key( $value );
+					} else {
+						$sanitized_output[ $key ] = sanitize_text_field( $value );
+					}
 					break;
 
 				case 'object':

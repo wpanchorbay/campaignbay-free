@@ -198,8 +198,8 @@ class Condition {
 	 */
 	public static function check_user_role( $condition ) {
 		$result      = true;
-		$role        = $condition['option'];
-		$is_included = $condition['is_included'];
+		$role        = $condition['option'] ?? '';
+		$is_included = $condition['is_included'] ?? true;
 		$user        = wp_get_current_user();
 		if ( empty( $user ) && $is_included ) {
 			return true;

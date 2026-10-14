@@ -20,10 +20,13 @@ use WpabCampaignBay\Api\SettingsController;
 use WpabCampaignBay\Core\Scheduler;
 use WpabCampaignBay\Engine\CalenderManager;
 use WpabCampaignBay\Engine\CampaignManager;
+use WpabCampaignBay\Engine\Countdown;
 use WpabCampaignBay\Engine\DiscountManager;
+use WpabCampaignBay\Engine\OfferMessages;
 use WpabCampaignBay\Engine\OrderManager;
 use WpabCampaignBay\Engine\PricingEngine;
 use WpabCampaignBay\Engine\QuantityLimits;
+use WpabCampaignBay\Engine\SaleBadge;
 use WpabCampaignBay\Helper\Loader;
 
 /**
@@ -123,6 +126,9 @@ class Plugin {
 		$scheduler             = Scheduler::get_instance();
 		$calender_manager      = CalenderManager::get_instance();
 		$quantity_limits       = QuantityLimits::get_instance();
+		$countdown             = Countdown::get_instance();
+		$sale_badge            = SaleBadge::get_instance();
+		$offer_messages        = OfferMessages::get_instance();
 		$components_with_hooks = array(
 			$discount_manager,
 			$campaign_manager,
@@ -131,6 +137,9 @@ class Plugin {
 			$scheduler,
 			$calender_manager,
 			$quantity_limits,
+			$countdown,
+			$sale_badge,
+			$offer_messages,
 		);
 
 		foreach ( $components_with_hooks as $component ) {

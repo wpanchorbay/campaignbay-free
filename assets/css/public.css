@@ -21,3 +21,84 @@
 .campaignbay-discount-table tr:hover {
 
 }
+
+.campaignbay-tier-label {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: #e2401c;
+    color: #fff;
+    font-size: 0.75em;
+    line-height: 1.5;
+    vertical-align: middle;
+}
+
+.campaignbay-discount-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.campaignbay-discount-card {
+    position: relative;
+    flex: 1 1 130px;
+    max-width: 220px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 18px 12px 12px;
+    border: 1px solid #dddddd;
+    border-radius: 6px;
+    background: #fff;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.campaignbay-discount-card:hover,
+.campaignbay-discount-card:focus-visible {
+    border-color: #e2401c;
+    outline: none;
+}
+
+.campaignbay-discount-card:focus-visible {
+    box-shadow: 0 0 0 2px rgba(226, 64, 28, 0.35);
+}
+
+.campaignbay-discount-card.is-selected {
+    border-color: #e2401c;
+    box-shadow: 0 0 0 2px #e2401c;
+}
+
+.campaignbay-discount-card__ribbon {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 1px 8px;
+    border-radius: 10px;
+    background: #e2401c;
+    color: #fff;
+    font-size: 0.75em;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.campaignbay-discount-card__title {
+    font-weight: 600;
+}
+
+.campaignbay-discount-card__discount {
+    font-size: 0.85em;
+    color: #2e7d32;
+}
+
+@media (max-width: 480px) {
+    .campaignbay-discount-card {
+        flex-basis: calc(50% - 6px);
+        max-width: none;
+    }
+}

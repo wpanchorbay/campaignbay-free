@@ -1,0 +1,24 @@
+/* CampaignBay storefront messages: category/shop offers and promo blurbs. */
+.campaignbay-offer-message,
+.campaignbay-promo {
+	margin: 0 0 1.25em;
+	padding: 0.75em 1em;
+	border-left: 4px solid #e2401c;
+	background: #fff6f3;
+	color: #333;
+	line-height: 1.5;
+}
+
+.campaignbay-offer-message p,
+.campaignbay-promo p {
+	margin: 0;
+}
+
+.campaignbay-offers-list {
+	margin: 0 0 1.25em;
+	padding-left: 1.25em;
+}
+
+.campaignbay-offers-list li {
+	margin: 0 0 0.35em;
+}
