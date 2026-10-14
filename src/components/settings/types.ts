@@ -33,7 +33,6 @@ export interface CampaignBaySettingsType {
   quantity_limit_message_max: string;
   quantity_limit_message_step: string;
   product_priorityMethod: "apply_highest" | "apply_lowest" | "apply_first" | "apply_recent";
-  product_enableQuantityTable: boolean;
   discount_table_options: DiscountTableOptionsType;
   discount_table_layout: "table" | "cards";
   discount_table_show_tier_label: boolean;

@@ -364,9 +364,9 @@ const ProductContent: React.FC<ProductContentProps> = ({
             <div className="campaignbay-space-y-2">
               <Checkbox
                 label="Enable Quantity Discounts Table on Product Page"
-                checked={settings.product_enableQuantityTable}
+                checked={settings.show_discount_table}
                 onChange={(v) =>
-                  updateSetting("product_enableQuantityTable", v)
+                  updateSetting("show_discount_table", v)
                 }
                 classNames={{
                   label:
@@ -992,7 +992,6 @@ const Settings = () => {
       'The maximum quantity for "{product_name}" is {max_quantity}.',
     quantity_limit_message_step:
       '"{product_name}" must be purchased in multiples of {step}.',
-    product_enableQuantityTable: true,
     discount_table_options: {
       show_header: true,
       title: { show: true, label: "Quantity" },
