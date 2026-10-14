@@ -1,17 +1,39 @@
 ( function () {
 	'use strict';
 
-	function init() {
-		var wrap = document.querySelector( '.campaignbay-discount-cards' );
-		if ( ! wrap ) {
+	function findQty( wrap ) {
+		var scope = wrap.closest( 'form.cart' );
+		var qty = scope ? scope.querySelector( 'input.qty' ) : null;
+		if ( qty ) {
+			return qty;
+		}
+		// Not inside the add-to-cart form: use the nearest ancestor that holds a quantity input.
+		scope = wrap.closest( '.product, li.product, .wc-block-grid__product, [id^="product-"]' );
+		qty = scope ? scope.querySelector( 'input.qty' ) : null;
+		if ( qty ) {
+			return qty;
+		}
+		scope = wrap.parentElement;
+		while ( scope && scope !== document.body ) {
+			qty = scope.querySelector( 'input.qty' );
+			if ( qty ) {
+				return qty;
+			}
+			scope = scope.parentElement;
+		}
+		return document.querySelector( 'form.cart input.qty' );
+	}
+
+	function setup( wrap ) {
+		if ( wrap.getAttribute( 'data-cb-bound' ) ) {
 			return;
 		}
 		var cards = Array.prototype.slice.call( wrap.querySelectorAll( '.campaignbay-discount-card' ) );
-		var form = wrap.closest( 'form.cart' ) || document.querySelector( 'form.cart' );
-		var qty = form ? form.querySelector( 'input.qty' ) : null;
+		var qty = findQty( wrap );
 		if ( ! qty || ! cards.length ) {
 			return;
 		}
+		wrap.setAttribute( 'data-cb-bound', '1' );
 
 		function num( v, d ) {
 			var n = parseFloat( v );
@@ -69,6 +91,11 @@
 		qty.addEventListener( 'input', sync );
 		qty.addEventListener( 'change', sync );
 		sync();
+	}
+
+	function init() {
+		var groups = document.querySelectorAll( '.campaignbay-discount-cards' );
+		Array.prototype.forEach.call( groups, setup );
 	}
 
 	if ( 'loading' === document.readyState ) {

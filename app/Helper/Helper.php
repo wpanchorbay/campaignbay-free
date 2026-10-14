@@ -767,13 +767,13 @@ class Helper {
 		) {
 			$table .= '<thead><tr>';
 			if ( true === $settings['title']['show'] ) {
-				$table .= '<th>' . ( $settings['title']['label'] ?? 'Title' ) . '</th>';
+				$table .= '<th>' . esc_html( $settings['title']['label'] ?? 'Title' ) . '</th>';
 			}
 			if ( true === $settings['range']['show'] ) {
-				$table .= '<th>' . ( $settings['range']['label'] ?? 'Range' ) . '</th>';
+				$table .= '<th>' . esc_html( $settings['range']['label'] ?? 'Range' ) . '</th>';
 			}
 			if ( true === $settings['discount']['show'] ) {
-				$table .= '<th>' . ( $settings['discount']['label'] ?? 'Discount' ) . '</th>';
+				$table .= '<th>' . esc_html( $settings['discount']['label'] ?? 'Discount' ) . '</th>';
 			}
 			$table .= '</tr></thead>';
 		}
@@ -782,19 +782,19 @@ class Helper {
 		foreach ( $tiers as $tier ) {
 			$table .= '<tr>';
 			if ( true === $settings['title']['show'] ) {
-				$table .= '<td>' . $tier['campaign_title'];
+				$table .= '<td>' . esc_html( $tier['campaign_title'] ?? '' );
 				if ( $show_label && ! empty( $tier['label'] ) ) {
 					$table .= ' <span class="campaignbay-tier-label">' . esc_html( $tier['label'] ) . '</span>';
 				}
 				$table .= '</td>';
 			}
 			if ( true === $settings['range']['show'] ) {
-				$table .= '<td>' . self::get_tier_range_text( $tier ) . '</td>';
+				$table .= '<td>' . esc_html( self::get_tier_range_text( $tier ) ) . '</td>';
 			}
 			if ( true === $settings['discount']['show'] && 'price' === $settings['discount']['content'] ) {
 				$table .= '<td>' . Woocommerce::format_price( $tier['price'] ) . '</td>';
 			} else {
-				$table .= '<td>' . ( 'currency' === $tier['type'] ? Woocommerce::format_price( $tier['value'] ) : $tier['value'] );
+				$table .= '<td>' . ( 'currency' === $tier['type'] ? Woocommerce::format_price( $tier['value'] ) : esc_html( $tier['value'] ) );
 				$table .= 'percentage' === $tier['type'] ? '%' : ( self::is_per_line_tier( $tier ) ? ' ' . esc_html__( 'off the total', 'campaignbay' ) : ' /PCS' );
 				$table .= '</td>';
 			}

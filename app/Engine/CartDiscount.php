@@ -397,6 +397,8 @@ class CartDiscount {
 		$next_tier    = null;
 		foreach ( $tiers as $key => $tier ) {
 			// Per-line fixed tiers price depends on the actual cart quantity.
+			// Note: the per-unit price derived from a once-per-line fixed value is rounded, so the line total can
+			// drift by a cent or two at odd quantities. This is accepted.
 			if ( Helper::is_per_line_tier( $tier ) ) {
 				$tier['price'] = (float) Helper::get_quantity_price( $base_price, $tier, max( $quantity, $tier['min'] ) );
 			}

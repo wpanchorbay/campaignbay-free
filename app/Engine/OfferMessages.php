@@ -10,6 +10,7 @@ namespace WpabCampaignBay\Engine;
 use WpabCampaignBay\Core\Base;
 use WpabCampaignBay\Core\Common;
 use WpabCampaignBay\Helper\Filter;
+use WpabCampaignBay\Helper\Helper;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -90,17 +91,45 @@ class OfferMessages extends Base {
 		$now    = time();
 		$result = array();
 		foreach ( CampaignManager::get_instance()->get_active_campaigns() as $campaign ) {
-			$end = $campaign->get_end_datetime_utc();
-			if ( $end && strtotime( $end . ' UTC' ) < $now ) {
+			// Dates only count when scheduling is on (the engine ignores stale dates otherwise).
+			if ( $campaign->get_schedule_enabled() ) {
+				$end = $campaign->get_end_datetime_utc();
+				if ( $end && strtotime( $end . ' UTC' ) < $now ) {
+					continue;
+				}
+				$start = $campaign->get_start_datetime_utc();
+				if ( $start && strtotime( $start . ' UTC' ) > $now ) {
+					continue;
+				}
+			}
+			// Spent campaigns do not discount anything, so do not advertise them.
+			$limit = (int) $campaign->get_usage_limit();
+			if ( $limit > 0 && $campaign->get_usage_count() >= $limit ) {
 				continue;
 			}
-			$start = $campaign->get_start_datetime_utc();
-			if ( $campaign->get_schedule_enabled() && $start && strtotime( $start . ' UTC' ) > $now ) {
+			if ( 'earlybird' === $campaign->get_type() && null === Helper::earlybird_current_tier( $campaign ) ) {
 				continue;
 			}
 			$result[ $campaign->get_id() ] = $campaign;
 		}
 		return $result;
+	}
+
+	/**
+	 * Whether a campaign has any targeting condition that depends on the visitor (user_role,
+	 * user_roles, users, user_status) or on the cart (cart_total, cart_items).
+	 *
+	 * Category/shop messages and promo blurbs are shown without evaluating a visitor or a cart, so
+	 * advertising such a campaign could promise a discount this visitor will never get. They are
+	 * skipped instead. Any rule at all (including unknown types added by Pro) is treated this way,
+	 * since every rule type is visitor- or cart-dependent.
+	 *
+	 * @param \WpabCampaignBay\Core\Campaign $campaign Campaign.
+	 * @return bool
+	 */
+	private function has_visitor_dependent_conditions( $campaign ) {
+		$conditions = $campaign->get_conditions();
+		return ! empty( $conditions['rules'] );
 	}
 
 	/**
@@ -334,7 +363,7 @@ class OfferMessages extends Base {
 
 		$html = '';
 		foreach ( $this->get_running_campaigns() as $campaign ) {
-			if ( ! $this->campaign_targets_category( $campaign, $ctx['term_id'] ) ) {
+			if ( $this->has_visitor_dependent_conditions( $campaign ) || ! $this->campaign_targets_category( $campaign, $ctx['term_id'] ) ) {
 				continue;
 			}
 			if ( $show_offer ) {
@@ -392,7 +421,7 @@ class OfferMessages extends Base {
 		$atts      = shortcode_atts( array( 'id' => 0 ), $atts, 'campaignbay_promo' );
 		$campaigns = $this->get_running_campaigns();
 		$id        = absint( $atts['id'] );
-		if ( ! $id || ! isset( $campaigns[ $id ] ) ) {
+		if ( ! $id || ! isset( $campaigns[ $id ] ) || $this->has_visitor_dependent_conditions( $campaigns[ $id ] ) ) {
 			return '';
 		}
 		$html = $this->promo_html( $campaigns[ $id ] );
@@ -423,7 +452,7 @@ class OfferMessages extends Base {
 		}
 		$items = '';
 		foreach ( $this->get_running_campaigns() as $campaign ) {
-			if ( ! $this->campaign_targets_category( $campaign, $term_id ) ) {
+			if ( $this->has_visitor_dependent_conditions( $campaign ) || ! $this->campaign_targets_category( $campaign, $term_id ) ) {
 				continue;
 			}
 			$text = $this->offer_text( $campaign, $name );

@@ -104,16 +104,41 @@
 		if ( ! items || ! rows.length ) {
 			return;
 		}
-		var byKey = {};
+		// Match rows to cart items by product permalink (never by array index: free BOGO lines and the
+		// order summary can reorder or add rows). Rows sharing a permalink (e.g. a paid line plus its
+		// free BOGO line) are paired in order within that permalink group; rows with no match get no timer.
+		function normUrl( url ) {
+			try {
+				var u = new URL( url, window.location.href );
+				return u.origin + u.pathname + u.search;
+			} catch ( e ) {
+				return '';
+			}
+		}
+		var groups = {};
 		items.forEach( function ( item ) {
 			var cd = item.extensions && item.extensions.campaignbay;
-			if ( cd && cd.end && cd.text ) {
-				byKey[ item.key ] = cd;
+			var key = normUrl( ( cd && cd.permalink ) || item.permalink || '' );
+			if ( ! key ) {
+				return;
 			}
+			( groups[ key ] = groups[ key ] || [] ).push( item );
 		} );
-		Array.prototype.forEach.call( rows, function ( row, idx ) {
-			var item = items[ idx ];
-			var cd = item && byKey[ item.key ];
+		var seen = {};
+		Array.prototype.forEach.call( rows, function ( row ) {
+			var link = row.querySelector( 'a.wc-block-components-product-name' ) || row.querySelector( 'a[href]' );
+			var key = link ? normUrl( link.getAttribute( 'href' ) || '' ) : '';
+			var scope = row.classList.contains( 'wc-block-cart-items__row' ) ? 'cart' : 'summary';
+			var item = null;
+			if ( key && groups[ key ] ) {
+				var n = seen[ scope + key ] || 0;
+				seen[ scope + key ] = n + 1;
+				item = groups[ key ][ n ] || null;
+			}
+			var cd = item && item.extensions && item.extensions.campaignbay;
+			if ( cd && ! ( cd.end && cd.text ) ) {
+				cd = null;
+			}
 			var holder = row.querySelector( '.wc-block-components-product-name' );
 			var existing = row.querySelector( '.campaignbay-countdown--block' );
 			if ( ! cd || ! holder ) {

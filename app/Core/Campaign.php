@@ -635,9 +635,10 @@ class Campaign {
 		$default['show_countdown']  = true;
 		$default['promote_enabled'] = false;
 		$default['promote_text']    = null;
-		$rules['show_countdown']    = 'required|boolean';
-		$rules['promote_enabled']   = 'required|boolean';
-		$rules['promote_text']      = 'nullable|string|max:500';
+		// Not 'required': empty settings, older clients and imports omit them; consumers default correctly.
+		$rules['show_countdown']  = 'nullable|boolean';
+		$rules['promote_enabled'] = 'nullable|boolean';
+		$rules['promote_text']    = 'nullable|string|max:500';
 
 		/**
 		 * Filters the settings validation rules for a campaign.

@@ -197,11 +197,13 @@ class Countdown extends Base {
 	 */
 	public function store_api_item_data( $cart_item ) {
 		$empty = array(
-			'end'      => 0,
-			'now'      => 0,
-			'campaign' => 0,
-			'text'     => '',
-			'expired'  => '',
+			'end'       => 0,
+			'now'       => 0,
+			'campaign'  => 0,
+			'key'       => '',
+			'permalink' => '',
+			'text'      => '',
+			'expired'   => '',
 		);
 		if ( ! $this->is_surface_enabled( 'cart' ) || ! is_array( $cart_item ) || empty( $cart_item['data'] ) || ! empty( $cart_item['is_campaignbay_free_product'] ) ) {
 			return $empty;
@@ -214,19 +216,21 @@ class Countdown extends Base {
 		if ( '' === trim( $format ) ) {
 			return $empty;
 		}
-		self::enqueue_assets();
+		// Assets are enqueued on page load (maybe_enqueue_for_cart); never from a Store API response.
 		$end_date = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $campaign->get_end_timestamp() );
 		return array(
-			'end'      => (int) $campaign->get_end_timestamp(),
-			'now'      => time(),
-			'campaign' => (int) $campaign->get_id(),
+			'end'       => (int) $campaign->get_end_timestamp(),
+			'now'       => time(),
+			'campaign'  => (int) $campaign->get_id(),
+			'key'       => isset( $cart_item['key'] ) ? (string) $cart_item['key'] : '',
+			'permalink' => (string) $cart_item['data']->get_permalink(),
 			// Plain text; the client builds the DOM with textContent. {countdown} is kept as a token.
-			'text'     => str_replace(
+			'text'      => str_replace(
 				array( '{end_date}', '{campaign_title}' ),
 				array( (string) $end_date, $campaign->get_title() ),
 				$format
 			),
-			'expired'  => (string) Common::get_instance()->get_settings( 'countdown_expired_message' ),
+			'expired'   => (string) Common::get_instance()->get_settings( 'countdown_expired_message' ),
 		);
 	}
 
@@ -246,11 +250,13 @@ class Countdown extends Base {
 			);
 		};
 		return array(
-			'end'      => $prop( 'integer', 'Countdown end (Unix timestamp).' ),
-			'now'      => $prop( 'integer', 'Server time (Unix timestamp).' ),
-			'campaign' => $prop( 'integer', 'Campaign ID.' ),
-			'text'     => $prop( 'string', 'Countdown format text with a {countdown} token.' ),
-			'expired'  => $prop( 'string', 'Message shown when the countdown ends.' ),
+			'end'       => $prop( 'integer', 'Countdown end (Unix timestamp).' ),
+			'now'       => $prop( 'integer', 'Server time (Unix timestamp).' ),
+			'campaign'  => $prop( 'integer', 'Campaign ID.' ),
+			'key'       => $prop( 'string', 'Cart item key.' ),
+			'permalink' => $prop( 'string', 'Product permalink.' ),
+			'text'      => $prop( 'string', 'Countdown format text with a {countdown} token.' ),
+			'expired'   => $prop( 'string', 'Message shown when the countdown ends.' ),
 		);
 	}
 
@@ -262,7 +268,20 @@ class Countdown extends Base {
 	 * @return void
 	 */
 	public function maybe_enqueue_for_cart() {
-		if ( is_admin() || ! $this->is_surface_enabled( 'cart' ) || ! function_exists( 'WC' ) || ! WC()->cart || WC()->cart->is_empty() ) {
+		if ( is_admin() || ! $this->is_surface_enabled( 'cart' ) ) {
+			return;
+		}
+		// Block cart/checkout fill their items client side (even from an empty server cart), so load
+		// the script whenever any active campaign could show a timer.
+		if ( ( function_exists( 'is_cart' ) && is_cart() ) || ( function_exists( 'is_checkout' ) && is_checkout() ) ) {
+			foreach ( CampaignManager::get_instance()->get_active_campaigns() as $campaign ) {
+				if ( self::campaign_has_countdown( $campaign ) ) {
+					self::enqueue_assets();
+					return;
+				}
+			}
+		}
+		if ( ! function_exists( 'WC' ) || ! WC()->cart || WC()->cart->is_empty() ) {
 			return;
 		}
 		foreach ( WC()->cart->get_cart() as $item ) {
@@ -328,6 +347,11 @@ class Countdown extends Base {
 		}
 		$settings = $campaign->get_settings();
 		if ( is_array( $settings ) && isset( $settings['show_countdown'] ) && false === filter_var( $settings['show_countdown'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) ) {
+			return false;
+		}
+		// The engine ignores dates when scheduling is off, so a stored end date is stale and there is
+		// no timer (a countdown needs a real end date).
+		if ( ! $campaign->get_schedule_enabled() ) {
 			return false;
 		}
 		$end = $campaign->get_end_timestamp();

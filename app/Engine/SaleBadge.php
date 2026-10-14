@@ -208,6 +208,8 @@ class SaleBadge extends Base {
 	 * @return array|null Array with 'percentage' and 'amount', or null.
 	 */
 	private function get_figures( $product ) {
+		// Quantity-tier-only products work too: PricingEngine::is_on_sale() returns true for them, so
+		// themes call woocommerce_sale_flash, and the tier pairs below produce the figures.
 		$pid = $product->get_id();
 		if ( array_key_exists( $pid, $this->figures_cache ) ) {
 			return $this->figures_cache[ $pid ];
