@@ -638,6 +638,10 @@ class PricingEngine extends Base {
 		if ( is_array( $discount_breakdown ) && ! empty( $discount_breakdown ) ) {
 			$this->discount_applied = true;
 		}
+		// Coupon-mode discounts (apply_as = coupon) are not part of the breakdown, but they are a CampaignBay discount too.
+		if ( is_array( $this->coupons ) && ! empty( $this->coupons ) ) {
+			$this->discount_applied = true;
+		}
 
 		add_action( 'woocommerce_before_calculate_totals', array( $this, 'before_calculate_totals' ), 20, 1 );
 	}
@@ -838,7 +842,51 @@ class PricingEngine extends Base {
 				continue;
 			}
 			$cart->remove_coupon( $code );
+			$this->drop_coupon_success_notice( $coupon );
 			$coupon->add_coupon_message( \WC_Coupon::E_WC_COUPON_INVALID_REMOVED );
+		}
+	}
+
+	/**
+	 * Drop WooCommerce's "Coupon code applied successfully." notice for a coupon that is being removed.
+	 *
+	 * WooCommerce adds that notice when the coupon is applied, before totals exist. Only one coupon is applied
+	 * per request, so one matching success notice is removed. Other notices are kept in their original order.
+	 *
+	 * @since 1.1.17
+	 * @param WC_Coupon $coupon The coupon being removed.
+	 * @return void
+	 */
+	private function drop_coupon_success_notice( $coupon ) {
+		if ( ! function_exists( 'wc_get_notices' ) || ! function_exists( 'wc_clear_notices' ) ) {
+			return;
+		}
+		$message = $coupon->get_coupon_message( \WC_Coupon::WC_COUPON_SUCCESS );
+		$notices = wc_get_notices();
+		if ( empty( $message ) || empty( $notices['success'] ) ) {
+			return;
+		}
+		$found = false;
+		foreach ( $notices['success'] as $index => $notice ) {
+			$text = is_array( $notice ) ? ( $notice['notice'] ?? '' ) : $notice;
+			if ( $text === $message ) {
+				unset( $notices['success'][ $index ] );
+				$found = true;
+				break;
+			}
+		}
+		if ( ! $found ) {
+			return;
+		}
+		wc_clear_notices();
+		foreach ( $notices as $type => $list ) {
+			foreach ( $list as $notice ) {
+				if ( is_array( $notice ) ) {
+					wc_add_notice( $notice['notice'] ?? '', $type, $notice['data'] ?? array() );
+				} else {
+					wc_add_notice( $notice, $type );
+				}
+			}
 		}
 	}
 
