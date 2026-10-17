@@ -146,6 +146,7 @@ class PricingEngine extends Base {
 
 		add_action( 'woocommerce_before_calculate_totals', array( $this, 'before_calculate_totals' ), 20, 1 );
 		add_action( 'woocommerce_after_calculate_totals', array( $this, 'after_calculate_totals' ), 20, 1 );
+		add_action( 'woocommerce_after_calculate_totals', array( $this, 'remove_stray_coupons' ), 99, 1 );
 
 		foreach ( $hooks as $hook ) {
 			$this->add_hook( ...$hook );
@@ -637,6 +638,10 @@ class PricingEngine extends Base {
 		if ( is_array( $discount_breakdown ) && ! empty( $discount_breakdown ) ) {
 			$this->discount_applied = true;
 		}
+		// Coupon-mode discounts (apply_as = coupon) are not part of the breakdown, but they are a CampaignBay discount too.
+		if ( is_array( $this->coupons ) && ! empty( $this->coupons ) ) {
+			$this->discount_applied = true;
+		}
 
 		add_action( 'woocommerce_before_calculate_totals', array( $this, 'before_calculate_totals' ), 20, 1 );
 	}
@@ -773,30 +778,116 @@ class PricingEngine extends Base {
 		if ( isset( $this->coupons[ $coupon->get_code() ] ) ) {
 			return true;
 		}
-		if ( ! $this->settings['cart_allowWcCouponStacking'] && $this->discount_applied ) {
-			/**
-			 * Filter whether a non-CampaignBay coupon may stay in the cart although coupon stacking is off.
-			 *
-			 * Runs inside the `woocommerce_coupon_is_valid` check, only when the "allow WooCommerce coupon
-			 * stacking" setting is disabled and a CampaignBay discount has already been applied. By default the
-			 * coupon is rejected (and WooCommerce removes it). Add-ons can return true to keep coupons that are
-			 * not discounts, for example activation codes that only unlock a campaign.
-			 *
-			 * @since 1.1.13
-			 * @hook campaignbay_allow_coupon_with_discount
-			 *
-			 * @param bool      $allow    Whether to allow the coupon. Default false.
-			 * @param string    $code     The coupon code.
-			 * @param WC_Coupon $coupon   The coupon being validated.
-			 * @param float     $discount The discount argument passed to `woocommerce_coupon_is_valid`.
-			 * @return bool True to keep the coupon valid, false to reject it.
-			 */
-			if ( apply_filters( 'campaignbay_allow_coupon_with_discount', false, $coupon->get_code(), $coupon, $discount ) ) {
-				return $value;
-			}
+		if ( $this->is_stray_coupon( $coupon, $discount ) ) {
 			return false;
 		}
 		return $value;
+	}
+
+	/**
+	 * Whether a coupon must be rejected because coupon stacking is off and a CampaignBay discount applies.
+	 *
+	 * @since 1.1.17
+	 * @param WC_Coupon $coupon   The coupon.
+	 * @param mixed     $discount The discount argument passed to `woocommerce_coupon_is_valid`.
+	 * @return bool True when the coupon is a stray coupon that must not stay.
+	 */
+	private function is_stray_coupon( $coupon, $discount = null ) {
+		if ( $this->settings['cart_allowWcCouponStacking'] || ! $this->discount_applied ) {
+			return false;
+		}
+		$code = $coupon->get_code();
+		if ( isset( $this->coupons[ $code ] ) || 0 === strpos( (string) $code, 'campaignbay' ) ) {
+			return false;
+		}
+		/**
+		 * Filter whether a non-CampaignBay coupon may stay in the cart although coupon stacking is off.
+		 *
+		 * Runs inside the `woocommerce_coupon_is_valid` check, only when the "allow WooCommerce coupon
+		 * stacking" setting is disabled and a CampaignBay discount has already been applied. By default the
+		 * coupon is rejected (and WooCommerce removes it). Add-ons can return true to keep coupons that are
+		 * not discounts, for example activation codes that only unlock a campaign.
+		 *
+		 * @since 1.1.13
+		 * @hook campaignbay_allow_coupon_with_discount
+		 *
+		 * @param bool      $allow    Whether to allow the coupon. Default false.
+		 * @param string    $code     The coupon code.
+		 * @param WC_Coupon $coupon   The coupon being validated.
+		 * @param float     $discount The discount argument passed to `woocommerce_coupon_is_valid`.
+		 * @return bool True to keep the coupon valid, false to reject it.
+		 */
+		return ! apply_filters( 'campaignbay_allow_coupon_with_discount', false, $code, $coupon, $discount );
+	}
+
+	/**
+	 * Remove stray WooCommerce coupons from the classic cart once totals show a CampaignBay discount.
+	 *
+	 * On the classic cart WooCommerce checks the applied coupons before totals are calculated, when the
+	 * CampaignBay discount is not known yet, so a stray coupon survives with a zero discount. Once totals are
+	 * calculated this removes it, as the block cart does. Removing a coupon does not trigger a recalculation,
+	 * and it carries no discount, so totals stay correct and no loop is possible.
+	 *
+	 * @since 1.1.17
+	 * @param WC_Cart $cart The cart object.
+	 * @return void
+	 */
+	public function remove_stray_coupons( $cart ) {
+		if ( $this->settings['cart_allowWcCouponStacking'] || ! $this->discount_applied || ! is_object( $cart ) || ! method_exists( $cart, 'get_applied_coupons' ) ) {
+			return;
+		}
+		foreach ( $cart->get_applied_coupons() as $code ) {
+			$coupon = new \WC_Coupon( $code );
+			if ( ! $this->is_stray_coupon( $coupon ) ) {
+				continue;
+			}
+			$cart->remove_coupon( $code );
+			$this->drop_coupon_success_notice( $coupon );
+			$coupon->add_coupon_message( \WC_Coupon::E_WC_COUPON_INVALID_REMOVED );
+		}
+	}
+
+	/**
+	 * Drop WooCommerce's "Coupon code applied successfully." notice for a coupon that is being removed.
+	 *
+	 * WooCommerce adds that notice when the coupon is applied, before totals exist. Only one coupon is applied
+	 * per request, so one matching success notice is removed. Other notices are kept in their original order.
+	 *
+	 * @since 1.1.17
+	 * @param WC_Coupon $coupon The coupon being removed.
+	 * @return void
+	 */
+	private function drop_coupon_success_notice( $coupon ) {
+		if ( ! function_exists( 'wc_get_notices' ) || ! function_exists( 'wc_clear_notices' ) ) {
+			return;
+		}
+		$message = $coupon->get_coupon_message( \WC_Coupon::WC_COUPON_SUCCESS );
+		$notices = wc_get_notices();
+		if ( empty( $message ) || empty( $notices['success'] ) ) {
+			return;
+		}
+		$found = false;
+		foreach ( $notices['success'] as $index => $notice ) {
+			$text = is_array( $notice ) ? ( $notice['notice'] ?? '' ) : $notice;
+			if ( $text === $message ) {
+				unset( $notices['success'][ $index ] );
+				$found = true;
+				break;
+			}
+		}
+		if ( ! $found ) {
+			return;
+		}
+		wc_clear_notices();
+		foreach ( $notices as $type => $list ) {
+			foreach ( $list as $notice ) {
+				if ( is_array( $notice ) ) {
+					wc_add_notice( $notice['notice'] ?? '', $type, $notice['data'] ?? array() );
+				} else {
+					wc_add_notice( $notice, $type );
+				}
+			}
+		}
 	}
 
 	/**
