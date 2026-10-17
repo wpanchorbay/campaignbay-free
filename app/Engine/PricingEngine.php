@@ -770,6 +770,26 @@ class PricingEngine extends Base {
 			return true;
 		}
 		if ( ! $this->settings['cart_allowWcCouponStacking'] && $this->discount_applied ) {
+			/**
+			 * Filter whether a non-CampaignBay coupon may stay in the cart although coupon stacking is off.
+			 *
+			 * Runs inside the `woocommerce_coupon_is_valid` check, only when the "allow WooCommerce coupon
+			 * stacking" setting is disabled and a CampaignBay discount has already been applied. By default the
+			 * coupon is rejected (and WooCommerce removes it). Add-ons can return true to keep coupons that are
+			 * not discounts, for example activation codes that only unlock a campaign.
+			 *
+			 * @since 1.1.13
+			 * @hook campaignbay_allow_coupon_with_discount
+			 *
+			 * @param bool      $allow    Whether to allow the coupon. Default false.
+			 * @param string    $code     The coupon code.
+			 * @param WC_Coupon $coupon   The coupon being validated.
+			 * @param float     $discount The discount argument passed to `woocommerce_coupon_is_valid`.
+			 * @return bool True to keep the coupon valid, false to reject it.
+			 */
+			if ( apply_filters( 'campaignbay_allow_coupon_with_discount', false, $coupon->get_code(), $coupon, $discount ) ) {
+				return $value;
+			}
 			return false;
 		}
 		return $value;
