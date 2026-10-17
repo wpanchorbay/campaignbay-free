@@ -661,6 +661,10 @@ class PricingEngine extends Base {
 			if ( ! empty( $cart_item['is_campaignbay_free_product'] ) ) {
 				continue;
 			}
+			// See Condition::check_cart_items() for the @hook docblock.
+			if ( apply_filters( 'campaignbay_cart_condition_skip_item', false, $cart_item ) ) {
+				continue;
+			}
 			$item_count += (int) $cart_item['quantity'];
 		}
 		$this->calculated_cart = array(

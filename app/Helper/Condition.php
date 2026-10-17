@@ -306,7 +306,16 @@ class Condition {
 		$operator   = $condition['operator'];
 		$value      = $condition['value'];
 		$cart       = PricingEngine::get_instance()->get_calculated_cart();
-		$cart_total = $cart['total'];
+		/**
+		 * Filters the cart total that cart_total conditions are compared against.
+		 *
+		 * @hook campaignbay_cart_total_for_condition
+		 * @since 1.1.13
+		 *
+		 * @param float|string $cart_total The calculated cart total (snapshot from PricingEngine).
+		 * @param array        $cart       The calculated cart array (keys: subtotal, total, item_count), not a WC_Cart.
+		 */
+		$cart_total = apply_filters( 'campaignbay_cart_total_for_condition', $cart['total'], $cart );
 		wpab_campaignbay_log( sprintf( 'Checking cart total condition: Cart Total (%s) %s Target Value (%s)', $cart_total, $operator, $value ), 'INFO' );
 		switch ( $operator ) {
 			case '>=':
@@ -357,6 +366,20 @@ class Condition {
 			// Count straight from the live cart, leaving out BOGO free lines.
 			foreach ( WC()->cart->get_cart() as $cart_item ) {
 				if ( ! empty( $cart_item['is_campaignbay_free_product'] ) ) {
+					continue;
+				}
+				/**
+				 * Filters whether a cart line is left out of the cart item count used by cart-level conditions.
+				 *
+				 * Also applied in PricingEngine::after_calculate_totals() when the cart snapshot is built.
+				 *
+				 * @hook campaignbay_cart_condition_skip_item
+				 * @since 1.1.13
+				 *
+				 * @param bool  $skip      Whether to skip the line. Default false.
+				 * @param array $cart_item The WooCommerce cart item array.
+				 */
+				if ( apply_filters( 'campaignbay_cart_condition_skip_item', false, $cart_item ) ) {
 					continue;
 				}
 				$item_count += (int) $cart_item['quantity'];
