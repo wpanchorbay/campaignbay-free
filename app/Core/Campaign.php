@@ -465,8 +465,8 @@ class Campaign {
 			'conditions'         => 'nullable|object',
 			'usage_limit'        => 'nullable|integer',
 		);
-		if ( true === $args['schedule_enabled'] ) {
-			if ( ( null === $args['start_datetime'] || '' === $args['start_datetime'] ) && ( null === $args['end_datetime'] || '' === $args['end_datetime'] ) ) {
+		if ( true === ( $args['schedule_enabled'] ?? false ) ) {
+			if ( ( null === ( $args['start_datetime'] ?? null ) || '' === ( $args['start_datetime'] ?? null ) ) && ( null === ( $args['end_datetime'] ?? null ) || '' === ( $args['end_datetime'] ?? null ) ) ) {
 				$rules['start_datetime'] = 'required|datetime';
 			}
 		}

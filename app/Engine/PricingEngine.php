@@ -300,7 +300,7 @@ class PricingEngine extends Base {
 			if ( isset( $meta['simple']['display_as_regular_price'] ) && true === $meta['simple']['display_as_regular_price'] ) {
 				$base_price = $quantity['base_price'];
 			}
-			if ( 'line_total' === $quantity['settings']['apply_as'] ) {
+			if ( 'line_total' === ( $quantity['settings']['apply_as'] ?? null ) ) {
 				$price = $quantity['price'];
 			}
 		} elseif ( isset( $meta['simple'] ) ) {
@@ -347,7 +347,7 @@ class PricingEngine extends Base {
 			if ( isset( $meta['simple']['display_as_regular_price'] ) && true === $meta['simple']['display_as_regular_price'] ) {
 				$base_price = $quantity['base_price'];
 			}
-			if ( 'line_total' === $quantity['settings']['apply_as'] ) {
+			if ( 'line_total' === ( $quantity['settings']['apply_as'] ?? null ) ) {
 				$price = $quantity['price'];
 			}
 		} elseif ( isset( $meta['simple'] ) ) {
@@ -661,6 +661,10 @@ class PricingEngine extends Base {
 			if ( ! empty( $cart_item['is_campaignbay_free_product'] ) ) {
 				continue;
 			}
+			// See Condition::check_cart_items() for the @hook docblock.
+			if ( apply_filters( 'campaignbay_cart_condition_skip_item', false, $cart_item ) ) {
+				continue;
+			}
 			$item_count += (int) $cart_item['quantity'];
 		}
 		$this->calculated_cart = array(
@@ -770,6 +774,26 @@ class PricingEngine extends Base {
 			return true;
 		}
 		if ( ! $this->settings['cart_allowWcCouponStacking'] && $this->discount_applied ) {
+			/**
+			 * Filter whether a non-CampaignBay coupon may stay in the cart although coupon stacking is off.
+			 *
+			 * Runs inside the `woocommerce_coupon_is_valid` check, only when the "allow WooCommerce coupon
+			 * stacking" setting is disabled and a CampaignBay discount has already been applied. By default the
+			 * coupon is rejected (and WooCommerce removes it). Add-ons can return true to keep coupons that are
+			 * not discounts, for example activation codes that only unlock a campaign.
+			 *
+			 * @since 1.1.13
+			 * @hook campaignbay_allow_coupon_with_discount
+			 *
+			 * @param bool      $allow    Whether to allow the coupon. Default false.
+			 * @param string    $code     The coupon code.
+			 * @param WC_Coupon $coupon   The coupon being validated.
+			 * @param float     $discount The discount argument passed to `woocommerce_coupon_is_valid`.
+			 * @return bool True to keep the coupon valid, false to reject it.
+			 */
+			if ( apply_filters( 'campaignbay_allow_coupon_with_discount', false, $coupon->get_code(), $coupon, $discount ) ) {
+				return $value;
+			}
 			return false;
 		}
 		return $value;

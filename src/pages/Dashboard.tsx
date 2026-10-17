@@ -18,6 +18,7 @@ import {
   Tooltip,
   Legend,
   ArcElement,
+  Filler,
   ChartOptions,
 } from "chart.js";
 import { Line, Doughnut, Bar } from "react-chartjs-2";
@@ -106,6 +107,7 @@ ChartJS.register(
   Tooltip,
   Legend,
   ArcElement,
+  Filler,
 );
 
 const Dashboard: FC = () => {
