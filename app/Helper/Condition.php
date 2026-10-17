@@ -302,10 +302,10 @@ class Condition {
 	 */
 	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 	public static function check_cart_total( $condition, $product = null ) {
-		$result     = true;
-		$operator   = $condition['operator'];
-		$value      = $condition['value'];
-		$cart       = PricingEngine::get_instance()->get_calculated_cart();
+		$result   = true;
+		$operator = $condition['operator'];
+		$value    = $condition['value'];
+		$cart     = PricingEngine::get_instance()->get_calculated_cart();
 		/**
 		 * Filters the cart total that cart_total conditions are compared against.
 		 *
