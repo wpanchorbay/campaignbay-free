@@ -300,7 +300,7 @@ class PricingEngine extends Base {
 			if ( isset( $meta['simple']['display_as_regular_price'] ) && true === $meta['simple']['display_as_regular_price'] ) {
 				$base_price = $quantity['base_price'];
 			}
-			if ( 'line_total' === $quantity['settings']['apply_as'] ) {
+			if ( 'line_total' === ( $quantity['settings']['apply_as'] ?? null ) ) {
 				$price = $quantity['price'];
 			}
 		} elseif ( isset( $meta['simple'] ) ) {
@@ -347,7 +347,7 @@ class PricingEngine extends Base {
 			if ( isset( $meta['simple']['display_as_regular_price'] ) && true === $meta['simple']['display_as_regular_price'] ) {
 				$base_price = $quantity['base_price'];
 			}
-			if ( 'line_total' === $quantity['settings']['apply_as'] ) {
+			if ( 'line_total' === ( $quantity['settings']['apply_as'] ?? null ) ) {
 				$price = $quantity['price'];
 			}
 		} elseif ( isset( $meta['simple'] ) ) {
