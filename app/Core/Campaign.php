@@ -1409,6 +1409,9 @@ class Campaign {
 		global $wpdb;
 		$campaigns_table = $wpdb->prefix . 'campaignbay_campaigns';
 
+		// MySQL evaluates single-table UPDATE assignments left to right, so by the time the
+		// `status` CASE runs, `usage_count` already holds the incremented value. Compare it
+		// directly (not `usage_count + 1`), otherwise a limit of N expires after N-1 orders.
 		//phpcs:ignore 
 		$result = $wpdb->query(
 			$wpdb->prepare(
@@ -1417,7 +1420,7 @@ class Campaign {
              SET 
                 usage_count = usage_count + 1,
                 status = CASE 
-                            WHEN usage_limit IS NOT NULL AND usage_limit > 0 AND (usage_count + 1) >= usage_limit 
+                            WHEN usage_limit IS NOT NULL AND usage_limit > 0 AND usage_count >= usage_limit 
                             THEN 'expired' 
                             ELSE status 
                          END
@@ -1464,6 +1467,8 @@ class Campaign {
 		global $wpdb;
 		$campaigns_table = $wpdb->prefix . 'campaignbay_campaigns';
 
+		// As in increment_usage_count(): the `status` CASE sees the already-decremented
+		// `usage_count`, so compare it directly (mirrors the local-data check below).
 		//phpcs:ignore 
 		$result = $wpdb->query(
 			$wpdb->prepare(
@@ -1476,7 +1481,7 @@ class Campaign {
                                 ELSE 0 
                              END,
                 status = CASE 
-                            WHEN usage_limit IS NOT NULL AND usage_limit > 0 AND (usage_count - 1) >= usage_limit 
+                            WHEN usage_limit IS NOT NULL AND usage_limit > 0 AND usage_count >= usage_limit 
                             THEN 'expired' 
                             ELSE status 
                          END
