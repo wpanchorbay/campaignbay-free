@@ -2,9 +2,9 @@
 Contributors: wpanchorbay, sankarsan
 Tags: discount manager, bulk discount, dynamic pricing, woocommerce, bogo
 Requires at least: 5.8
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.0
-Stable tag: 1.1.12
+Stable tag: 1.1.13
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -98,7 +98,7 @@ Need more advanced features? [Get CampaignBayPro](https://wpanchorbay.com/campai
 
 *   **BOGO Advanced** – Buy from Category A, get a discount on Category B.
 *   **Product In Cart Discounts** – Trigger discounts when specific products are in cart.
-*   **Advanced Conditions** – Target by cart total, order history, specific products in cart, and more.
+*   **Advanced Conditions** – Target by order history, specific products in cart, payment or shipping method, and more.
 *   **Priority Email Support** – Direct access to our development team.
 
 [Buy CampaignBayPro Now](https://wpanchorbay.com/campaignbay)
@@ -179,6 +179,22 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 12. Frontend: Cart Page – Strikethrough pricing and savings display.
 
 == Changelog ==
+
+= 1.1.13 =
+*   New: Countdown timers on product, shop, cart and via shortcode.
+*   New: CampaignBay sale badge, category/shop offer messages and campaign promo blurbs.
+*   New: Quantity-tier labels and a cards layout for the discount table.
+*   New: A fixed quantity discount can apply per unit or once to the whole line.
+*   New: Per-campaign minimum, maximum and step quantity limits.
+*   New: Product tag targeting, "guest vs logged-in" and "cart item quantity" conditions.
+*   New: "Most recently started wins" priority method.
+*   New: Dashboard 90-day, 1-year and custom date ranges.
+*   Fix: Fee-mode quantity discounts on tax-inclusive stores; empty and zero dates; tag lookup and tag names when reopening a campaign; block checkout countdown.
+*   Fix: Conditions on product-level rules are now honoured in the cart pass.
+*   Fix: The "show quantity table" setting is bound to the right option.
+*   Fix: Ordinary coupons are removed from the classic cart when stacking is off.
+*   Fix: PHP warnings on partial REST requests; dashboard chart fill warning.
+*   Dev: New filters for Pro/third-party extensions (coupons with discounts, cart condition items and totals).
 
 = 1.1.12 =
 *   Fix: Scheduled campaigns saved without a start date now activate immediately instead of getting stuck in "Scheduled" status forever.
@@ -285,6 +301,9 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 *   Initial release of CampaignBay.
 
 == Upgrade Notice ==
+
+= 1.1.13 =
+New countdown timers, sale badge and offer messages, quantity limits, tag targeting and extra conditions, plus several cart and checkout fixes. Recommended for all users. CampaignBay Pro users: CampaignBay Pro 1.1.0 requires this version.
 
 = 1.1.12 =
 Additional stability fixes for campaign scheduling, validation, and bulk actions. Recommended for all users.
