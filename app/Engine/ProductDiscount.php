@@ -169,8 +169,14 @@ class ProductDiscount {
 			if ( ! $campaign->is_applicable_to_product( $this->product ) ) {
 				continue;
 			}
+			$new_price = null;
+			$tier      = null;
 			if ( 'earlybird' === $campaign->get_type() ) {
-				$tier      = Helper::earlybird_current_tier( $campaign );
+				$tier = Helper::earlybird_current_tier( $campaign );
+				if ( null === $tier ) {
+					// All tiers are used up: this campaign gives no discount and must not compete.
+					continue;
+				}
 				$new_price = $this->calculate_earlybird_price( $tier, $base_price );
 			} elseif ( 'scheduled' === $campaign->get_type() ) {
 				$new_price = $this->calculate_scheduled_price( $campaign, $base_price );
@@ -179,7 +185,7 @@ class ProductDiscount {
 			if ( $this->is_better_price( $new_price, $best_price, $campaign, $applied_campaign ) ) {
 				$best_price       = $new_price;
 				$applied_campaign = $campaign;
-				$applied_tier     = $tier ?? null;
+				$applied_tier     = $tier;
 			}
 		}
 		if ( null !== $applied_campaign ) {
@@ -222,8 +228,8 @@ class ProductDiscount {
 				$data['type']  = $applied_campaign->get_discount_type() ?? null;
 			}
 			if ( 'earlybird' === $applied_campaign->get_type() ) {
-				$data['value'] = $applied_tier['value'];
-				$data['type']  = $applied_tier['type'];
+				$data['value'] = $applied_tier['value'] ?? null;
+				$data['type']  = $applied_tier['type'] ?? null;
 			}
 			$this->data['simple'] = $data;
 
@@ -369,6 +375,10 @@ class ProductDiscount {
 	 * @return float The calculated price.
 	 */
 	public function calculate_earlybird_price( $tier, $base_price ) {
+		if ( ! is_array( $tier ) ) {
+			// Exhausted (null) tier: no discount.
+			return $base_price;
+		}
 		$discount_type    = $tier['type'];
 		$discount_value   = $tier['value'];
 		$calculated_price = $base_price;
