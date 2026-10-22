@@ -321,7 +321,7 @@ class Admin {
 			 */
 			$admin_legacy_script = apply_filters( 'campaignbay_admin_legacy_script', CAMPAIGNBAY_URL . 'build/admin-legacy.js' );
 
-			wp_enqueue_script( CAMPAIGNBAY_PLUGIN_NAME, CAMPAIGNBAY_URL . 'build/admin-legacy.js', array(), $version, true );
+			wp_enqueue_script( CAMPAIGNBAY_PLUGIN_NAME, $admin_legacy_script, array(), $version, true );
 		}
 
 		/**
