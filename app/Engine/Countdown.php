@@ -10,6 +10,7 @@ namespace WpabCampaignBay\Engine;
 use WpabCampaignBay\Core\Base;
 use WpabCampaignBay\Core\Campaign;
 use WpabCampaignBay\Core\Common;
+use WpabCampaignBay\Helper\Helper;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -343,6 +344,10 @@ class Countdown extends Base {
 	 */
 	public static function campaign_has_countdown( $campaign ) {
 		if ( ! $campaign instanceof Campaign || 'active' !== $campaign->get_status() ) {
+			return false;
+		}
+		// A used-up Early Bird no longer discounts, so it must not advertise a timer.
+		if ( 'earlybird' === $campaign->get_type() && null === Helper::earlybird_current_tier( $campaign ) ) {
 			return false;
 		}
 		$settings = $campaign->get_settings();

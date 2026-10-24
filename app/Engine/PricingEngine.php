@@ -256,10 +256,15 @@ class PricingEngine extends Base {
 				$prices['regular_price'][ $key ] = $value['price'];
 			}
 		}
-		$min_price     = current( $prices['price'] );
-		$max_price     = end( $prices['price'] );
-		$min_reg_price = current( $prices['regular_price'] );
-		$max_reg_price = end( $prices['regular_price'] );
+		// The arrays are keyed by variation and no longer sorted once discounts are applied
+		// (a discounted later variation can be cheaper than an earlier one), so take true min/max.
+		if ( empty( $prices['price'] ) || empty( $prices['regular_price'] ) ) {
+			return $price_html;
+		}
+		$min_price     = min( array_map( 'floatval', $prices['price'] ) );
+		$max_price     = max( array_map( 'floatval', $prices['price'] ) );
+		$min_reg_price = min( array_map( 'floatval', $prices['regular_price'] ) );
+		$max_reg_price = max( array_map( 'floatval', $prices['regular_price'] ) );
 
 		if ( $min_price !== $max_price ) {
 			$price_html = wc_format_price_range( $min_price, $max_price );
