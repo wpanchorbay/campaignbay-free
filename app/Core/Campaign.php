@@ -101,11 +101,12 @@ class Campaign {
 	 * Creates a new campaign.
 	 *
 	 * @since 1.0.0
-	 * @param array $args The campaign arguments.
+	 * @param array $args        The campaign arguments.
+	 * @param int   $usage_count Optional. A previous usage count to carry over (used by the importer). Default 0.
 	 * @return Campaign The created campaign object.
 	 * @throws Exception If validation fails.
 	 */
-	public static function create( $args ) {
+	public static function create( $args, $usage_count = 0 ) {
 		// validating main data
 		$validator = new Validator( $args );
 		$rules     = self::get_validation_rules( $args );
@@ -128,6 +129,10 @@ class Campaign {
 		// validating tiers
 		$tmp_tiers = array();
 		if ( self::need_tier_validation( $data['type'] ) ) {
+			$tiers_error = self::get_missing_tiers_error( $data['type'], $data['tiers'] ?? null );
+			if ( is_wp_error( $tiers_error ) ) {
+				return $tiers_error;
+			}
 			foreach ( (array) $data['tiers'] as $tier ) {
 				$tier_validator = new Validator( $tier );
 				$tier_rules     = self::get_tiers_validation_rules( $data['type'] );
@@ -167,7 +172,20 @@ class Campaign {
 		$data['conditions'] = wp_json_encode( $validated_conditions ? $validated_conditions : array() );
 
 		// adding other default data
-		$data['usage_count']   = 0;
+		$data['usage_count'] = absint( $usage_count );
+		// A carried-over count that already spends the campaign means it is expired (as increment_usage_count() would
+		// decide). An inactive campaign keeps its status; an Early Bird is spent once its summed tier quantities are used.
+		$spent = isset( $data['usage_limit'] ) && (int) $data['usage_limit'] > 0 && $data['usage_count'] >= (int) $data['usage_limit'];
+		if ( ! $spent && 'earlybird' === ( $data['type'] ?? '' ) && ! empty( $tmp_tiers ) ) {
+			$tier_total = 0;
+			foreach ( $tmp_tiers as $tmp_tier ) {
+				$tier_total += absint( $tmp_tier['quantity'] ?? 0 );
+			}
+			$spent = $tier_total > 0 && $data['usage_count'] >= $tier_total;
+		}
+		if ( $spent && 'inactive' !== ( $data['status'] ?? 'active' ) ) {
+			$data['status'] = 'expired';
+		}
 		$data['date_created']  = current_time( 'mysql' );
 		$data['date_modified'] = current_time( 'mysql' );
 		$data['created_by']    = get_current_user_id();
@@ -263,6 +281,7 @@ class Campaign {
 	 * @param mixed $partial Description.
 	 */
 	public function update( $args, $partial = false ) {
+		$tiers_sent = array_key_exists( 'tiers', $args );
 		if ( $partial ) {
 			$args = array_merge( (array) $this->data, $args );
 		}
@@ -278,6 +297,11 @@ class Campaign {
 		// validating tiers
 		$tmp_tiers = array();
 		if ( self::need_tier_validation( $data['type'] ) ) {
+			// Only when the request carries tiers: an update that leaves them out keeps the stored ones.
+			$tiers_error = $tiers_sent ? self::get_missing_tiers_error( $data['type'], $data['tiers'] ?? null ) : null;
+			if ( is_wp_error( $tiers_error ) ) {
+				return $tiers_error;
+			}
 			foreach ( (array) $data['tiers'] as $tier ) {
 				$tier_validator = new Validator( $tier );
 				$tier_rules     = self::get_tiers_validation_rules( $data['type'] );
@@ -545,6 +569,44 @@ class Campaign {
 			$tier['label'] = '' === $label ? null : $label;
 		}
 		return $tier;
+	}
+
+	/**
+	 * Builds the validation error for a campaign type that needs at least one tier but got none.
+	 *
+	 * @since 1.2.0
+	 * @param string     $type  The type of the campaign.
+	 * @param array|null $tiers The submitted tiers.
+	 * @return WP_Error|null The error, or null when the tiers are fine or the type does not require any.
+	 */
+	private static function get_missing_tiers_error( $type, $tiers ) {
+		if ( ! empty( $tiers ) ) {
+			return null;
+		}
+		/**
+		 * Filters whether a campaign type must be saved with at least one tier.
+		 *
+		 * Only checked for types that need tier validation. A campaign without tiers of such a type saves but
+		 * never applies, so by default it is rejected for the listed types.
+		 *
+		 * @since 1.2.0
+		 * @hook campaignbay_campaign_requires_tiers
+		 *
+		 * @param bool   $required Whether at least one tier is required.
+		 * @param string $type     The type of the campaign being validated.
+		 */
+		if ( ! apply_filters( 'campaignbay_campaign_requires_tiers', in_array( $type, array( 'fixed_price', 'cart_fee' ), true ), $type ) ) {
+			return null;
+		}
+		$message = __( 'At least one tier is required.', 'campaignbay' );
+		return new WP_Error(
+			'rest_validation_error',
+			$message,
+			array(
+				'status'  => 400,
+				'details' => array( 'tiers' => array( 'message' => $message ) ),
+			)
+		);
 	}
 
 	/**
@@ -1467,6 +1529,18 @@ class Campaign {
 		global $wpdb;
 		$campaigns_table = $wpdb->prefix . 'campaignbay_campaigns';
 
+		// Was the campaign expired because it used up its usage limit? (Not manually, not by its end date.)
+		$usage_limit = isset( $this->data->usage_limit ) ? (int) $this->data->usage_limit : 0;
+		$was_spent   = 'expired' === $this->data->status && $usage_limit > 0 && (int) $this->data->usage_count >= $usage_limit;
+		if ( ! $was_spent && 'expired' === $this->data->status && 'earlybird' === $this->get_type() ) {
+			// An Early Bird is also spent once its summed tier quantities are used up.
+			$tier_total = 0;
+			foreach ( (array) $this->get_tiers() as $tier ) {
+				$tier_total += absint( is_array( $tier ) ? ( $tier['quantity'] ?? 0 ) : ( $tier->quantity ?? 0 ) );
+			}
+			$was_spent = $tier_total > 0 && (int) $this->data->usage_count >= $tier_total;
+		}
+
 		// As in increment_usage_count(): the `status` CASE sees the already-decremented
 		// `usage_count`, so compare it directly (mirrors the local-data check below).
 		//phpcs:ignore 
@@ -1500,6 +1574,21 @@ class Campaign {
 
 		if ( null !== $this->data->usage_limit && $this->data->usage_limit > 0 && $this->data->usage_count >= $this->data->usage_limit ) {
 			$this->data->status = 'expired';
+		} elseif ( $was_spent ) {
+			// The usage dropped back below the limit (e.g. an order was cancelled or refunded): give the campaign
+			// back, unless its schedule has ended in the meantime.
+			$end_timestamp   = $this->get_end_timestamp();
+			$start_timestamp = $this->get_start_timestamp();
+			if ( ! $this->get_schedule_enabled() || ! $end_timestamp || $end_timestamp > time() ) {
+				$new_status = ( $this->get_schedule_enabled() && $start_timestamp && $start_timestamp > time() ) ? 'scheduled' : 'active';
+				//phpcs:ignore
+				$reactivated = $wpdb->update( $campaigns_table, array( 'status' => $new_status ), array( 'id' => $this->id, 'status' => 'expired' ), array( '%s' ), array( '%d', '%s' ) );
+				if ( $reactivated ) {
+					$this->data->status = $new_status;
+					/** This action is documented in Campaign::update(). */
+					do_action( 'campaignbay_campaign_save', $this->id, $this );
+				}
+			}
 		}
 
 		wpab_campaignbay_log( 'Usage count decremented for campaign: #' . $this->get_id() . ' ' . $this->get_title() . ' - New count: ' . $this->data->usage_count, 'INFO' );

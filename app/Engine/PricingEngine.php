@@ -98,6 +98,22 @@ class PricingEngine extends Base {
 	private $calculated_cart = null;
 
 	/**
+	 * Signature of the cart contents the `$calculated_cart` snapshot was taken from.
+	 *
+	 * @since 1.2.0
+	 * @var string
+	 */
+	private $calculated_cart_signature = '';
+
+	/**
+	 * Same as the signature above, without the shipping choice and destination.
+	 *
+	 * @since 1.2.0
+	 * @var string
+	 */
+	private $calculated_cart_lines_signature = '';
+
+	/**
 	 * Constructor to define and build the hooks array.
 	 *
 	 * @since 1.0.0
@@ -125,6 +141,7 @@ class PricingEngine extends Base {
 		$hooks               = array(
 			array( 'filter', 'woocommerce_get_price_html', 'get_price_html', 20, 2 ),
 			array( 'filter', 'woocommerce_variable_price_html', 'get_variable_price_html', 20, 2 ),
+			array( 'filter', 'woocommerce_available_variation', 'available_variation_data', 20, 3 ),
 			array( 'filter', 'woocommerce_product_is_on_sale', 'is_on_sale', 20, 2 ),
 			array( 'action', $banner_position, 'display_product_discount_message', 20, 0 ),
 			array( 'action', $bulk_table_position, 'display_product_quantity_table', 20, 0 ),
@@ -222,14 +239,38 @@ class PricingEngine extends Base {
 				false
 			);
 		}
+		// Strike the price the discount was calculated from (as the cart does), not the regular price: with
+		// "calculate discount from sale price" the product's own sale price is the starting point.
 		$price_html = Woocommerce::get_price_html(
 			$price_html,
 			$product,
-			$meta['original_price'],
+			$meta['base_price'] ?? $meta['original_price'],
 			$meta['simple']['price'],
 			$meta['simple']['display_as_regular_price']
 		);
 		return $price_html;
+	}
+
+	/**
+	 * Make a variation's `display_price` (the number in the product form's `data-product_variations`)
+	 * match the discounted price that its `price_html` already shows.
+	 *
+	 * @since 1.2.0
+	 * @param array                $data      The variation data WooCommerce exposes to the product form.
+	 * @param WC_Product           $product   The variable product.
+	 * @param WC_Product_Variation $variation The variation.
+	 * @return array The variation data.
+	 */
+	public function available_variation_data( $data, $product, $variation ) {
+		if ( ! is_array( $data ) || ! is_object( $variation ) ) {
+			return $data;
+		}
+		$meta = Woocommerce::get_product( $variation->get_id() )->get_meta( 'campaignbay' );
+		if ( ! is_array( $meta ) || empty( $meta['on_discount'] ) || ! isset( $meta['simple']['price'] ) ) {
+			return $data;
+		}
+		$data['display_price'] = Woocommerce::get_display_price( $variation, $meta['simple']['price'] );
+		return $data;
 	}
 
 	/**
@@ -249,11 +290,13 @@ class PricingEngine extends Base {
 			return $price_html;
 		}
 
-		$prices = Woocommerce::get_variation_prices( $product );
+		// Display prices (incl. or excl. tax as the store shows them); the campaign prices are converted the same way.
+		$prices = Woocommerce::get_variation_prices( $product, true );
 		foreach ( $meta['simple'] as $key => $value ) {
-			$prices['price'][ $key ] = $value['price'];
+			$display_price           = Woocommerce::get_display_price( Woocommerce::get_product( $key ), $value['price'] );
+			$prices['price'][ $key ] = $display_price;
 			if ( null !== $value['display_as_regular_price'] && true === $value['display_as_regular_price'] ) {
-				$prices['regular_price'][ $key ] = $value['price'];
+				$prices['regular_price'][ $key ] = $display_price;
 			}
 		}
 		// The arrays are keyed by variation and no longer sorted once discounts are applied
@@ -300,7 +343,7 @@ class PricingEngine extends Base {
 		$base_price   = $meta['base_price'];
 		$price        = $base_price;
 		$as_reg_price = false;
-		if ( isset( $meta['quantity'] ) ) {
+		if ( CartDiscount::quantity_tier_applies( $meta ) ) {
 			$quantity = $meta['quantity'];
 			// seting simple discount as base price
 			if ( isset( $meta['simple']['display_as_regular_price'] ) && true === $meta['simple']['display_as_regular_price'] ) {
@@ -322,6 +365,8 @@ class PricingEngine extends Base {
 			$base_price,
 			$price,
 			$as_reg_price
+	,
+			'cart'
 		);
 		return $price_html;
 	}
@@ -347,7 +392,7 @@ class PricingEngine extends Base {
 
 		$as_reg_price = false;
 
-		if ( isset( $meta['quantity'] ) ) {
+		if ( CartDiscount::quantity_tier_applies( $meta ) ) {
 			$quantity = $meta['quantity'];
 			// seting simple discount as base price
 			if ( isset( $meta['simple']['display_as_regular_price'] ) && true === $meta['simple']['display_as_regular_price'] ) {
@@ -367,6 +412,8 @@ class PricingEngine extends Base {
 			$base_price * $cart_item['quantity'],
 			$price * $cart_item['quantity'],
 			$as_reg_price
+	,
+			'cart'
 		);
 		return $price_html;
 	}
@@ -433,11 +480,17 @@ class PricingEngine extends Base {
 	 * @return bool The is on sale flag.
 	 */
 	public function is_on_sale( $is_on_sale, $product ) {
+		$meta = Woocommerce::get_product( $product->get_id() )->get_meta( 'campaignbay' );
 		if ( $is_on_sale ) {
+			// A campaign price at or above the base price is not a sale: the product's own (native) sale price no
+			// longer applies, so do not let it show the "Sale!" badge.
+			if ( is_array( $meta ) && ! empty( $meta['on_discount'] ) && isset( $meta['is_on_sale'] ) && false === $meta['is_on_sale']
+				&& isset( $meta['simple']['price'], $meta['base_price'] ) && (float) $meta['simple']['price'] >= (float) $meta['base_price'] ) {
+				return false;
+			}
 			return $is_on_sale;
 		}
 
-		$meta = Woocommerce::get_product( $product->get_id() )->get_meta( 'campaignbay' );
 		if ( is_array( $meta ) && ! empty( $meta ) && isset( $meta['is_on_sale'] ) && true === $meta['is_on_sale'] ) {
 			return true;
 		}
@@ -637,6 +690,12 @@ class PricingEngine extends Base {
 	public function before_calculate_totals( $cart ) {
 		remove_action( 'woocommerce_before_calculate_totals', array( $this, 'before_calculate_totals' ), 20, 1 );
 		wpab_campaignbay_log( 'Before calculate totals: ', 'INFO' );
+		// The cart changed since the cart total snapshot was taken: forget it, so the cart level conditions are
+		// deferred again until the totals of the changed cart are known.
+		// Shipping is left out here: WooCommerce itself sets the chosen shipping method while calculating totals.
+		if ( $this->calculating_cart_total_for_cart_level_conditions && $this->get_cart_signature( $cart, false ) !== $this->calculated_cart_lines_signature ) {
+			$this->calculating_cart_total_for_cart_level_conditions = false;
+		}
 		$this->coupons           = CartDiscount::calculate_cart_discount( $cart );
 		$this->calculated_totals = true;
 		$discount_breakdown      = $cart->campaignbay_discount_breakdown ?? array();
@@ -677,11 +736,19 @@ class PricingEngine extends Base {
 			}
 			$item_count += (int) $cart_item['quantity'];
 		}
-		$this->calculated_cart = array(
-			'subtotal'   => $cart->get_subtotal(),
-			'total'      => $cart->get_total( 'edit' ),
-			'item_count' => $item_count,
-		);
+		// Snapshot the totals once per cart state. WooCommerce may calculate totals several times per request
+		// (classic cart, Store API); a later run already carries this campaign's discount and must not replace
+		// the snapshot, otherwise a cart total condition would flip between runs and between cart and block cart.
+		$signature = $this->get_cart_signature( $cart );
+		if ( null === $this->calculated_cart || $signature !== $this->calculated_cart_signature ) {
+			$this->calculated_cart           = array(
+				'subtotal'   => $cart->get_subtotal(),
+				'total'      => $cart->get_total( 'edit' ),
+				'item_count' => $item_count,
+			);
+			$this->calculated_cart_signature = $signature;
+			$this->calculated_cart_lines_signature = $this->get_cart_signature( $cart, false );
+		}
 		wpab_campaignbay_log( 'Cart level condition campaigns found for evaluation: ' . print_r( $this->cart_level_condition_campaigns, true ), 'INFO' );
 		wpab_campaignbay_log( 'Calculating cart total for cart level conditions', 'INFO' );
 
@@ -692,6 +759,49 @@ class PricingEngine extends Base {
 
 
 
+
+	/**
+	 * Builds a signature of what is in the cart (lines, quantities, shopper coupons and shipping).
+	 *
+	 * CampaignBay's own free lines and virtual coupons are left out, as they are results of the calculation.
+	 *
+	 * @since 1.2.0
+	 * @param WC_Cart $cart          The cart object.
+	 * @param bool    $with_shipping Whether the shipping choice and destination are part of the signature.
+	 * @return string The signature.
+	 */
+	private function get_cart_signature( $cart, $with_shipping = true ) {
+		$lines = array();
+		foreach ( $cart->get_cart() as $key => $cart_item ) {
+			if ( ! empty( $cart_item['is_campaignbay_free_product'] ) ) {
+				continue;
+			}
+			// See Condition::check_cart_items() for the @hook docblock.
+			if ( apply_filters( 'campaignbay_cart_condition_skip_item', false, $cart_item ) ) {
+				continue;
+			}
+			$lines[ $key ] = (int) $cart_item['quantity'];
+		}
+		// The snapshot total includes shipping and fees, so shipping choice and destination are part of the state.
+		$shipping = array();
+		if ( $with_shipping && function_exists( 'WC' ) && WC()->session ) {
+			$shipping[] = (array) WC()->session->get( 'chosen_shipping_methods', array() );
+		}
+		if ( $with_shipping && function_exists( 'WC' ) && WC()->customer ) {
+			$shipping[] = array(
+				WC()->customer->get_shipping_country(),
+				WC()->customer->get_shipping_state(),
+				WC()->customer->get_shipping_postcode(),
+			);
+		}
+		$coupons = array();
+		foreach ( $cart->get_applied_coupons() as $code ) {
+			if ( 0 !== strpos( (string) $code, 'campaignbay' ) ) {
+				$coupons[] = $code;
+			}
+		}
+		return md5( wp_json_encode( array( $lines, $coupons, $shipping ) ) );
+	}
 
 	/**
 	 * Validate fake coupon data.
@@ -765,7 +875,8 @@ class PricingEngine extends Base {
 	public function change_virtual_coupon_label( $label, $coupon_code ) {
 		$code = $coupon_code->get_code();
 		if ( isset( $this->coupons[ $code ] ) ) {
-			return $this->coupons[ $code ]['campaign_title'];
+			// WooCommerce echoes this label as-is, and the campaign title is admin-entered text, so escape it.
+			return esc_html( $this->coupons[ $code ]['campaign_title'] );
 		}
 		return $label;
 	}
@@ -813,7 +924,7 @@ class PricingEngine extends Base {
 		 * coupon is rejected (and WooCommerce removes it). Add-ons can return true to keep coupons that are
 		 * not discounts, for example activation codes that only unlock a campaign.
 		 *
-		 * @since 1.1.13
+		 * @since 1.2.0
 		 * @hook campaignbay_allow_coupon_with_discount
 		 *
 		 * @param bool      $allow    Whether to allow the coupon. Default false.
@@ -838,6 +949,16 @@ class PricingEngine extends Base {
 	 * @return void
 	 */
 	public function remove_stray_coupons( $cart ) {
+		// Our virtual coupons are rebuilt on every totals pass ($this->coupons). One that is still applied but was not
+		// rebuilt is left over from an earlier state (for example the campaign moved from coupon mode to fee), and would
+		// show as an empty "-0.00" row. This applies whatever the coupon stacking setting is.
+		if ( $this->calculated_totals && is_array( $this->coupons ) && is_object( $cart ) && method_exists( $cart, 'get_applied_coupons' ) ) {
+			foreach ( $cart->get_applied_coupons() as $code ) {
+				if ( 0 === strpos( (string) $code, 'campaignbay_' ) && ! isset( $this->coupons[ $code ] ) ) {
+					$cart->remove_coupon( $code );
+				}
+			}
+		}
 		if ( $this->settings['cart_allowWcCouponStacking'] || ! $this->discount_applied || ! is_object( $cart ) || ! method_exists( $cart, 'get_applied_coupons' ) ) {
 			return;
 		}

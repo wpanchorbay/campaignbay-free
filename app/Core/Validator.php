@@ -53,6 +53,26 @@ class Validator {
 	private $validated_data = array();
 
 	/**
+	 * Whether the field being validated carries a numeric type rule (`numeric` or `integer`).
+	 *
+	 * Size rules (`min`, `max`, ...) then compare a numeric string such as "3" by value, not by length.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @var bool
+	 */
+	private $numeric_field = false;
+
+	/**
+	 * Whether the field being validated carries the `required` rule.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @var bool
+	 */
+	private $required_field = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
@@ -76,8 +96,10 @@ class Validator {
 		$this->validated_data = array();
 
 		foreach ( $rules as $field => $rule_string ) {
-			$rules_for_field = explode( '|', $rule_string );
-			$value           = $this->data[ $field ] ?? null;
+			$rules_for_field     = explode( '|', $rule_string );
+			$this->numeric_field = in_array( 'numeric', $rules_for_field, true ) || in_array( 'integer', $rules_for_field, true );
+			$this->required_field = in_array( 'required', $rules_for_field, true );
+			$value               = $this->data[ $field ] ?? null;
 
 			// A field marked nullable skips its other rules when left empty, matching the "required" definition of empty.
 			$is_nullable = in_array( 'nullable', $rules_for_field, true );
@@ -174,6 +196,24 @@ class Validator {
 				}
 				break;
 
+			case 'boolean':
+				// Accepts true/false, 1/0 and their string spellings (what the admin app, the DB and exports send).
+				// An empty string is accepted only on a field that is not required; 'yes' / 'on' are rejected.
+				$allowed = array( true, false, 1, 0, '1', '0', 'true', 'false' );
+				if ( ! $this->required_field ) {
+					$allowed[] = '';
+				}
+				if ( ! is_null( $value ) && ! in_array( $value, $allowed, true ) ) {
+					$this->add_error( $field, __( 'This field must be true or false.', 'campaignbay' ) );
+				}
+				break;
+
+			case 'string':
+				if ( ! is_null( $value ) && ! is_string( $value ) ) {
+					$this->add_error( $field, __( 'This field must be a string.', 'campaignbay' ) );
+				}
+				break;
+
 			case 'array':
 				if ( ! is_null( $value ) && ! is_array( $value ) ) {
 					$this->add_error( $field, __( 'This field must be an array.', 'campaignbay' ) );
@@ -197,7 +237,7 @@ class Validator {
 
 			case 'max':
 				$max_val = (int) $param_str;
-				if ( is_string( $value ) && mb_strlen( $value ) > $max_val ) {
+				if ( is_string( $value ) && ! $this->is_numeric_string( $value ) && mb_strlen( $value ) > $max_val ) {
 					// translators: %d: maximum number of characters
 					$this->add_error( $field, sprintf( __( 'This field may not be greater than %d characters.', 'campaignbay' ), $max_val ) );
 				} elseif ( is_numeric( $value ) && (float) $value > $max_val ) {
@@ -208,7 +248,7 @@ class Validator {
 
 			case 'min':
 				$min_val = (int) $param_str;
-				if ( is_string( $value ) && mb_strlen( $value ) < $min_val ) {
+				if ( is_string( $value ) && ! $this->is_numeric_string( $value ) && mb_strlen( $value ) < $min_val ) {
 					// translators: %d: minimum number of characters
 					$this->add_error( $field, sprintf( __( 'This field must be at least %d characters.', 'campaignbay' ), $min_val ) );
 				} elseif ( is_numeric( $value ) && (float) $value < $min_val ) {
@@ -225,7 +265,7 @@ class Validator {
 
 				if ( $other_field && in_array( $other_value, $required_values, true ) ) {
 					$min_val = (int) array_pop( $rule_params );
-					if ( is_string( $value ) ) {
+					if ( is_string( $value ) && ! $this->is_numeric_string( $value ) ) {
 						if ( mb_strlen( $value ) < $min_val ) {
 
 							// translators: %d: minimum number of characters
@@ -282,6 +322,18 @@ class Validator {
 				}
 				break;
 		}
+	}
+
+	/**
+	 * Whether a string must be compared by its numeric value (the field has a numeric type rule and the string is a number).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $value The string value.
+	 * @return bool True when the string is a number on a numeric field.
+	 */
+	private function is_numeric_string( $value ) {
+		return $this->numeric_field && is_numeric( $value );
 	}
 
 	/**

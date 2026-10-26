@@ -306,6 +306,11 @@ class QuantityLimits extends Base {
 	 * @return array The filtered arguments.
 	 */
 	public function filter_quantity_input_args( $args, $product ) {
+		// The Store API derives the cart line limits from these arguments without any cart item context. A BOGO free
+		// line keeps its own limits, as in the filter_store_api_* guards.
+		if ( $this->is_free_cart_product( $product, $args ) ) {
+			return $args;
+		}
 		$limits = $this->get_limits( $product );
 		if ( null === $limits ) {
 			return $args;
@@ -424,6 +429,35 @@ class QuantityLimits extends Base {
 				wc_add_notice( $message, 'error' );
 			}
 		}
+	}
+
+	/**
+	 * Whether a product object is the product of a free line added by a BOGO campaign.
+	 *
+	 * Compares the object itself (not the product ID), so a paid line of the same product is not affected.
+	 *
+	 * @since 1.2.0
+	 * @access private
+	 * @param WC_Product $product The product.
+	 * @param array      $args    The quantity input arguments (may carry the cart item key in `input_name`).
+	 * @return bool True when the product belongs to a CampaignBay free cart line.
+	 */
+	private function is_free_cart_product( $product, $args = array() ) {
+		if ( ! function_exists( 'WC' ) || ! isset( WC()->cart ) || null === WC()->cart ) {
+			return false;
+		}
+		$cart_items = WC()->cart->get_cart();
+		// The classic cart input is named cart[<cart item key>][qty]: look the line up by its key.
+		if ( ! empty( $args['input_name'] ) && preg_match( '/^cart\[([^\]]+)\]/', (string) $args['input_name'], $matches ) ) {
+			return isset( $cart_items[ $matches[1] ] ) && ! empty( $cart_items[ $matches[1] ]['is_campaignbay_free_product'] );
+		}
+		// No cart key (Store API): fall back to the cart line holding this very product object.
+		foreach ( $cart_items as $cart_item ) {
+			if ( ! empty( $cart_item['is_campaignbay_free_product'] ) && isset( $cart_item['data'] ) && $cart_item['data'] === $product ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

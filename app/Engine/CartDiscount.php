@@ -167,12 +167,7 @@ class CartDiscount {
 					$cart->cart_contents[ $key ]['data']->set_price( $meta['simple']['price'] );
 				}
 
-				if (
-					isset( $meta['quantity'] ) && (
-						( self::cart_allow_campaign_stacking() || ! isset( $meta['simple'] ) ) ||
-						$meta['quantity']['price'] < $meta['simple']['price']
-					)
-				) {
+				if ( self::quantity_tier_applies( $meta ) ) {
 					// campaign stacking not allowed
 					if ( ! self::cart_allow_campaign_stacking() ) {
 						// seting orginal price as base price
@@ -351,6 +346,25 @@ class CartDiscount {
 		do_action( 'campaignbay_after_cart_discount_calculation', $cart );
 
 		return $cart->campaignbay['coupon'];
+	}
+
+	/**
+	 * Whether the quantity tier in the cart item metadata is the discount that gets charged.
+	 *
+	 * With campaign stacking on, or no simple discount, the tier always applies. With stacking off, the tier only
+	 * applies when it is cheaper than the simple discount. The cart totals and the cart line display must agree on this.
+	 *
+	 * @since 1.2.0
+	 * @param array $meta The CampaignBay metadata of a cart item.
+	 * @return bool True when the quantity tier price is the one charged.
+	 */
+	public static function quantity_tier_applies( $meta ) {
+		if ( ! is_array( $meta ) || ! isset( $meta['quantity'] ) ) {
+			return false;
+		}
+		return self::cart_allow_campaign_stacking() ||
+			! isset( $meta['simple']['price'] ) ||
+			$meta['quantity']['price'] < $meta['simple']['price'];
 	}
 
 	/**

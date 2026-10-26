@@ -310,7 +310,7 @@ class Condition {
 		 * Filters the cart total that cart_total conditions are compared against.
 		 *
 		 * @hook campaignbay_cart_total_for_condition
-		 * @since 1.1.13
+		 * @since 1.2.0
 		 *
 		 * @param float|string $cart_total The calculated cart total (snapshot from PricingEngine).
 		 * @param array        $cart       The calculated cart array (keys: subtotal, total, item_count), not a WC_Cart.
@@ -374,7 +374,7 @@ class Condition {
 				 * Also applied in PricingEngine::after_calculate_totals() when the cart snapshot is built.
 				 *
 				 * @hook campaignbay_cart_condition_skip_item
-				 * @since 1.1.13
+				 * @since 1.2.0
 				 *
 				 * @param bool  $skip      Whether to skip the line. Default false.
 				 * @param array $cart_item The WooCommerce cart item array.

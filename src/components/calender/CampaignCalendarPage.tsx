@@ -188,7 +188,6 @@ const CampaignCalendarPage: React.FC = () => {
   useEffect(() => {
     const month = searchParams.get("month");
     const year = searchParams.get("year");
-    console.log(month, year);
     if (month && year) {
       selectMonthAndYear(parseInt(month), parseInt(year));
     }

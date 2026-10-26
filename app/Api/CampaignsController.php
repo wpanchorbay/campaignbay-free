@@ -651,7 +651,7 @@ class CampaignsController extends ApiController {
 					'start_datetime'     => $campaign->get_start_datetime(),
 					'end_datetime'       => $campaign->get_end_datetime(),
 
-					'conditions'         => array(), // we dont need conditions for now
+					'conditions'         => $campaign->get_conditions(),
 					'settings'           => $campaign->get_settings(),
 					'usage_limit'        => $campaign->get_usage_limit(),
 				)
@@ -718,7 +718,7 @@ class CampaignsController extends ApiController {
 				'discount_value'     => isset( $campaign_data['discount_value'] ) ? floatval( $campaign_data['discount_value'] ) : 0,
 
 				'target_type'        => isset( $campaign_data['target_type'] ) ? sanitize_key( $campaign_data['target_type'] ) : 'entire_store',
-				'target_ids'         => isset( $campaign_data['target_ids'] ) && ! empty( $campaign_data['target_ids'] ) ? json_decode( $campaign_data['target_ids'], true ) : array(),
+				'target_ids'         => isset( $campaign_data['target_ids'] ) && ! empty( $campaign_data['target_ids'] ) ? ( is_string( $campaign_data['target_ids'] ) ? json_decode( $campaign_data['target_ids'], true ) : $campaign_data['target_ids'] ) : array(),
 				'is_exclude'         => isset( $campaign_data['is_exclude'] ) ? (bool) $campaign_data['is_exclude'] : false,
 				'exclude_sale_items' => isset( $campaign_data['exclude_sale_items'] ) ? $campaign_data['exclude_sale_items'] : false,
 
@@ -726,14 +726,14 @@ class CampaignsController extends ApiController {
 				'start_datetime'     => isset( $campaign_data['start_datetime'] ) && ! empty( $campaign_data['start_datetime'] ) ? sanitize_text_field( $campaign_data['start_datetime'] ) : null,
 				'end_datetime'       => isset( $campaign_data['end_datetime'] ) && ! empty( $campaign_data['end_datetime'] ) ? sanitize_text_field( $campaign_data['end_datetime'] ) : null,
 
-				'tiers'              => isset( $campaign_data['tiers'] ) && ! empty( $campaign_data['tiers'] ) ? $campaign_data['tiers'] : array(),
-				'conditions'         => isset( $campaign_data['conditions'] ) && ! empty( $campaign_data['conditions'] ) ? $campaign_data['conditions'] : null,
-				'settings'           => isset( $campaign_data['settings'] ) && ! empty( $campaign_data['settings'] ) ? $campaign_data['settings'] : null,
+				'tiers'              => isset( $campaign_data['tiers'] ) && ! empty( $campaign_data['tiers'] ) ? ( is_string( $campaign_data['tiers'] ) ? json_decode( $campaign_data['tiers'], true ) : $campaign_data['tiers'] ) : array(),
+				'conditions'         => isset( $campaign_data['conditions'] ) && ! empty( $campaign_data['conditions'] ) ? ( is_string( $campaign_data['conditions'] ) ? json_decode( $campaign_data['conditions'], true ) : $campaign_data['conditions'] ) : null,
+				'settings'           => isset( $campaign_data['settings'] ) && ! empty( $campaign_data['settings'] ) ? ( is_string( $campaign_data['settings'] ) ? json_decode( $campaign_data['settings'], true ) : $campaign_data['settings'] ) : null,
 
 				'usage_limit'        => isset( $campaign_data['usage_limit'] ) && is_numeric( $campaign_data['usage_limit'] ) ? absint( $campaign_data['usage_limit'] ) : null,
 				'usage_count'        => isset( $campaign_data['usage_count'] ) ? absint( $campaign_data['usage_count'] ) : 0, // Allow importing a previous usage count
 			);
-			$result = Campaign::create( $args );
+			$result = Campaign::create( $args, $args['usage_count'] );
 
 			if ( is_wp_error( $result ) ) {
 				++$failed_count;

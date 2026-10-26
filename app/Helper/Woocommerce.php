@@ -74,10 +74,14 @@ class Woocommerce
      * @param float $original_price The original price of the product.
      * @param float $discount_price The discount price of the product.
      * @param bool $display_as_regular_price Whether to display the price as the regular price.
+     * @param string $context Tax display context: 'shop' or 'cart'.
      * @return string The HTML for the price of the product.
      */
-    static function get_price_html($price_html, $product, $original_price, $discount_price, $display_as_regular_price = false)
+    static function get_price_html($price_html, $product, $original_price, $discount_price, $display_as_regular_price = false, $context = 'shop')
     {
+        // The prices passed in are stored (entered) prices; show them the way the store displays prices (incl. or excl. tax).
+        $original_price = self::get_display_price($product, $original_price, $context);
+        $discount_price = self::get_display_price($product, $discount_price, $context);
         if ($display_as_regular_price || $original_price <= $discount_price) {
             return self::format_price($discount_price);
         }
@@ -85,6 +89,27 @@ class Woocommerce
         if ($new_price_html)
             return $new_price_html;
         return $price_html;
+    }
+
+    /**
+     * Convert a stored price into the price the shop displays.
+     *
+     * Applies the "display prices" tax setting through wc_get_price_to_display(), which leaves the price
+     * unchanged when prices are entered and displayed on the same tax basis.
+     *
+     * @since 1.2.0
+     *
+     * @param \WC_Product $product The product the price belongs to.
+     * @param float|string $price   The stored price.
+     * @param string       $context Tax display context: 'shop' or 'cart' (uses the cart tax display setting).
+     * @return float|string The price to display.
+     */
+    static function get_display_price($product, $price, $context = 'shop')
+    {
+        if (is_object($product) && function_exists('wc_get_price_to_display') && is_numeric($price)) {
+            return (float) wc_get_price_to_display($product, array('price' => (float) $price, 'display_context' => 'cart' === $context ? 'cart' : 'shop'));
+        }
+        return $price;
     }
 
     /**
@@ -108,9 +133,11 @@ class Woocommerce
                 $type == 'percentage' ? 'product_message_format_percentage' : 'product_message_format_fixed'
             );
         }
+        // Plain text amount in the store's currency format (symbol position, separators, decimals).
+        $amount_off = function_exists('wc_price') ? html_entity_decode(wp_strip_all_tags(wc_price($value)), ENT_QUOTES, 'UTF-8') : $value . self::get_currency_symbol();
         return Helper::generate_message($format, array(
             '{percentage_off}' => $value,
-            '{amount_off}' => $value . self::get_currency_symbol(),
+            '{amount_off}' => $amount_off,
         ));
     }
 

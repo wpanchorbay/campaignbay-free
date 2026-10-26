@@ -353,6 +353,11 @@ class Helper {
 		$message_format = $tier['settings']['cart_quantity_message_format'] ?? '';
 		$type           = $tier['type'];
 		$value          = $tier['value'];
+		$amount_off     = $value;
+		if ( 'percentage' !== $type && function_exists( 'wc_price' ) ) {
+			// Fixed tiers are a currency amount: use the store's currency format, as plain text.
+			$amount_off = html_entity_decode( wp_strip_all_tags( wc_price( $value ) ), ENT_QUOTES, 'UTF-8' );
+		}
 		if ( '' === $message_format || null === $message_format ) {
 			$message_format = self::get_settings( 'percentage' === $type ? 'cart_quantity_message_format_percentage' : 'cart_quantity_message_format_fixed' );
 		}
@@ -366,7 +371,7 @@ class Helper {
 				'{remainging_quantity_for_next_offer}' => $tier['remaining'],
 				'{remaining_quantity_for_next_offer}'  => $tier['remaining'],
 				'{percentage_off}'                     => $value,
-				'{amount_off}'                         => $value,
+				'{amount_off}'                         => $amount_off,
 			)
 		);
 		return $message;
@@ -808,7 +813,7 @@ class Helper {
 	/**
 	 * Returns the quantity range text of a tier ("min - max", "min+" when open-ended).
 	 *
-	 * @since 1.1.13
+	 * @since 1.2.0
 	 * @param array $tier Tier data.
 	 * @return string Plain text range.
 	 */
@@ -824,7 +829,7 @@ class Helper {
 	/**
 	 * Renders the quantity tiers as clickable cards.
 	 *
-	 * @since 1.1.13
+	 * @since 1.2.0
 	 * @access public
 	 * @static
 	 *
@@ -916,7 +921,7 @@ class Helper {
 		/**
 		 * Filters the rendered quantity discount cards HTML.
 		 *
-		 * @since 1.1.13
+		 * @since 1.2.0
 		 * @param string $html       Cards markup (escaped, sanitized afterwards with wp_kses).
 		 * @param array  $tiers      Tiers rendered.
 		 * @param mixed  $base_price Base price.

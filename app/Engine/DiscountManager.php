@@ -88,8 +88,12 @@ class DiscountManager extends Base {
 	 * @return object The product object with discount data added.
 	 */
 	public function add_discount_data( $product, $product_id ) {
-		$product = ProductDiscount::create( $product )->apply_discounts()->get_product();
+		$discount = ProductDiscount::create( $product );
+		// A missing or deleted product (create() returns null) simply gets no discount.
+		if ( null === $discount ) {
+			return $product;
+		}
 
-		return $product;
+		return $discount->apply_discounts()->get_product();
 	}
 }

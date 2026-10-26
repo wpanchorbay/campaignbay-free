@@ -4,7 +4,7 @@ Tags: discount manager, bulk discount, dynamic pricing, woocommerce, bogo
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.0
-Stable tag: 1.1.13
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -180,7 +180,7 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 
 == Changelog ==
 
-= 1.1.13 =
+= 1.2.0 =
 *   New: Countdown timers on product, shop, cart and via shortcode.
 *   New: CampaignBay sale badge, category/shop offer messages and campaign promo blurbs.
 *   New: Quantity-tier labels and a cards layout for the discount table.
@@ -194,7 +194,22 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 *   Fix: The "show quantity table" setting is bound to the right option.
 *   Fix: Ordinary coupons are removed from the classic cart when stacking is off.
 *   Fix: PHP warnings on partial REST requests; dashboard chart fill warning.
-*   Dev: New filters for Pro/third-party extensions (coupons with discounts, cart condition items and totals).
+*   Fix: An Early Bird tier whose uses are spent no longer gives a discount, warnings or a sale badge.
+*   Fix: A usage limit of N now expires the campaign after N orders, not N-1.
+*   Fix: The variable product price range uses the true minimum and maximum.
+*   Fix: The admin script URL filtered for the legacy build is now the one enqueued.
+*   Fix: No countdown timer for an Early Bird whose tiers are used up.
+*   Fix: Campaign fields now validate as true booleans and strings; REST clients must send real booleans (true/false, 1/0) rather than values like "yes".
+*   Fix: Product and cart prices now respect the "prices entered with/without tax" and display-tax settings for quantity and fixed-price discounts.
+*   Fix: Importing a campaign keeps its usage count and only expires it when the limit is really reached; cancelling an order re-activates a campaign that expired from its usage limit.
+*   Fix: Duplicating a campaign now keeps its conditions.
+*   Fix: Campaign labels shown on the cart's discount line are escaped (XSS hardening).
+*   Fix: The "Sale!" badge no longer shows when a fixed-price campaign leaves the price at or above the regular price.
+*   Fix: Stale CampaignBay coupons are removed from the cart after the campaign changes.
+*   Fix: Cart-total conditions are evaluated once per cart state, so shipping changes refresh them correctly.
+*   Fix: Quantity-discount, fixed-price and cart-fee campaigns can no longer be saved with no tiers.
+*   Fix: A deleted product in the cart no longer causes a PHP error; importing campaigns with array fields no longer returns a server error.
+*   Dev: New filters for Pro/third-party extensions (coupons with discounts, cart condition items and totals, campaign types that require tiers).
 
 = 1.1.12 =
 *   Fix: Scheduled campaigns saved without a start date now activate immediately instead of getting stuck in "Scheduled" status forever.
@@ -302,7 +317,7 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 
 == Upgrade Notice ==
 
-= 1.1.13 =
+= 1.2.0 =
 New countdown timers, sale badge and offer messages, quantity limits, tag targeting and extra conditions, plus several cart and checkout fixes. Recommended for all users. CampaignBay Pro users: CampaignBay Pro 1.1.0 requires this version.
 
 = 1.1.12 =
