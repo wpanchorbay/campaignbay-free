@@ -5,7 +5,7 @@
  * Source URI:        https://github.com/dipta-sdd/campaignbay
  * Description:       Automated Discount Campaigns & Flash Sales for WooCommerce.
  * Requires at least: 5.8
- * Requires PHP:      7.0
+ * Requires PHP:      7.4
  * Requires Plugins:  woocommerce
  * WC requires at least: 6.1
  * Version:           1.2.0

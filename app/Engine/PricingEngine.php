@@ -646,7 +646,6 @@ class PricingEngine extends Base {
 			if ( true === wpab_campaignbay_get_value( $meta['simple'], 'display_as_regular_price', false ) ) {
 				return;
 			}
-			wpab_campaignbay_log( '________ simple: ' . print_r( $meta['simple'], true ), 'INFO' );
 			if ( false === wpab_campaignbay_get_value( $meta['simple'], 'show_product_message', true ) ) {
 				return;
 			}
@@ -828,7 +827,6 @@ class PricingEngine extends Base {
 			$this->calculated_cart_signature = $signature;
 			$this->calculated_cart_lines_signature = $this->get_cart_signature( $cart, false );
 		}
-		wpab_campaignbay_log( 'Cart level condition campaigns found for evaluation: ' . print_r( $this->cart_level_condition_campaigns, true ), 'INFO' );
 		wpab_campaignbay_log( 'Calculating cart total for cart level conditions', 'INFO' );
 
 		$this->calculating_cart_total_for_cart_level_conditions = true;

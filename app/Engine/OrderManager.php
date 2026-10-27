@@ -7,6 +7,10 @@
 
 namespace WpabCampaignBay\Engine;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use WC_Order;
 use WpabCampaignBay\Core\Base;
 use WpabCampaignBay\Core\Campaign;
@@ -100,15 +104,15 @@ class OrderManager extends Base {
 		$table_name = $wpdb->prefix . 'campaignbay_logs';
 
 		$sql = "SELECT campaign_id FROM $table_name WHERE order_id = %d";
-		// phpcs:ignore 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$campaign_ids = $wpdb->get_results(
 			$wpdb->prepare(
-				//phpcs:ignore 
-				$sql,
+				$sql, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				$order_id
 			)
 		);
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->delete(
 			$table_name,
 			array( 'order_id' => $order_id ),
