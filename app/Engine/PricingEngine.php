@@ -98,6 +98,14 @@ class PricingEngine extends Base {
 	private $calculated_cart = null;
 
 	/**
+	 * Discount breakdown captured when checkout started, before an account may be created.
+	 *
+	 * @since 1.2.1
+	 * @var array
+	 */
+	private $checkout_discount_breakdown = array();
+
+	/**
 	 * Signature of the cart contents the `$calculated_cart` snapshot was taken from.
 	 *
 	 * @since 1.2.0
@@ -157,6 +165,7 @@ class PricingEngine extends Base {
 			array( 'filter', 'woocommerce_cart_item_subtotal', 'cart_item_subtotal', 10, 3 ),
 			array( 'filter', 'woocommerce_cart_item_name', 'cart_item_name', 10, 3 ),
 			array( 'action', 'woocommerce_after_cart_item_quantity_update', 'after_cart_item_quantity_update', 10, 4 ),
+			array( 'action', 'woocommerce_checkout_process', 'snapshot_discount_breakdown', 10, 0 ),
 			array( 'action', 'woocommerce_checkout_create_order', 'save_discount_breakdown_to_order_meta', 10, 2 ),
 			array( 'action', 'woocommerce_store_api_checkout_update_order_meta', 'save_discount_breakdown_to_order_meta', 10, 1 ),
 		);
@@ -164,6 +173,7 @@ class PricingEngine extends Base {
 		add_action( 'woocommerce_before_calculate_totals', array( $this, 'before_calculate_totals' ), 20, 1 );
 		add_action( 'woocommerce_after_calculate_totals', array( $this, 'after_calculate_totals' ), 20, 1 );
 		add_action( 'woocommerce_after_calculate_totals', array( $this, 'remove_stray_coupons' ), 99, 1 );
+		add_action( 'woocommerce_after_calculate_totals', array( $this, 'remember_discount_breakdown' ), 100, 1 );
 
 		foreach ( $hooks as $hook ) {
 			$this->add_hook( ...$hook );
@@ -173,22 +183,17 @@ class PricingEngine extends Base {
 
 
 	/**
-	 * Save the discount breakdown to the order meta.
+	 * Discount breakdown of the cart as it is priced right now.
 	 *
-	 * @since 1.0.0
-	 * @hook woocommerce_checkout_create_order
-	 * @hook woocommerce_store_api_checkout_update_order_meta
-	 * @param WC_Order $order The order object.
-	 * @param array    $data The order data.
+	 * @since 1.2.1
+	 * @param WC_Cart $cart The cart object.
+	 * @return array The breakdown, keyed by campaign id.
 	 */
-	public function save_discount_breakdown_to_order_meta( $order, $data = null ) {
-		// The cart object is available globally via WC()->cart at this point.
-		$cart = WC()->cart;
-		if ( ! $cart ) {
-			return;
-		}
-
+	private function build_discount_breakdown( $cart ) {
 		$discount_breakdown = $cart->campaignbay_discount_breakdown ?? array();
+		if ( ! is_array( $discount_breakdown ) ) {
+			$discount_breakdown = array();
+		}
 
 		$applied_coupons = $cart->get_coupon_discount_totals();
 		$our_coupons     = $this->coupons;
@@ -210,6 +215,80 @@ class PricingEngine extends Base {
 				$discount_breakdown[ $campaign_id ]['discount']  = $discount_breakdown[ $campaign_id ]['discount'] + $value;
 			}
 		}
+		return $discount_breakdown;
+	}
+
+	/**
+	 * Keep the discount breakdown of the latest totals pass in the session.
+	 *
+	 * The checkout request that places the order only loads the cart from the session; its breakdown is not rebuilt
+	 * until WooCommerce recalculates the totals, which for an account created at checkout happens after login.
+	 *
+	 * @since 1.2.1
+	 * @hook woocommerce_after_calculate_totals
+	 * @param WC_Cart $cart The cart object.
+	 * @return void
+	 */
+	public function remember_discount_breakdown( $cart ) {
+		if ( ! is_object( $cart ) || ! function_exists( 'WC' ) || ! WC()->session ) {
+			return;
+		}
+		WC()->session->set(
+			'campaignbay_discount_breakdown',
+			array(
+				'breakdown' => $this->build_discount_breakdown( $cart ),
+				'total'     => (float) $cart->get_total( 'edit' ),
+				'guest'     => ! is_user_logged_in(),
+			)
+		);
+	}
+
+	/**
+	 * Take the discount breakdown as the shopper was priced, before checkout creates their account.
+	 *
+	 * Creating the account logs the shopper in and WooCommerce then recalculates the cart, which can drop
+	 * a guest-only discount from the live breakdown although the order is already priced with it.
+	 *
+	 * @since 1.2.1
+	 * @hook woocommerce_checkout_process
+	 */
+	public function snapshot_discount_breakdown() {
+		$saved = WC()->session ? WC()->session->get( 'campaignbay_discount_breakdown' ) : array();
+		// Only a snapshot taken while the shopper is still a guest can be followed by an account created at checkout.
+		$this->checkout_discount_breakdown = array();
+		if ( is_array( $saved ) && ! empty( $saved['breakdown'] ) && is_array( $saved['breakdown'] ) && ! is_user_logged_in() ) {
+			$this->checkout_discount_breakdown = array(
+				'breakdown' => $saved['breakdown'],
+				'total'     => (float) ( $saved['total'] ?? 0 ),
+			);
+		}
+	}
+
+	/**
+	 * Save the discount breakdown to the order meta.
+	 *
+	 * @since 1.0.0
+	 * @hook woocommerce_checkout_create_order
+	 * @hook woocommerce_store_api_checkout_update_order_meta
+	 * @param WC_Order $order The order object.
+	 * @param array    $data The order data.
+	 */
+	public function save_discount_breakdown_to_order_meta( $order, $data = null ) {
+		// The cart object is available globally via WC()->cart at this point.
+		$cart = WC()->cart;
+		if ( ! $cart ) {
+			return;
+		}
+
+		$discount_breakdown = $this->build_discount_breakdown( $cart );
+		// The account created during checkout recalculated the cart: fall back to what was priced before it.
+		// Only when the account creation is what emptied it: the shopper is now logged in and the order still
+		// carries the price the snapshot was priced at (a repriced order, e.g. a used up tier, has no discount).
+		$snapshot = $this->checkout_discount_breakdown;
+		if ( empty( $discount_breakdown ) && ! empty( $snapshot['breakdown'] ) && is_user_logged_in() && abs( (float) $cart->get_total( 'edit' ) - $snapshot['total'] ) < 0.005 ) {
+			$discount_breakdown = $snapshot['breakdown'];
+		}
+		$this->checkout_discount_breakdown = array();
 
 		// Save the entire breakdown array to a single meta key on the order.
 		$order->update_meta_data( '_campaignbay_discount_breakdown', $discount_breakdown );

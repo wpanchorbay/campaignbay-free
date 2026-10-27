@@ -326,9 +326,15 @@ class Campaign {
 			return $validated_settings;
 		}
 		// validating conditions
-		$validated_conditions = $this->get_validated_conditions( $data['conditions'] ?? array(), $data['type'] );
-		if ( is_wp_error( $validated_conditions ) ) {
-			return $validated_conditions;
+		// Only when the request carries conditions: get_validated_conditions() always returns a
+		// non-empty array (it defaults match_type), so without this guard a PUT that omits the key
+		// would overwrite the stored rules. An explicit empty value still clears them.
+		$validated_conditions = null;
+		if ( array_key_exists( 'conditions', $args ) ) {
+			$validated_conditions = $this->get_validated_conditions( $data['conditions'] ?? array(), $data['type'] );
+			if ( is_wp_error( $validated_conditions ) ) {
+				return $validated_conditions;
+			}
 		}
 		// json encoding json fields. The fallback branches re-encode $this->data's existing
 		// value, which is normally already-decoded (Campaign::load_data() decodes it) but isn't
@@ -595,7 +601,7 @@ class Campaign {
 		 * @param bool   $required Whether at least one tier is required.
 		 * @param string $type     The type of the campaign being validated.
 		 */
-		if ( ! apply_filters( 'campaignbay_campaign_requires_tiers', in_array( $type, array( 'fixed_price', 'cart_fee' ), true ), $type ) ) {
+		if ( ! apply_filters( 'campaignbay_campaign_requires_tiers', in_array( $type, array( 'fixed_price' ), true ), $type ) ) {
 			return null;
 		}
 		$message = __( 'At least one tier is required.', 'campaignbay' );
