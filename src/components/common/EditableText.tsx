@@ -29,6 +29,7 @@ export const EditableText: React.FC<EditableTextProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [localValue, setLocalValue] = useState(value ?? "");
   const inputRef = useRef<HTMLInputElement>(null);
+  const cancelled = useRef(false);
 
   // Sync local state when prop value changes
   useEffect(() => {
@@ -47,6 +48,7 @@ export const EditableText: React.FC<EditableTextProps> = ({
     if (e.key === "Enter") {
       handleSave();
     } else if (e.key === "Escape") {
+      cancelled.current = true;
       setLocalValue(value ?? "");
       setIsEditing(false);
       inputRef.current?.blur();
@@ -60,6 +62,12 @@ export const EditableText: React.FC<EditableTextProps> = ({
   };
 
   const onBlur = () => {
+    // The blur raised by Escape must not save the text that was being edited.
+    if (cancelled.current) {
+      cancelled.current = false;
+      setIsEditing(false);
+      return;
+    }
     // Trigger save on blur
     handleSave();
   };

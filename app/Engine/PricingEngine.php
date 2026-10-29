@@ -75,6 +75,20 @@ class PricingEngine extends Base {
 	 */
 	private $calculated_totals = false;
 
+	/**
+	 * True while the cart is being priced just to validate a coupon in a REST request.
+	 *
+	 * @var bool
+	 */
+	private $pricing_for_coupon_validation = false;
+
+	/**
+	 * True once the cart was priced just to validate a coupon in a REST request.
+	 *
+	 * @var bool
+	 */
+	private $pricing_ran_for_coupon_validation = false;
+
 
 	/**
 	 * The cart level condition campaigns array.
@@ -151,6 +165,8 @@ class PricingEngine extends Base {
 			array( 'filter', 'woocommerce_variable_price_html', 'get_variable_price_html', 20, 2 ),
 			array( 'filter', 'woocommerce_available_variation', 'available_variation_data', 20, 3 ),
 			array( 'filter', 'woocommerce_product_is_on_sale', 'is_on_sale', 20, 2 ),
+			array( 'filter', 'woocommerce_product_get_price', 'store_api_product_price', 20, 2 ),
+			array( 'filter', 'woocommerce_product_variation_get_price', 'store_api_product_price', 20, 2 ),
 			array( 'action', $banner_position, 'display_product_discount_message', 20, 0 ),
 			array( 'action', $bulk_table_position, 'display_product_quantity_table', 20, 0 ),
 
@@ -913,8 +929,8 @@ class PricingEngine extends Base {
 				'customer_email'             => '',
 				'discount_type'              => $this->coupons[ $coupon_code ]['type'],
 			);
-		} elseif ( false === $this->calculated_totals && is_string( $coupon_code ) && strlen( $coupon_code ) >= 11 && 'campaignbay' === substr( $coupon_code, 0, 11 ) ) {
-			// before calculating total
+		} elseif ( false === $this->calculated_totals && is_string( $coupon_code ) && strlen( $coupon_code ) >= 11 && 'campaignbay' === substr( $coupon_code, 0, 11 ) && $this->is_applied_in_cart( $coupon_code ) ) {
+			// Before calculating totals: a virtual coupon restored from the session is still in the cart. A code a shopper just typed is not, so it stays unknown to WooCommerce.
 			$data = array(
 				'id'                         => $coupon_code,
 				'amount'                     => 0,
@@ -939,6 +955,49 @@ class PricingEngine extends Base {
 			);
 		}
 		return $data;
+	}
+
+	/**
+	 * Show the campaign price in Store API product responses (block product listings).
+	 *
+	 * The Store API reads `$product->get_price()`, which never sees a campaign. Only requests to the Store API
+	 * products routes are touched; the cart and the classic storefront price products their own way.
+	 *
+	 * @since 1.2.1
+	 * @param string|float $price   The product price.
+	 * @param WC_Product   $product The product.
+	 * @return string|float The price.
+	 */
+	public function store_api_product_price( $price, $product ) {
+		static $busy = false;
+		if ( $busy || ! is_object( $product ) || ! function_exists( 'WC' ) || ! WC()->is_rest_api_request() ) {
+			return $price;
+		}
+		$uri = isset( $_SERVER['REQUEST_URI'] ) ? rawurldecode( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) : '';
+		if ( false === strpos( $uri, 'wc/store' ) || false === strpos( $uri, '/products' ) ) {
+			return $price;
+		}
+		$busy = true;
+		$meta = Woocommerce::get_product( $product->get_id() )->get_meta( 'campaignbay' );
+		$busy = false;
+		if ( is_array( $meta ) && ! empty( $meta['on_discount'] ) && isset( $meta['simple']['price'] ) && is_numeric( $meta['simple']['price'] ) ) {
+			return $meta['simple']['price'];
+		}
+		return $price;
+	}
+
+	/**
+	 * Whether a coupon code is already applied to the current cart.
+	 *
+	 * @since 1.2.1
+	 * @param string $coupon_code The coupon code.
+	 * @return bool
+	 */
+	private function is_applied_in_cart( $coupon_code ) {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return false;
+		}
+		return in_array( wc_format_coupon_code( $coupon_code ), WC()->cart->get_applied_coupons(), true );
 	}
 
 	/**
@@ -978,6 +1037,30 @@ class PricingEngine extends Base {
 	}
 
 	/**
+	 * Make sure the cart is priced before a coupon is validated in a REST (Store API) request.
+	 *
+	 * The Store API validates a coupon being applied before any totals exist in that request, so a CampaignBay
+	 * discount is not known yet and a stray coupon would be accepted. Pricing the cart first makes the check match
+	 * the classic cart. It only runs once, for REST requests, and never while totals are being calculated.
+	 *
+	 * @since 1.2.1
+	 * @return void
+	 */
+	private function ensure_totals_for_rest_coupon_validation() {
+		if ( $this->calculated_totals || $this->pricing_for_coupon_validation || ! function_exists( 'WC' ) || ! WC()->is_rest_api_request() ) {
+			return;
+		}
+		$cart = WC()->cart;
+		if ( ! $cart || $cart->is_empty() ) {
+			return;
+		}
+		$this->pricing_for_coupon_validation = true;
+		$cart->calculate_totals();
+		$this->pricing_for_coupon_validation = false;
+		$this->pricing_ran_for_coupon_validation = true;
+	}
+
+	/**
 	 * Whether a coupon must be rejected because coupon stacking is off and a CampaignBay discount applies.
 	 *
 	 * @since 1.1.17
@@ -986,7 +1069,15 @@ class PricingEngine extends Base {
 	 * @return bool True when the coupon is a stray coupon that must not stay.
 	 */
 	private function is_stray_coupon( $coupon, $discount = null ) {
-		if ( $this->settings['cart_allowWcCouponStacking'] || ! $this->discount_applied ) {
+		if ( $this->settings['cart_allowWcCouponStacking'] ) {
+			return false;
+		}
+		$this->ensure_totals_for_rest_coupon_validation();
+		if ( ! $this->discount_applied ) {
+			return false;
+		}
+		if ( $this->pricing_ran_for_coupon_validation && ! empty( $this->get_cart_level_condition_campaigns() ) ) {
+			// The cart was priced without this coupon, and a campaign depends on the cart total, which the coupon changes. Let the removal pass after totals decide, as the classic cart does.
 			return false;
 		}
 		$code = $coupon->get_code();
