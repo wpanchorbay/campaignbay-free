@@ -1,6 +1,6 @@
 {
   "name": "campaignbay",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "CampaignBay for WooCommerce Product Discount WordPress Plugin.",
   "main": "index.js",
   "scripts": {

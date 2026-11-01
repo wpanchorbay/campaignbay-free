@@ -100,6 +100,10 @@ class Countdown extends Base {
 			'campaignbay_countdown'
 		);
 
+		if ( ! Common::get_instance()->get_settings( 'global_enableAddon' ) ) {
+			return '';
+		}
+
 		$campaign = $this->get_active_campaign( absint( $atts['id'] ) );
 		if ( ! $campaign || ! self::campaign_has_countdown( $campaign ) ) {
 			return '';
@@ -484,6 +488,9 @@ class Countdown extends Base {
 	 * @return bool
 	 */
 	private function is_surface_enabled( $surface ) {
+		if ( ! Common::get_instance()->get_settings( 'global_enableAddon' ) ) {
+			return false;
+		}
 		return (bool) Common::get_instance()->get_settings( 'countdown_show_' . $surface );
 	}
 

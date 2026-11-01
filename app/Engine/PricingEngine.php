@@ -189,6 +189,7 @@ class PricingEngine extends Base {
 		add_action( 'woocommerce_before_calculate_totals', array( $this, 'before_calculate_totals' ), 20, 1 );
 		add_action( 'woocommerce_after_calculate_totals', array( $this, 'after_calculate_totals' ), 20, 1 );
 		add_action( 'woocommerce_after_calculate_totals', array( $this, 'remove_stray_coupons' ), 99, 1 );
+		add_action( 'woocommerce_applied_coupon', array( $this, 'drop_virtual_coupons_for_individual_use' ), 10, 1 );
 		add_action( 'woocommerce_after_calculate_totals', array( $this, 'remember_discount_breakdown' ), 100, 1 );
 
 		foreach ( $hooks as $hook ) {
@@ -1102,6 +1103,34 @@ class PricingEngine extends Base {
 		 * @return bool True to keep the coupon valid, false to reject it.
 		 */
 		return ! apply_filters( 'campaignbay_allow_coupon_with_discount', false, $code, $coupon, $discount );
+	}
+
+	/**
+	 * Drop CampaignBay's virtual coupons when the shopper applies an individual-use coupon.
+	 *
+	 * WooCommerce removes the other applied coupons before it adds an individual-use coupon, but that removal
+	 * recalculates the cart while the new coupon is not applied yet, so CampaignBay adds its virtual coupon back.
+	 * Both then stay. This runs once the coupon is applied: the shopper's individual-use coupon wins and the
+	 * virtual coupons are removed. The recalculation that follows does not add them again, because
+	 * CartDiscount::apply_fake_coupons() skips them while an individual-use coupon is applied.
+	 *
+	 * @since 1.2.1
+	 * @param string $coupon_code The coupon code that was just applied.
+	 * @return void
+	 */
+	public function drop_virtual_coupons_for_individual_use( $coupon_code ) {
+		if ( 0 === strpos( (string) $coupon_code, 'campaignbay_' ) || ! function_exists( 'WC' ) || ! isset( WC()->cart ) || ! is_object( WC()->cart ) ) {
+			return;
+		}
+		$coupon = new \WC_Coupon( $coupon_code );
+		if ( true !== $coupon->get_individual_use() ) {
+			return;
+		}
+		foreach ( WC()->cart->get_applied_coupons() as $code ) {
+			if ( 0 === strpos( (string) $code, 'campaignbay_' ) ) {
+				WC()->cart->remove_coupon( $code );
+			}
+		}
 	}
 
 	/**

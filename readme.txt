@@ -4,7 +4,7 @@ Tags: discount manager, bulk discount, dynamic pricing, woocommerce, bogo
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -180,6 +180,12 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 
 == Changelog ==
 
+= 1.2.1 =
+*   Fix: Discounted cart totals and prices now stay correct when a coupon is checked through the REST API or the block cart.
+*   Fix: A shopper's individual-use coupon now replaces a CampaignBay coupon-mode discount, as WooCommerce coupons normally do.
+*   Fix: Countdown timers no longer show when CampaignBay is switched off in settings.
+*   Fix: Pressing Escape cancels an inline edit instead of saving it.
+
 = 1.2.0 =
 *   New: Countdown timers on product, shop, cart and via shortcode.
 *   New: CampaignBay sale badge, category/shop offer messages and campaign promo blurbs.
@@ -316,6 +322,9 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 *   Initial release of CampaignBay.
 
 == Upgrade Notice ==
+
+= 1.2.1 =
+Coupon and countdown fixes. Recommended for all users. CampaignBay Pro 1.1.0 requires this version.
 
 = 1.2.0 =
 New countdown timers, sale badge and offer messages, quantity limits, tag targeting and extra conditions, plus several cart and checkout fixes. Recommended for all users. CampaignBay Pro users: CampaignBay Pro 1.1.0 requires this version.
