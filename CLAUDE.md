@@ -63,3 +63,9 @@ it as active:
 Anything that seeds, imports or migrates campaigns must keep `usage_count` below both the
 summed tier `quantity` and `usage_limit`. `CampaignsController.php:712` deliberately allows
 importing a previous usage count, so this is reachable through the public import path too.
+
+## Branching and releases
+
+- **Release tags are always cut from `main`.** `main` only ever holds released code.
+- Day-to-day work happens on `dev` or a short-lived feature branch off `dev`. Merge it into `dev`, then delete the branch locally and on the remote.
+- To release: bring `dev` up to date, fast-forward `main` to it, tag that commit on `main`, then push `main`, `dev` and the tag. Keep only `main` and `dev` long-term.
