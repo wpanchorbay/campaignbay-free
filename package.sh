@@ -25,6 +25,7 @@ copy_plugin_files() {
     cp -r languages "$DEST/"
     cp -r assets "$DEST/"
     cp -r build "$DEST/"
+    cp -r includes "$DEST/"
 
     # vendor/ was never copied, so the released zip contained no
     # deactivation-feedback package at all and class_exists() was always false.

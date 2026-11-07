@@ -15,7 +15,15 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 define( 'CAMPAIGNBAY_OPTION_NAME', 'campaignbay' );
 define( 'CAMPAIGNBAY_TEXT_DOMAIN', 'campaignbay' );
 
+// Read the "delete all data" flag now: the cleanup below deletes the option that holds it.
+$campaignbay_wpab_options = get_option( CAMPAIGNBAY_OPTION_NAME );
+$campaignbay_wpab_delete  = ! empty( $campaignbay_wpab_options['advanced_deleteAllOnUninstall'] ) && true === $campaignbay_wpab_options['advanced_deleteAllOnUninstall'];
+
 wpab_cb_run_uninstall();
+
+// Shared WPAnchorBay banner cleanup: removes the shared "banner closed" user meta once the last WPAnchorBay plugin is uninstalled.
+require_once __DIR__ . '/includes/wpab-banner/wpab-banner-uninstall.php';
+wpab_banner_uninstall( WP_UNINSTALL_PLUGIN, $campaignbay_wpab_delete );
 
 /**
  * The main controller function for the uninstallation process.

@@ -59,6 +59,12 @@ spl_autoload_register(
 );
 
 require_once CAMPAIGNBAY_PATH . 'app/functions.php';
+
+// Shared WPAnchorBay admin banner. Loaded at file scope so its AJAX dismiss handler also registers on admin-ajax.php.
+if ( is_admin() ) {
+	require_once __DIR__ . '/includes/wpab-banner/wpab-banner-loader.php';
+}
+
 if ( ! function_exists( 'is_plugin_active' ) ) {
 	include_once ABSPATH . 'wp-admin/includes/plugin.php';
 }
