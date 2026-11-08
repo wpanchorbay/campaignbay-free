@@ -35,7 +35,7 @@ if ( is_admin() ) {
 }
 ```
 
-That's all for showing it. The loader prints the banner through `admin_notices`.
+That's all for showing it. The loader prints the banner through `admin_notices`, except on WooCommerce > Settings, where WooCommerce Admin hides everything printed on `admin_notices`; there it prints on `all_admin_notices` (after WooCommerce's hidden wrapper) so it shows at the top of the content area. The banner clears the floated Screen Options / Help tabs, so on the Plugins screen it takes the full row below them.
 
 ## 3. Clean up on uninstall
 
@@ -69,7 +69,7 @@ The flag is only deleted when no other WPAnchorBay plugin is still installed. If
 - **Where:**
   - the Plugins screen;
   - the active plugins' own admin pages (any screen whose id contains the plugin key, for example `campaignbay`);
-  - the plugin's tab under WooCommerce > Settings.
+  - the plugin's tab under WooCommerce > Settings (`tab=<plugin key>`), or its section under the Products tab (`tab=products&section=<plugin key>`, as OptionBay uses). The Products tab on its own has no banner.
   - The main Dashboard is off by default (WordPress.org Guideline 11).
 - **Closing it:** the X hides it and saves the choice in user meta `wpab_banner_dismissed`, so it never comes back for that user, on any browser or device.
 

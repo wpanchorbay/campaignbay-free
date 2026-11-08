@@ -13,7 +13,9 @@
  * Behaviour:
  *  - Shown to administrators only, and only between the start and end times below.
  *  - Shown on the Plugins screen, on the active plugins' own screens and on their
- *    WooCommerce > Settings tab. The Dashboard is off unless a filter turns it on.
+ *    WooCommerce > Settings tab (or Products section). The Dashboard is off unless a filter turns it on.
+ *  - Printed on `admin_notices`, except on WooCommerce > Settings where it is printed on
+ *    `all_admin_notices`, because WooCommerce Admin hides everything on `admin_notices` there.
  *  - Hidden automatically after the end time, even from a cached page.
  *  - Closing the banner saves the dismissal for that user and that campaign in
  *    user meta, so it stays closed on every browser and device. A new campaign
@@ -122,6 +124,14 @@ if ( ! function_exists( 'wpab_banner_on_screen' ) ) {
 			if ( $tab && in_array( $tab, (array) $tabs, true ) ) {
 				return true;
 			}
+
+			// A plugin that lives under a core tab (OptionBay: Products > its own section) is matched by
+			// the section in the URL. The core tab on its own (no section) stays banner-free.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- reads a section name only, changes nothing.
+			$section = isset( $_GET['section'] ) ? sanitize_key( wp_unslash( $_GET['section'] ) ) : '';
+			if ( 'products' === $tab && $section && in_array( $section, (array) $tabs, true ) ) {
+				return true;
+			}
 		}
 
 		// Off by default: Guideline 11 says advertising within the WordPress dashboard should be avoided.
@@ -211,7 +221,46 @@ if ( ! function_exists( 'wpab_banner_print' ) ) {
 		<?php
 	}
 }
-add_action( 'admin_notices', 'wpab_banner_print' );
+
+if ( ! function_exists( 'wpab_banner_is_wc_settings_screen' ) ) {
+	/**
+	 * Is this the WooCommerce > Settings screen?
+	 *
+	 * WooCommerce Admin wraps everything printed on `admin_notices` in a hidden element on this
+	 * screen (and moves it later), so the banner would never be visible there.
+	 *
+	 * @return bool
+	 */
+	function wpab_banner_is_wc_settings_screen() {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		return $screen && 'woocommerce_page_wc-settings' === $screen->id;
+	}
+}
+
+if ( ! function_exists( 'wpab_banner_print_notice' ) ) {
+	/**
+	 * `admin_notices`: every screen except WooCommerce > Settings.
+	 */
+	function wpab_banner_print_notice() {
+		if ( ! wpab_banner_is_wc_settings_screen() ) {
+			wpab_banner_print();
+		}
+	}
+}
+
+if ( ! function_exists( 'wpab_banner_print_after_notices' ) ) {
+	/**
+	 * `all_admin_notices`: runs after WooCommerce has closed its hidden notice wrapper, so the
+	 * banner is printed visibly at the top of the content area. WooCommerce > Settings only.
+	 */
+	function wpab_banner_print_after_notices() {
+		if ( wpab_banner_is_wc_settings_screen() ) {
+			wpab_banner_print();
+		}
+	}
+}
+add_action( 'admin_notices', 'wpab_banner_print_notice' );
+add_action( 'all_admin_notices', 'wpab_banner_print_after_notices' );
 
 if ( ! function_exists( 'wpab_banner_dismiss' ) ) {
 	/**
