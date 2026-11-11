@@ -102,6 +102,41 @@ add_filter(
 );
 ```
 
+## For AI agents and automation
+
+Read this before touching these files or wiring the banner into a plugin.
+
+**Rules**
+
+1. **The four files are one unit and must be byte-identical in every plugin.** Never edit a copy inside a plugin. Change the canonical copy, then copy it into every plugin and compare with `sha256sum`. Whichever plugin loads first prints the banner, so an out-of-date copy anywhere shows the old banner or the old dates.
+2. **Load it at file scope, guarded by `is_admin()`**, in the plugin's main file. Do not hook it, and do not put it inside a class or a function. The dismiss handler (`wp_ajax_wpab_dismiss_banner`) has to register on admin-ajax requests, and a late hook would miss them.
+3. **Uninstall order matters.** Read the plugin's own "delete data on uninstall" flag before its cleanup runs, then call `wpab_banner_uninstall( WP_UNINSTALL_PLUGIN, $delete )` last. See section 3.
+4. **Packaging and linting.** Make sure the plugin's release script copies `includes/` into the zip, and exclude `*/includes/wpab-banner/*` from phpcs so a formatter never rewrites the shared files.
+5. **Do not change dates or placement per plugin.** Dates live in `WPAB_BANNER_STARTS` and `WPAB_BANNER_ENDS`. To make the banner appear on a plugin screen that the default rules miss, use the `wpab_banner_show_on_screen` filter from the plugin's own code, not an edit to the loader.
+6. **Test dates without editing shipped files.** Use a temporary mu-plugin that defines `WPAB_BANNER_STARTS` and `WPAB_BANNER_ENDS` before the plugins load (see `dev/wpab-banner-test.php` in the repo), and delete it afterwards. The loader defines both constants unconditionally, so a test override that loads after it prints a "constant already defined" warning.
+7. **Do not add CSS or JS for the banner outside `wpab-banner.html`.** It is self-contained on purpose (no external requests, fonts built in).
+
+**Check that an integration is done**
+
+```bash
+# the four files match the canonical copy
+sha256sum includes/wpab-banner/*
+
+# the loader is required at file scope, guarded by is_admin()
+grep -n "wpab-banner-loader.php" *.php
+
+# uninstall reads the flag first and calls wpab_banner_uninstall() last
+grep -n "wpab_banner_uninstall\|wpab-banner-uninstall" uninstall.php
+
+# the dates are the campaign dates
+grep -n "WPAB_BANNER_STARTS'\|WPAB_BANNER_ENDS'" includes/wpab-banner/wpab-banner-loader.php
+
+# syntax
+php -l includes/wpab-banner/wpab-banner-loader.php
+```
+
+Then check in a browser as an administrator, inside the date window: the banner shows once on the Plugins screen and on the plugin's own pages, shows on its WooCommerce settings tab if it has one, is absent from the Dashboard, and stays gone after you close it and reload. Do not run a plugin's real `uninstall.php` on a working site to test it; call `wpab_banner_uninstall()` directly instead.
+
 ## Important
 
-All plugins must ship the **same version** of these three files for a campaign, because whichever plugin loads first is the one that prints the banner.
+All plugins must ship the **same version** of these files for a campaign, because whichever plugin loads first is the one that prints the banner.
