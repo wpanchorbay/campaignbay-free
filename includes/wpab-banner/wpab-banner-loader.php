@@ -37,8 +37,8 @@ define( 'WPAB_BANNER_LOADED', true );
 // Campaign id. Changing it makes the banner show again for users who dismissed the last one.
 define( 'WPAB_BANNER_CAMPAIGN', 'blackfriday26' );
 
-// Start: 25 Nov 2026, 00:00:01 UTC (24 Nov 2026, 7:00:01 PM EST).
-define( 'WPAB_BANNER_STARTS', 1795564801 );
+// Start: 12 Nov 2026, 08:00:00 UTC (12 Nov 2026, 2:00:00 PM Bangladesh, 3:00:00 AM EST).
+define( 'WPAB_BANNER_STARTS', 1794470400 );
 
 // End: 5 Dec 2026, 23:59:59 UTC (5 Dec 2026, 6:59:59 PM EST). The banner is not printed after this, and hides itself on a cached page.
 define( 'WPAB_BANNER_ENDS', 1796515199 );

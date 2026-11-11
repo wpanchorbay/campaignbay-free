@@ -65,7 +65,7 @@ The flag is only deleted when no other WPAnchorBay plugin is still installed. If
 ## How it behaves
 
 - **Who sees it:** administrators only (`manage_options`).
-- **When:** 25 Nov 2026 00:00:01 UTC to 5 Dec 2026 23:59:59 UTC (25 Nov 6:00:01 AM to 6 Dec 5:59:59 AM Bangladesh time). Outside this window the banner is not shown, and it also hides itself after the end time if a page was cached.
+- **When:** 12 Nov 2026 08:00:00 UTC to 5 Dec 2026 23:59:59 UTC (12 Nov 2:00:00 PM to 6 Dec 5:59:59 AM Bangladesh time). Outside this window the banner is not shown, and it also hides itself after the end time if a page was cached.
 - **Where:**
   - the Plugins screen;
   - the active plugins' own admin pages (any screen whose id contains the plugin key, for example `campaignbay`);
