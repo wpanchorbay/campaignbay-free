@@ -181,7 +181,7 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 == Changelog ==
 
 = 1.2.2 =
-*   New: A dismissible Black Friday deals notice from WPAnchorBay for administrators, on the Plugins screen and CampaignBay's own admin pages, through 5 December 2026. Closing it hides it for good.
+*   New: A dismissible Black Friday deals notice from WPAnchorBay for administrators, on the Plugins screen and CampaignBay's own admin pages, through 20 December 2026. Closing it hides it for a few days, and it comes back on a few key sale dates, such as just before Black Friday and Cyber Monday.
 
 = 1.2.1 =
 *   Fix: Discounted cart totals and prices now stay correct when a coupon is checked through the REST API or the block cart.
@@ -327,7 +327,7 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 == Upgrade Notice ==
 
 = 1.2.2 =
-Adds a dismissible Black Friday notice for administrators on the Plugins and CampaignBay screens, through 5 December 2026. No changes to discounts, cart or storefront.
+Adds a dismissible Black Friday notice for administrators on the Plugins and CampaignBay screens, through 20 December 2026. No changes to discounts, cart or storefront.
 
 = 1.2.1 =
 Coupon and countdown fixes. Recommended for all users. CampaignBay Pro 1.1.0 requires this version.

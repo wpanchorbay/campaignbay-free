@@ -17,11 +17,11 @@
  *  - Printed on `admin_notices`, except on WooCommerce > Settings where it is printed on
  *    `all_admin_notices`, because WooCommerce Admin hides everything on `admin_notices` there.
  *  - Hidden automatically after the end time, even from a cached page.
- *  - Closing the banner saves the dismissal for that user and that campaign in
- *    user meta, so it stays closed on every browser and device. A new campaign
- *    (new WPAB_BANNER_CAMPAIGN value) shows again.
+ *  - Closing the banner saves when that user closed it, in user meta, so it stays
+ *    closed on every browser and device until the next date in WPAB_BANNER_RESHOW.
+ *    A new campaign (new WPAB_BANNER_CAMPAIGN value) shows again straight away.
  *
- * To run the next campaign: change the three constants below and swap in that
+ * To run the next campaign: change the constants below and swap in that
  * campaign's wpab-banner.html.
  */
 
@@ -40,13 +40,27 @@ define( 'WPAB_BANNER_CAMPAIGN', 'blackfriday26' );
 // Start: 12 Nov 2026, 08:00:00 UTC (12 Nov 2026, 2:00:00 PM Bangladesh, 3:00:00 AM EST).
 define( 'WPAB_BANNER_STARTS', 1794470400 );
 
-// End: 5 Dec 2026, 23:59:59 UTC (5 Dec 2026, 6:59:59 PM EST). The banner is not printed after this, and hides itself on a cached page.
-define( 'WPAB_BANNER_ENDS', 1796515199 );
+// End: 20 Dec 2026, 23:59:59 UTC (21 Dec 2026, 5:59:59 AM Bangladesh, 20 Dec 2026, 6:59:59 PM EST). The banner is not printed after this, and hides itself on a cached page.
+define( 'WPAB_BANNER_ENDS', 1797811199 );
+
+// A closed banner comes back at each of these times (Unix time, UTC).
+define(
+	'WPAB_BANNER_RESHOW',
+	array(
+		1795064400, // Thu 19 Nov 2026, 05:00 UTC (11:00 AM Bangladesh, 12:00 AM EST). One week in.
+		1795496400, // Tue 24 Nov 2026, 05:00 UTC (11:00 AM Bangladesh, 12:00 AM EST). Thanksgiving week.
+		1795712400, // Thu 26 Nov 2026, 17:00 UTC (11:00 PM Bangladesh, 12:00 PM EST). 12 hours before Black Friday.
+		1795971600, // Sun 29 Nov 2026, 17:00 UTC (11:00 PM Bangladesh, 12:00 PM EST). 12 hours before Cyber Monday.
+		1796619600, // Mon 7 Dec 2026, 05:00 UTC (11:00 AM Bangladesh, 12:00 AM EST).
+		1797224400, // Mon 14 Dec 2026, 05:00 UTC (11:00 AM Bangladesh, 12:00 AM EST).
+		1797570000, // Fri 18 Dec 2026, 05:00 UTC (11:00 AM Bangladesh, 12:00 AM EST). The last three days.
+	)
+);
 
 // The chosen banner design.
 define( 'WPAB_BANNER_FILE', __DIR__ . '/wpab-banner.html' );
 
-// User meta key that holds the list of dismissed campaign ids.
+// User meta key that holds campaign id => the time the user last closed that campaign's banner.
 define( 'WPAB_BANNER_META', 'wpab_banner_dismissed' );
 
 if ( ! function_exists( 'wpab_banner_active_plugins' ) ) {
@@ -156,13 +170,23 @@ if ( ! function_exists( 'wpab_banner_on_screen' ) ) {
 
 if ( ! function_exists( 'wpab_banner_is_dismissed' ) ) {
 	/**
-	 * Has the current user already closed this campaign's banner?
+	 * Has the current user closed this campaign's banner since the latest show-again date?
 	 *
 	 * @return bool
 	 */
 	function wpab_banner_is_dismissed() {
 		$done = get_user_meta( get_current_user_id(), WPAB_BANNER_META, true );
-		return is_array( $done ) && in_array( WPAB_BANNER_CAMPAIGN, $done, true );
+		if ( ! is_array( $done ) || ! isset( $done[ WPAB_BANNER_CAMPAIGN ] ) ) {
+			return false;
+		}
+
+		$latest = WPAB_BANNER_STARTS;
+		foreach ( WPAB_BANNER_RESHOW as $reshow ) {
+			if ( $reshow <= time() && $reshow > $latest ) {
+				$latest = $reshow;
+			}
+		}
+		return (int) $done[ WPAB_BANNER_CAMPAIGN ] >= $latest;
 	}
 }
 
@@ -264,7 +288,7 @@ add_action( 'all_admin_notices', 'wpab_banner_print_after_notices' );
 
 if ( ! function_exists( 'wpab_banner_dismiss' ) ) {
 	/**
-	 * AJAX: save that the current user closed this campaign's banner.
+	 * AJAX: save when the current user closed this campaign's banner.
 	 */
 	function wpab_banner_dismiss() {
 		check_ajax_referer( 'wpab_dismiss_banner', '_wpnonce' );
@@ -281,10 +305,10 @@ if ( ! function_exists( 'wpab_banner_dismiss' ) ) {
 		$user_id = get_current_user_id();
 		$done    = get_user_meta( $user_id, WPAB_BANNER_META, true );
 		$done    = is_array( $done ) ? $done : array();
-		if ( ! in_array( $campaign, $done, true ) ) {
-			$done[] = $campaign;
-			update_user_meta( $user_id, WPAB_BANNER_META, array_slice( $done, -20 ) );
-		}
+		// Drop entries from the old list format (numeric keys), which held no close time.
+		$done              = array_filter( $done, 'is_string', ARRAY_FILTER_USE_KEY );
+		$done[ $campaign ] = time();
+		update_user_meta( $user_id, WPAB_BANNER_META, array_slice( $done, -20, null, true ) );
 		wp_send_json_success();
 	}
 }

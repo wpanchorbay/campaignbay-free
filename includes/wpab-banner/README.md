@@ -65,13 +65,24 @@ The flag is only deleted when no other WPAnchorBay plugin is still installed. If
 ## How it behaves
 
 - **Who sees it:** administrators only (`manage_options`).
-- **When:** 12 Nov 2026 08:00:00 UTC to 5 Dec 2026 23:59:59 UTC (12 Nov 2:00:00 PM to 6 Dec 5:59:59 AM Bangladesh time). Outside this window the banner is not shown, and it also hides itself after the end time if a page was cached.
+- **When:** 12 Nov 2026 08:00:00 UTC to 20 Dec 2026 23:59:59 UTC (12 Nov 2:00:00 PM to 21 Dec 5:59:59 AM Bangladesh time). Outside this window the banner is not shown, and it also hides itself after the end time if a page was cached.
 - **Where:**
   - the Plugins screen;
   - the active plugins' own admin pages (any screen whose id contains the plugin key, for example `campaignbay`);
   - the plugin's tab under WooCommerce > Settings (`tab=<plugin key>`), or its section under the Products tab (`tab=products&section=<plugin key>`, as OptionBay uses). The Products tab on its own has no banner.
   - The main Dashboard is off by default (WordPress.org Guideline 11).
-- **Closing it:** the X hides it and saves the choice in user meta `wpab_banner_dismissed`, so it never comes back for that user, on any browser or device.
+- **Closing it:** the X hides it and saves the close time in user meta `wpab_banner_dismissed`, so it stays closed for that user on every browser and device until the next comeback date in `WPAB_BANNER_RESHOW`. Each user is separate.
+- **Comeback dates:** once one of these times passes, the banner shows again for every user who closed it before then:
+
+  | Date (UTC) | Bangladesh | New York | Why |
+  |---|---|---|---|
+  | Thu 19 Nov 2026, 05:00 | 11:00 AM | 12:00 AM | One week into the sale |
+  | Tue 24 Nov 2026, 05:00 | 11:00 AM | 12:00 AM | Thanksgiving week |
+  | Thu 26 Nov 2026, 17:00 | 11:00 PM | 12:00 PM | 12 hours before Black Friday (27 Nov) |
+  | Sun 29 Nov 2026, 17:00 | 11:00 PM | 12:00 PM | 12 hours before Cyber Monday (30 Nov) |
+  | Mon 7 Dec 2026, 05:00 | 11:00 AM | 12:00 AM | Start of the second week of December |
+  | Mon 14 Dec 2026, 05:00 | 11:00 AM | 12:00 AM | Last full week of the sale |
+  | Fri 18 Dec 2026, 05:00 | 11:00 AM | 12:00 AM | The last three days of the sale |
 
 ## Settings you may need
 
@@ -80,6 +91,7 @@ All of them are in `wpab-banner-loader.php` or are filters you can add in the pl
 | What | How |
 |---|---|
 | Change the dates | Edit `WPAB_BANNER_STARTS` and `WPAB_BANNER_ENDS` (Unix time, UTC). |
+| Change the comeback dates | Edit `WPAB_BANNER_RESHOW` (Unix times, UTC). A user who closed the banner sees it again once a listed time passes. |
 | Run a new campaign later | Change `WPAB_BANNER_CAMPAIGN` (for example `cybermonday26`) and replace `wpab-banner.html`. Users who closed the old one will see the new one. |
 | A WooCommerce settings tab slug is not the plugin key | `add_filter( 'wpab_banner_wc_tabs', fn( $tabs ) => $tabs + array( 'campaignbay' => 'campaignbay-settings' ) );` |
 | Hide it for Pro users | `add_filter( 'wpab_banner_show', fn( $show ) => $show && ! my_plugin_has_pro() );` |
@@ -112,7 +124,7 @@ Read this before touching these files or wiring the banner into a plugin.
 2. **Load it at file scope, guarded by `is_admin()`**, in the plugin's main file. Do not hook it, and do not put it inside a class or a function. The dismiss handler (`wp_ajax_wpab_dismiss_banner`) has to register on admin-ajax requests, and a late hook would miss them.
 3. **Uninstall order matters.** Read the plugin's own "delete data on uninstall" flag before its cleanup runs, then call `wpab_banner_uninstall( WP_UNINSTALL_PLUGIN, $delete )` last. See section 3.
 4. **Packaging and linting.** Make sure the plugin's release script copies `includes/` into the zip, and exclude `*/includes/wpab-banner/*` from phpcs so a formatter never rewrites the shared files.
-5. **Do not change dates or placement per plugin.** Dates live in `WPAB_BANNER_STARTS` and `WPAB_BANNER_ENDS`. To make the banner appear on a plugin screen that the default rules miss, use the `wpab_banner_show_on_screen` filter from the plugin's own code, not an edit to the loader.
+5. **Do not change dates or placement per plugin.** Dates live in `WPAB_BANNER_STARTS`, `WPAB_BANNER_ENDS` and `WPAB_BANNER_RESHOW`. To make the banner appear on a plugin screen that the default rules miss, use the `wpab_banner_show_on_screen` filter from the plugin's own code, not an edit to the loader.
 6. **Test dates without editing shipped files.** Use a temporary mu-plugin that defines `WPAB_BANNER_STARTS` and `WPAB_BANNER_ENDS` before the plugins load (see `dev/wpab-banner-test.php` in the repo), and delete it afterwards. The loader defines both constants unconditionally, so a test override that loads after it prints a "constant already defined" warning.
 7. **Do not add CSS or JS for the banner outside `wpab-banner.html`.** It is self-contained on purpose (no external requests, fonts built in).
 
@@ -135,7 +147,7 @@ grep -n "WPAB_BANNER_STARTS'\|WPAB_BANNER_ENDS'" includes/wpab-banner/wpab-banne
 php -l includes/wpab-banner/wpab-banner-loader.php
 ```
 
-Then check in a browser as an administrator, inside the date window: the banner shows once on the Plugins screen and on the plugin's own pages, shows on its WooCommerce settings tab if it has one, is absent from the Dashboard, and stays gone after you close it and reload. Do not run a plugin's real `uninstall.php` on a working site to test it; call `wpab_banner_uninstall()` directly instead.
+Then check in a browser as an administrator, inside the date window: the banner shows once on the Plugins screen and on the plugin's own pages, shows on its WooCommerce settings tab if it has one, is absent from the Dashboard, and stays gone after you close it and reload (until the next comeback date). Do not run a plugin's real `uninstall.php` on a working site to test it; call `wpab_banner_uninstall()` directly instead.
 
 ## Important
 
