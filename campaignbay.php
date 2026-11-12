@@ -8,8 +8,8 @@
  * Requires PHP:      7.4
  * Requires Plugins:  woocommerce
  * WC requires at least: 6.1
- * Version:           1.2.1
- * Stable tag:        1.2.1
+ * Version:           1.2.2
+ * Stable tag:        1.2.2
  * Author:            WPAnchorBay
  * Author URI:        https://wpanchorbay.com
  * License:           GPLv2 or later
@@ -26,7 +26,7 @@ if ( ! defined( 'WPINC' ) ) {
 define( 'CAMPAIGNBAY_PATH', plugin_dir_path( __FILE__ ) );
 define( 'CAMPAIGNBAY_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CAMPAIGNBAY_URL', plugin_dir_url( __FILE__ ) );
-define( 'CAMPAIGNBAY_VERSION', '1.2.1' );
+define( 'CAMPAIGNBAY_VERSION', '1.2.2' );
 define( 'CAMPAIGNBAY_PLUGIN_NAME', 'campaignbay' );
 define( 'CAMPAIGNBAY_TEXT_DOMAIN', 'campaignbay' );
 define( 'CAMPAIGNBAY_OPTION_NAME', 'campaignbay' );

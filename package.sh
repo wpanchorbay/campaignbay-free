@@ -26,6 +26,8 @@ copy_plugin_files() {
     cp -r assets "$DEST/"
     cp -r build "$DEST/"
     cp -r includes "$DEST/"
+    # The shared banner's README is internal developer notes; keep it in the repo, not in the release.
+    rm -f "$DEST/includes/wpab-banner/README.md"
 
     # vendor/ was never copied, so the released zip contained no
     # deactivation-feedback package at all and class_exists() was always false.

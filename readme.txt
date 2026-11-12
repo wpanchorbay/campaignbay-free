@@ -4,7 +4,7 @@ Tags: discount manager, bulk discount, dynamic pricing, woocommerce, bogo
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -180,6 +180,9 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 
 == Changelog ==
 
+= 1.2.2 =
+*   New: A dismissible Black Friday deals notice from WPAnchorBay for administrators, on the Plugins screen and CampaignBay's own admin pages, through 5 December 2026. Closing it hides it for good.
+
 = 1.2.1 =
 *   Fix: Discounted cart totals and prices now stay correct when a coupon is checked through the REST API or the block cart.
 *   Fix: A shopper's individual-use coupon now replaces a CampaignBay coupon-mode discount, as WooCommerce coupons normally do.
@@ -322,6 +325,9 @@ Visit our [Support Forum](https://wpanchorbay.com/support/).
 *   Initial release of CampaignBay.
 
 == Upgrade Notice ==
+
+= 1.2.2 =
+Adds a dismissible Black Friday notice for administrators on the Plugins and CampaignBay screens, through 5 December 2026. No changes to discounts, cart or storefront.
 
 = 1.2.1 =
 Coupon and countdown fixes. Recommended for all users. CampaignBay Pro 1.1.0 requires this version.
